@@ -9,7 +9,6 @@
 #include <serial/serial.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Empty.h>
-#include <uarm/uarm.h>
 #include <swiftpro/SwiftproState.h>
 #include <swiftpro/status.h>
 #include <swiftpro/position.h>

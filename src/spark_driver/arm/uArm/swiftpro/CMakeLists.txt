@@ -175,7 +175,6 @@ target_link_libraries(swiftpro_write_node ${catkin_LIBRARIES})
 target_link_libraries(swiftpro_moveit_node ${catkin_LIBRARIES})
 target_link_libraries(swiftpro_rviz_node ${catkin_LIBRARIES})
 target_link_libraries(swiftpro_read_node ${catkin_LIBRARIES})
-target_link_libraries(swiftpro_write_node PRIVATE /usr/lib/libuarm.so)
 
 #############
 ## Install ##
