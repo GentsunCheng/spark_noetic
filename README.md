@@ -5,6 +5,8 @@
 
 本项目为本人学校2023年机器人协会自用代码，此代码基于[***NXROBO Spark***](https://github.com/NXROBO/spark_noetic "NXROBO Spark")官方仓库进行修改，本项目使用 ***GPL3.0*** 协议，***使用本项目时请遵守相关协议***
 
+Spark控制程序[***Spark Control***](https://github.com/GentsunCheng/electron-spark "Spark Control")
+
 ## 功能包说明
 
 * ***src*** : Spark的源代码，包括底层配置，硬件驱动，和各个应用功能包等。

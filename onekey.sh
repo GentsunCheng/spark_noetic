@@ -941,86 +941,11 @@ spark_hsv_detection(){
 #方块抓取程序
 spark_carry_game(){
     clear
-	echo -e "${info}夺宝奇兵比赛程序"
 	ROSVER=`/usr/bin/rosversion -d`
 	PROJECTPATH=$(cd `dirname $0`; pwd)
 	source ${PROJECTPATH}/devel/setup.bash
-    echo -e "${info}Spark控制程序请前往我的GitHub项目下载\e[36mhttps://github.com/GentsunCheng/electron-spark\e[0m"
-	echo -e "${info}请选择方式：
-	  ${Green_font_prefix}1.${Font_color_suffix} 手动模式
-	  ${Green_font_prefix}2.${Font_color_suffix} 自动模式
-	  ${Green_font_prefix}3.${Font_color_suffix} 退出请按：Ctrl + c"
-	echo && stty erase ^? && read -p "请输入数字 [1-2]：" armnum
-	case "$armnum" in
-		1)
-		gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N spark_hand; roslaunch move2grasp teleop2grasp.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}'"
-        gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N armcontrol; armcontrol'"
-        spark_game_started 1
-		;;
-		2)
-		gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N spark_auto; roslaunch move2grasp move2grasp.launch camera_type_tel:=${CAMERATYPE}  lidar_type_tel:=${LIDARTYPE}'"
-        gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N armcontrol; armcontrol'"
-        spark_game_started 2
-		;;
-        3)
-        exit
-        ;;
-		*)
-		echo -e "${Error} 错误，请填入正确的数字"
-		;;
-	esac
-}
-
-#比赛启动后程序
-spark_game_started() {
-    ROSVER=`/usr/bin/rosversion -d`
-    PROJECTPATH=$(cd `dirname $0`; pwd)
-    source ${PROJECTPATH}/devel/setup.bash
-    wmctrl -r :ACTIVE: -e 0,0,0,60,350
-    while true; do
-        clear
-        echo -e "${info}程序已启动"
-        echo -e "${info}
-        ${Green_font_prefix}1.${Font_color_suffix} 重启比赛程序
-        ${Green_font_prefix}2.${Font_color_suffix} 退出程序"
-        echo && stty erase ^? && read -p "请输入数字 [1-2]：" armnum
-        case "$armnum" in
-            1)
-                if [ "$1" -lt 1 ]
-                then
-                    kill "$(pgrep -f spark_hand)" > /dev/null
-                    kill "$(pgrep -f armcontrol)" > /dev/null
-                    sleep 3 s
-                    gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N spark_hand; roslaunch move2grasp teleop2grasp.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}'"
-                    gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N armcontrol; armcontrol'"
-                else
-                    kill "$(pgrep -f spark_auto)" > /dev/null
-                    kill "$(pgrep -f armcontrol)" > /dev/null
-                    sleep 3 s
-                    gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N spark_auto; roslaunch move2grasp move2grasp.launch camera_type_tel:=${CAMERATYPE}  lidar_type_tel:=${LIDARTYPE}'"
-                    gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N armcontrol; armcontrol'"
-                fi
-                clear
-                ;;
-            2)
-                if [ "$1" -lt 2 ]
-                then
-                    kill "$(pgrep -f spark_hand)" > /dev/null
-                    kill "$(pgrep -f armcontrol)" > /dev/null
-                else
-                    kill "$(pgrep -f spark_auto)" > /dev/null
-                    kill "$(pgrep -f armcontrol)" > /dev/null
-                fi
-                clear
-                exit
-                ;;
-            *)
-                echo -e "${Error} 错误，请填入正确的数字"
-                sleep 1s
-                clear
-                ;;
-        esac
-    done
+    gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N spark_game; roslaunch move2grasp move2grasp.launch camera_type_tel:=${CAMERATYPE}  lidar_type_tel:=${LIDARTYPE}'"
+    gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N armcontrol; armcontrol'"
 }
 
 #进阶赛示例程序
