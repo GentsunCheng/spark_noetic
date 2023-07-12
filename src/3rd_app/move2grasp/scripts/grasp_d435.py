@@ -37,7 +37,7 @@ class GraspObject():
         '''
 
         global xc, yc, xc_prev, yc_prev, found_count, angle, debug_mod, mod, auto_mod
-        angle = 90
+        angle = 90.0
         debug_mod = 0
         auto_mod = 0
         mod = 0
@@ -131,13 +131,13 @@ class GraspObject():
             self.grasp_status_pub.publish(status)
 
         # 机械臂位姿调整
-        if msg.data=='11' or msg.data=='12' or msg.data=='13':
+        if msg.data=='51' or msg.data=='52' or msg.data=='53':
             self.is_found_object = False
-            if msg.data=='11':
+            if msg.data=='51':
                 mod=0
-            elif msg.data=='12':
+            elif msg.data=='52':
                 mod=1
-            elif msg.data=='13':
+            elif msg.data=='53':
                 mod=2
             self.arm_pose()
             status=String()
@@ -154,14 +154,13 @@ class GraspObject():
 
         # 第四关节左转
         if msg.data=='41':
-            if angle <= 180:
-                angle = angle + 1
+            if angle <= 180.0:
+                angle = angle + 1.0
                 self.forth_pose()
-
         # 第四关节右转
         if msg.data=='43':
-            if angle >= 0:
-                angle = angle - 1
+            if angle >= 0.0:
+                angle = angle - 1.0
                 self.forth_pose()
 
         # 机械臂归位
@@ -169,7 +168,7 @@ class GraspObject():
             self.is_found_object = False
             times=0
             steps=0
-            angle = 90
+            angle = 90.0
             self.default_arm()
             status=String()
             status.data='403'
@@ -180,6 +179,7 @@ class GraspObject():
             self.is_found_object = False
             times=0
             steps=0
+            angle = 90.0
             self.reset_pub.publish(1)
             status=String()
             status.data='403'
