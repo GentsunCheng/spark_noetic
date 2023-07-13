@@ -252,6 +252,13 @@ class GraspObject():
         except CvBridgeError as e:
             print('error')
 
+       # 获取图像尺寸
+        height, width, _ = cv_image1.shape
+        # 计算上方2/5区域的起始和结束位置
+        start_y = 0
+        end_y = int(height * 2 / 7)
+        # 将上方2/5区域设为白色
+        cv_image1[start_y:end_y, :] = (0,0,0)
         # 获取图像尺寸
         height, width, _ = cv_image1.shape
         # 计算圆心坐标和半径
