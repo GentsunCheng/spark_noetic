@@ -26,6 +26,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from spark_carry_object.msg import *
 
+
 class GraspObject():
     '''
     监听主控，用于物品抓取功能
@@ -90,99 +91,101 @@ class GraspObject():
             if msg.data == '0a':
                 auto_mod = 1
             # 订阅摄像头话题,对图像信息进行处理
-            self.sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
+            self.sub = rospy.Subscriber(
+                "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
             self.is_found_object = False
             rate = rospy.Rate(10)
-            times=0
-            steps=0
+            times = 0
+            steps = 0
             while not self.is_found_object:
                 rate.sleep()
-                times+=1
+                times += 1
                 # 转圈没有发现可抓取物体,退出抓取
-                if steps>=2:
+                if steps >= 2:
                     self.sub.unregister()
                     print("stop grasp\n")
-                    status=String()
-                    status.data='-1'
+                    status = String()
+                    status.data = '-1'
                     self.grasp_status_pub.publish(status)
                     return
                 # 旋转一定角度扫描是否有可供抓取的物体
-                if times>=30:
-                    times=0
-                    steps+=1
-                    self.turn_body()
+                if times >= 30:
+                    times = 0
+                    steps += 1
                     print("not found\n")
             print("unregisting sub\n")
             self.sub.unregister()
             print("unregisted sub\n")
             # 抓取检测到的物体
             self.grasp()
-            status=String()
-            status.data='0'
+            status = String()
+            status.data = '0'
             self.grasp_status_pub.publish(status)
 
-        #释放物体
-        if msg.data=='1':
+        # 释放物体
+        if msg.data == '1':
             # 放下物体
             self.is_found_object = False
             self.release_object()
-            status=String()
-            status.data='1'
+            status = String()
+            status.data = '1'
             self.grasp_status_pub.publish(status)
 
         # 机械臂位姿调整
-        if msg.data=='51' or msg.data=='52' or msg.data=='53':
+        if msg.data == '51' or msg.data == '52' or msg.data == '53' or msg.data == '666':
             self.is_found_object = False
-            if msg.data=='51':
-                mod=0
-            elif msg.data=='52':
-                mod=1
-            elif msg.data=='53':
-                mod=2
+            if msg.data == '51':
+                mod = 0
+            elif msg.data == '52':
+                mod = 1
+            elif msg.data == '53':
+                mod = 2
+            elif msg.data == '666':
+                mod = 666
             self.arm_pose()
-            status=String()
-            status.data='403'
+            status = String()
+            status.data = '403'
             self.grasp_status_pub.publish(status)
 
         # 备选方案
-        if msg.data=='200':
+        if msg.data == '200':
             self.is_found_object = False
             self.spare_plan()
-            status=String()
-            status.data='0'
+            status = String()
+            status.data = '0'
             self.grasp_status_pub.publish(status)
 
         # 第四关节左转
-        if msg.data=='41':
+        if msg.data == '41':
             if angle <= 180.0:
                 angle = angle + 1.0
                 self.forth_pose()
         # 第四关节右转
-        if msg.data=='43':
+        if msg.data == '43':
             if angle >= 0.0:
                 angle = angle - 1.0
                 self.forth_pose()
 
         # 机械臂归位
-        if msg.data=='403':
+        if msg.data == '403':
             self.is_found_object = False
-            times=0
-            steps=0
+            times = 0
+            steps = 0
             angle = 90.0
             self.default_arm()
-            status=String()
-            status.data='403'
+            status = String()
+            status.data = '403'
             self.grasp_status_pub.publish(status)
 
         # 机械臂重置
-        if msg.data=='404':
+        if msg.data == '404':
             self.is_found_object = False
-            times=0
-            steps=0
+            times = 0
+            steps = 0
             angle = 90.0
             self.reset_pub.publish(1)
-            status=String()
-            status.data='403'
+            status = String()
+            status.data = '403'
             self.grasp_status_pub.publish(status)
 
     # 执行抓取
@@ -197,25 +200,25 @@ class GraspObject():
         s = file_pix.read()
         file_pix.close()
         print(s)
-        arr=s.split()
-        a1=arr[0]
-        a2=arr[1]
-        a3=arr[2]
-        a4=arr[3]
+        arr = s.split()
+        a1 = arr[0]
+        a2 = arr[1]
+        a3 = arr[2]
+        a4 = arr[3]
         a = [0]*2
         b = [0]*2
-        a[0]=float(a1)
-        a[1]=float(a2)
-        b[0]=float(a3)
-        b[1]=float(a4)
-        print('k and b value:',a[0],a[1],b[0],b[1])
+        a[0] = float(a1)
+        a[1] = float(a2)
+        b[0] = float(a3)
+        b[1] = float(a4)
+        print('k and b value:', a[0], a[1], b[0], b[1])
         r2 = rospy.Rate(10)
         pos = position()
         # 物体所在坐标+标定误差
         pos.x = a[0] * yc + a[1]
         pos.y = b[0] * xc + b[1]
         pos.z = -20
-	    # pos.z = 20
+        # pos.z = 20
         print("z = -20\n")
         self.pub1.publish(pos)
         r2.sleep()
@@ -278,13 +281,14 @@ class GraspObject():
         blurred = cv2.GaussianBlur(cv_image4, (9, 9), 0)
         (_, thresh) = cv2.threshold(blurred, 90, 255, cv2.THRESH_BINARY)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
-        cv_image5 = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel) # 闭运算
-        cv_image5 = cv2.erode(cv_image5, None, iterations=4) # 腐蚀图像
-        cv_image5 = cv2.dilate(cv_image5, None, iterations=4) # 膨胀图像
+        cv_image5 = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)  # 闭运算
+        cv_image5 = cv2.erode(cv_image5, None, iterations=4)  # 腐蚀图像
+        cv_image5 = cv2.dilate(cv_image5, None, iterations=4)  # 膨胀图像
 
-        contours, hier = cv2.findContours(cv_image5, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hier = cv2.findContours(
+            cv_image5, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        if len(contours) > 0: # 如果检测到正方体，输出最大的正方体
+        if len(contours) > 0:  # 如果检测到正方体，输出最大的正方体
             size = []
             size_max = 0
             for i, c in enumerate(contours):
@@ -293,8 +297,10 @@ class GraspObject():
                 box = np.int0(box)
                 x_mid = (box[0][0] + box[2][0] + box[1][0] + box[3][0]) / 4
                 y_mid = (box[0][1] + box[2][1] + box[1][1] + box[3][1]) / 4
-                w = math.sqrt((box[0][0] - box[1][0]) ** 2 + (box[0][1] - box[1][1]) ** 2)
-                h = math.sqrt((box[0][0] - box[3][0]) ** 2 + (box[0][1] - box[3][1]) ** 2)
+                w = math.sqrt((box[0][0] - box[1][0]) **
+                              2 + (box[0][1] - box[1][1]) ** 2)
+                h = math.sqrt((box[0][0] - box[3][0]) **
+                              2 + (box[0][1] - box[3][1]) ** 2)
                 size.append(w * h)
                 if size[i] > size_max:
                     size_max = size[i]
@@ -321,7 +327,7 @@ class GraspObject():
     # 释放物体
     def release_object(self):
         global mod
-        rotate=angle4th()
+        rotate = angle4th()
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect(('localhost', 8801))
@@ -330,13 +336,13 @@ class GraspObject():
         response_y = client_socket.recv(1024).decode()
         message = 'get_pos_z'
         client_socket.sendall(message.encode())
-        response_z= client_socket.recv(1024).decode()
+        response_z = client_socket.recv(1024).decode()
         message = 'disconnect'
         client_socket.sendall(message.encode())
         client_socket.close()
         arr_pos_y = float(response_y)
         arr_pos_z = float(response_z)
-        rotate.angle4th=90
+        rotate.angle4th = 90
         pos.x = 220.0
         pos.y = arr_pos_y
         pos.z = arr_pos_z - 20.0
@@ -346,8 +352,8 @@ class GraspObject():
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
 
-
     # 机械臂位姿调整
+
     def arm_pose(self):
         global mod
         pos = position()
@@ -363,19 +369,21 @@ class GraspObject():
         # go forward
         pos.x = 220.0
         pos.y = arr_pos
-        if mod==0:
+        if mod == 0:
             pos.z = -35.0
-        elif mod==1:
+        elif mod == 1:
             pos.z = 75.0
-        elif mod==2:
+        elif mod == 2:
             pos.z = 175.0
+        elif mod == 666:
+            pos.z = -100
         self.pub1.publish(pos)
 
     # 第四关节调整
     def forth_pose(self):
         global angle
-        rotate=angle4th()
-        rotate.angle4th=angle
+        rotate = angle4th()
+        rotate.angle4th = angle
         self.angle4th_pub.publish(rotate)
 
     # 备选方案
@@ -390,7 +398,7 @@ class GraspObject():
         response_y = client_socket.recv(1024).decode()
         message = 'get_pos_z'
         client_socket.sendall(message.encode())
-        response_z= client_socket.recv(1024).decode()
+        response_z = client_socket.recv(1024).decode()
         message = 'disconnect'
         client_socket.sendall(message.encode())
         client_socket.close()
@@ -409,7 +417,7 @@ class GraspObject():
         pos.y = arr_pos_y
         pos.z = arr_pos_z
         self.pub1.publish(pos)
-        mod=1
+        mod = 1
 
     # 机械臂恢复默认位姿
     def default_arm(self):
@@ -417,25 +425,15 @@ class GraspObject():
         angle = 90
         pos = position()
         r2 = rospy.Rate(1)
-        rotate=angle4th()   # 1s
+        rotate = angle4th()   # 1s
         pos.x = 110.0
         pos.y = 0.0
         pos.z = 35.0
-        rotate.angle4th=90
+        rotate.angle4th = 90
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
         r2.sleep()
         return 'reset completed'
-
-    # 转动机器人到一定角度
-    def turn_body(self):
-        cmd_vel = Twist()
-        cmd_vel.angular.z = 0.5
-        rate = rospy.Rate(10)
-        for i in range(2):
-            self.cmd_vel_pub.publish(cmd_vel)
-            rate.sleep()
-
 
 
 if __name__ == '__main__':
@@ -446,4 +444,3 @@ if __name__ == '__main__':
         rospy.spin()
     except rospy.ROSInterruptException:
         rospy.loginfo("End spark GraspObject main")
-
