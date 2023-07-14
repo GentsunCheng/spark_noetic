@@ -256,7 +256,7 @@ class GraspObject():
         height, width, _ = cv_image1.shape
         # 计算上方2/5区域的起始和结束位置
         start_y = 0
-        end_y = int(height * 2 / 7)
+        end_y = int(height * 35 / 100)
         # 将上方2/5区域设为白色
         cv_image1[start_y:end_y, :] = (0,0,0)
         # 获取图像尺寸
@@ -271,7 +271,6 @@ class GraspObject():
         cv2.circle(result, (center_x, center_y), radius, (255, 255, 255), -1)
         # 将结果图像与原始图像进行按位与运算，将圆外的区域设置为白色
         result = cv2.bitwise_and(cv_image1, result)
-
         # 调整 rgb 到 hsv
         cv_image2 = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
 
@@ -313,7 +312,6 @@ class GraspObject():
                     size_max = size[i]
                     xc = x_mid
                     yc = y_mid
-
             # 如果方块在 30 单位时间内没有移动
             # 打印找到物体
             if found_count >= 30:
