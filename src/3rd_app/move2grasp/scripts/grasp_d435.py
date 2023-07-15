@@ -311,7 +311,7 @@ class GraspObject():
                 if size[i] > size_max:
                     size_max = size[i]
                     xc = x_mid
-                    yc = y_mid
+                    yc = y_mid 
             # 如果方块在 30 单位时间内没有移动
             # 打印找到物体
             if found_count >= 30:
