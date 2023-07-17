@@ -13,6 +13,7 @@ import smach_ros
 import threading
 import string
 import math
+import cmath
 import cv2
 import numpy as np
 from geometry_msgs.msg import Twist
@@ -42,12 +43,15 @@ class GraspObject():
         debug_mod = 0
         auto_mod = 0
         mod = 0
-        xc = 0
-        yc = 0
-        xc_prev = xc
-        yc_prev = yc
-        found_count = 0
+        self.xc = 0
+        self.yc = 0
+        self.xc_prev = 0
+        self.yc_prev = 0
+        self.found_count = 0
+        self.is_have_object = False
         self.is_found_object = False
+        self.object_union = []
+        self.last_object_union = []
         # self.sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
         # 订阅机械臂抓取指令
         self.sub2 = rospy.Subscriber(
@@ -215,8 +219,8 @@ class GraspObject():
         r2 = rospy.Rate(10)
         pos = position()
         # 物体所在坐标+标定误差
-        pos.x = a[0] * yc + a[1]
-        pos.y = b[0] * xc + b[1]
+        pos.x = a[0] * self.yc_prev + a[1]
+        pos.y = b[0] * self.xc_prev + b[1]
         pos.z = -20
         # pos.z = 20
         print("z = -20\n")
@@ -291,43 +295,82 @@ class GraspObject():
         cv_image5 = cv2.erode(cv_image5, None, iterations=4)  # 腐蚀图像
         cv_image5 = cv2.dilate(cv_image5, None, iterations=4)  # 膨胀图像
 
-        contours, hier = cv2.findContours(
-            cv_image5, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # detect contour
+        # 寻找前景区域
+        dist_transform = cv2.distanceTransform(cv_image5, cv2.DIST_L2, 5)
+        # cv2.imshow("距离变换", dist_transform/dist_transform.max())
+        ret, sure_fg = cv2.threshold(dist_transform, 0.5 * dist_transform.max(), 255, 0)
+        # cv2.imshow("TEST", sure_fg) # 前景色
+        # 找到未知区域
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        sure_fg = np.uint8(sure_fg)
+        sure_fg = cv2.morphologyEx(sure_fg, cv2.MORPH_CLOSE, kernel)
+        sure_fg = cv2.erode(sure_fg, None, iterations=4)
+        sure_fg = cv2.dilate(sure_fg, None, iterations=4)
 
-        if len(contours) > 0:  # 如果检测到正方体，输出最大的正方体
-            size = []
-            size_max = 0
+        contours, hier = cv2.findContours(
+            sure_fg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # if find contours, pick the biggest box
+        if len(contours) == 0:
+            self.is_have_object = False
+            self.is_found_object = False
+            self.found_count = 0
+        else:
+            self.is_have_object = True
+            index = -1
+            p_min = 10000
+            self.object_union.clear()
             for i, c in enumerate(contours):
                 rect = cv2.minAreaRect(c)
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
+                # cv2.drawContours(cv_image1, [box], 0, (0, 255, 0), 2)
+
                 x_mid = (box[0][0] + box[2][0] + box[1][0] + box[3][0]) / 4
                 y_mid = (box[0][1] + box[2][1] + box[1][1] + box[3][1]) / 4
-                w = math.sqrt((box[0][0] - box[1][0]) **
-                              2 + (box[0][1] - box[1][1]) ** 2)
-                h = math.sqrt((box[0][0] - box[3][0]) **
-                              2 + (box[0][1] - box[3][1]) ** 2)
-                size.append(w * h)
-                if size[i] > size_max:
-                    size_max = size[i]
+                cv2.circle(cv_image1, (int(x_mid), int(y_mid)), 5, (0, 0, 255), 2)
+
+                w = math.sqrt((box[0][0] - box[1][0]) ** 2 + (box[0][1] - box[1][1]) ** 2)
+                h = math.sqrt((box[0][0] - box[3][0]) ** 2 + (box[0][1] - box[3][1]) ** 2)
+                size = w * h
+
+                p, theta = cmath.polar(complex(x_mid - 320, 480 - y_mid))
+                cn = cmath.rect(p, theta)
+                cv2.line(cv_image1, (320, 480), (int(320 + cn.real), int(480 - cn.imag)), (255, 0, 0), 2)
+
+                if p > 350:
+                    continue
+
+                cv2.circle(cv_image1, (int(x_mid), int(y_mid)), 10, (0, 0, 255), 2)
+                self.object_union.append((p, theta, w, h, size, x_mid, y_mid))
+
+                if p < p_min:
+                    index = index + 1
+                    p_min = p
                     xc = x_mid
-                    yc = y_mid 
-            # 如果方块在 30 单位时间内没有移动
-            # 打印找到物体
-            if found_count >= 30:
+                    yc = y_mid
+            self.object_union.sort(key=lambda x:x[0]) # 按抓取长度小到大排序
+
+            if self.found_count >= 30:
+                self.found_count = 0
                 self.is_found_object = True
-                cmd_vel = Twist()
-                self.cmd_vel_pub.publish(cmd_vel)
+                self.xc = xc
+                self.yc = yc
             else:
-                # 如果方块没有移动
-                if abs(xc - xc_prev) <= 2 and abs(yc - yc_prev) <= 2:
-                    found_count = found_count + 1
+                # if box is not moving
+                if index == -1:
+                    # rospy.logwarn("No object eligible for grasp")
+                    self.found_count = 0
+                    self.is_found_object = False
+                elif abs(xc - self.xc_prev) <= 8 and abs(yc - self.yc_prev) <= 8:
+                    # cn = cmath.rect(self.object_union['p'][index], self.object_union['theta'][index])
+                    # cv2.line(cv_image1, (320, 480), (int(320 + cn.real), int(480 - cn.imag)), (255, 0, 0), 2)
+                    self.found_count = self.found_count + 1
                 else:
-                    found_count = 0
-        else:
-            found_count = 0
-        xc_prev = xc
-        yc_prev = yc
+                    self.found_count = 0
+        self.xc_prev = xc
+        self.yc_prev = yc
 
     # 释放物体
     def release_object(self):
