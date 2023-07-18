@@ -196,7 +196,7 @@ class GraspObject():
     def grasp(self):
         global mod, auto_mod
         print("start to grasp\n")
-        global xc, yc, found_count
+        global found_count
         # stop function
 
         filename = os.environ['HOME'] + "/thefile.txt"
@@ -393,10 +393,12 @@ class GraspObject():
         rotate.angle4th = 90
         pos.x = 220.0
         pos.y = arr_pos_y
-        pos.z = arr_pos_z - 20.0
+        pos.z = arr_pos_z - 21.0
         self.pub1.publish(pos)
+        rospy.sleep(0.5)
         self.pub2.publish(0)
         pos.z = arr_pos_z
+        rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
 
