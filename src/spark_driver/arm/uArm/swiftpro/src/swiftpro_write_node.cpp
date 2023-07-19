@@ -19,7 +19,6 @@
 
 serial::Serial _serial;				// serial object
 swiftpro::SwiftproState pos;
-using namespace uarm;
 
 /*
  * Description: callback when receive data from position_write_topic
@@ -207,27 +206,6 @@ void pump_callback(const swiftpro::status& msg)
 	result.data = _serial.read(_serial.available());
 }
 
-/*
- * Description: callback when receive data from reset_topic
- * Inputs: 		msg(uint8)			status of reset: work if 1
- * Outputs:		None
- */
-void reset_callback(const swiftpro::status& msg)
-{
-	std_msgs::String result;
-    Swift swift("/dev/ttyACM0");
-
-	if (msg.status == 1) {
-    usleep(10000);
-    swift.reset();
-    usleep(30000);
-    swift.set_position(110, 0, 35);
-    } else {
-		ROS_INFO("Error:Wrong value input");
-		return;
-	}
-    ROS_INFO("reset success!!!");
-}
 
 /*
  * Node name:
@@ -253,7 +231,6 @@ int main(int argc, char** argv)
 	ros::Subscriber sub2 = nh.subscribe("swiftpro_status_topic", 10, swiftpro_status_callback);
 	ros::Subscriber sub3 = nh.subscribe("gripper_topic", 10, gripper_callback);
 	ros::Subscriber sub4 = nh.subscribe("pump_topic", 10, pump_callback);
-    ros::Subscriber sub5 = nh.subscribe("reset_topic", 10, reset_callback);
     ros::Subscriber sub6 = nh.subscribe("angle1st_topic", 10, angle1st_callback);
     ros::Subscriber sub7 = nh.subscribe("angle2nd_topic", 10, angle2nd_callback);
     ros::Subscriber sub8 = nh.subscribe("angle3rd_topic", 10, angle3rd_callback);

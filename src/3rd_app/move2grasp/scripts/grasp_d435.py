@@ -77,9 +77,6 @@ class GraspObject():
         # 发布机械臂状态
         self.grasp_status_pub = rospy.Publisher(
             'grasp_status', String, queue_size=10)
-        # 机械臂重置
-        self.reset_pub = rospy.Publisher(
-            'reset_topic', status, queue_size=10)
         # 发布TWist消息控制机器人底盘
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         pos = position()
