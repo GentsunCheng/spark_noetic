@@ -161,12 +161,12 @@ class GraspObject():
 
         # 第四关节左转
         if msg.data == '41':
-            if angle <= 180.0:
+            if angle < 180.0:
                 angle = angle + 1.0
                 self.forth_pose()
         # 第四关节右转
         if msg.data == '43':
-            if angle >= 0.0:
+            if angle > 0.0:
                 angle = angle - 1.0
                 self.forth_pose()
 
