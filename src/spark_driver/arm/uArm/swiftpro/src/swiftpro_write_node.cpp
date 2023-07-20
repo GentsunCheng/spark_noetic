@@ -119,7 +119,7 @@ void angle4th_callback(const swiftpro::angle4th& msg)
 
 	pos.motor_angle4 = msg.angle4th;
 	sprintf(m4, "%.2f", msg.angle4th);
-	Gcode = (std::string)"G2202 N3 V" + m4 + "F100\r\n";
+	Gcode = (std::string)"G2202 N3 V" + m4 + "F500\r\n";
 	ROS_INFO("%s", Gcode.c_str());
 	_serial.write(Gcode.c_str());
 	result.data = _serial.read(_serial.available());
