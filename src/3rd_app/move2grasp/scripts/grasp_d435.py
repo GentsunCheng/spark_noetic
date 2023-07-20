@@ -2,27 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import os
-import time
-import random
 import socket
-import ctypes
-import roslib
 import rospy
-import smach
-import smach_ros
-import threading
-import string
 import math
 import cmath
 import cv2
 import numpy as np
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
-from geometry_msgs.msg import Pose, Point, Quaternion
-from swiftpro.msg import angle1st
-from swiftpro.msg import angle2nd
-from swiftpro.msg import angle3rd
-from swiftpro.msg import angle4th
+from swiftpro.msg import *
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from spark_carry_object.msg import *

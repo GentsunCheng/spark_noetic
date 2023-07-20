@@ -11,7 +11,6 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler
 from visualization_msgs.msg import Marker
 from math import radians, pi
-import time
 
 class Move2Grasp():
     def __init__(self):
@@ -30,7 +29,7 @@ class Move2Grasp():
 
         # Subscribe to the move_base action server
         # 订阅move_base服务器的消息
-        self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        self.move_base = actionlib.ActionClient("move_base", MoveBaseAction)
 
         rospy.loginfo("Waiting for move_base action server...")
 
@@ -65,17 +64,17 @@ class Move2Grasp():
         # Start the robot moving toward the goal
         self.move_base.send_goal(goal)
         finished_within_time = self.move_base.wait_for_result(rospy.Duration(3))
-        time.sleep(3)
-        # If we don't get there in time, abort the goal  
-        # 如果三秒钟之内没有到达，修正朝向再发送  
-        if not finished_within_time:  
+        rospy.sleep(3)
+        # If we don't get there in time, abort the goal
+        # 如果三秒钟之内没有到达，修正朝向再发送
+        if not finished_within_time:
             (trans, rot) = listener.lookupTransform('map', 'base_link', rospy.Time(0))
             goal.target_pose.pose.orientation.x = rot[0]
             goal.target_pose.pose.orientation.y = rot[1]
             goal.target_pose.pose.orientation.z = rot[2]
             goal.target_pose.pose.orientation.w = rot[3]
-            self.move_base.send_goal(goal)   
-        
+            self.move_base.send_goal(goal)
+
 
     def shutdown(self):
         rospy.loginfo("Stopping the robot...")
