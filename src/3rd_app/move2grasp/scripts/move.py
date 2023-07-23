@@ -80,10 +80,10 @@ class Move2Grasp():
         rospy.loginfo("Stopping the robot...")
         # Cancel any active goals
         self.move_base.cancel_goal()
-        rospy.sleep(2)
+        rospy.sleep(1)
         # Stop the robot
         self.cmd_vel_pub.publish(Twist())
-        rospy.sleep(1)
+        rospy.sleep(0.5)
 
 if __name__ == '__main__':
     try:
