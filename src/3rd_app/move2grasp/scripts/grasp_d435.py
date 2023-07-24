@@ -378,7 +378,7 @@ class GraspObject():
         rotate.angle4th = 90
         pos.x = 220.0
         pos.y = arr_pos_y
-        pos.z = arr_pos_z - 21.0
+        pos.z = arr_pos_z - 20.0
         self.pub1.publish(pos)
         rospy.sleep(0.5)
         self.pub2.publish(0)
@@ -405,11 +405,11 @@ class GraspObject():
         pos.x = 220.0
         pos.y = arr_pos
         if mod == 0:
-            pos.z = -35.0
+            pos.z = -30.0
         elif mod == 1:
-            pos.z = 75.0
+            pos.z = 70.0
         elif mod == 2:
-            pos.z = 175.0
+            pos.z = 170.0
         elif mod == 666:
             pos.z = -130
         self.pub1.publish(pos)
@@ -442,7 +442,7 @@ class GraspObject():
         # go forward
         pos.x = 220.0
         pos.y = arr_pos_y
-        pos.z = arr_pos_z - 25.0
+        pos.z = arr_pos_z - 20.0
         self.pub1.publish(pos)
         r2.sleep()
         self.pub2.publish(1)
