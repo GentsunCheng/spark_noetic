@@ -69,9 +69,9 @@ class Move2Grasp():
         # If we don't get there in time, abort the goal
         # 如果没有到达，修正朝向再发送
         for i in range(8):
-            if i < 2:
+            if i == 0:
                 rospy.sleep(2)
-            elif i == 2:
+            elif i == 1:
                 rospy.sleep(1)
             else:
                 rospy.sleep(0.5)
