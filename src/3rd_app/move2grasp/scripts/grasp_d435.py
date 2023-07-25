@@ -395,11 +395,17 @@ class GraspObject():
         rotate.angle4th = 90
         pos.x = 220.0
         pos.y = arr_pos_y
-        pos.z = arr_pos_z - 20.0
+        if block_mod:
+            pos.z = arr_pos_z
+        else:
+            pos.z = arr_pos_z - 20.0
         self.pub1.publish(pos)
         rospy.sleep(0.5)
         self.pub2.publish(0)
-        pos.z = arr_pos_z
+        if block_mod:
+            pos.z = arr_pos_z + 20.0
+        else:
+            pos.z = arr_pos_z
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
@@ -447,7 +453,7 @@ class GraspObject():
 
     # 备选方案
     def spare_plan(self):
-        global mod
+        global mod, block_mod
         r2 = rospy.Rate(1)     # 1s
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -466,7 +472,10 @@ class GraspObject():
         # go forward
         pos.x = 220.0
         pos.y = arr_pos_y
-        pos.z = arr_pos_z - 20.0
+        if block_mod:
+            pos.z = arr_pos_z
+        else:
+            pos.z = arr_pos_z - 20.0
         self.pub1.publish(pos)
         r2.sleep()
         self.pub2.publish(1)
