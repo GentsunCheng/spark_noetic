@@ -126,6 +126,9 @@ class GraspObject():
             # 放下物体
             self.is_found_object = False
             self.pub2.publish(0)
+            block_mod = 0
+            rospy.sleep(0.3)
+            self.arm_pose()
             status = String()
             status.data = '1'
             self.grasp_status_pub.publish(status)
@@ -455,7 +458,6 @@ class GraspObject():
     # 备选方案
     def spare_plan(self):
         global block_mod
-        r2 = rospy.Rate(1)     # 1s
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect(('localhost', 8801))
@@ -478,9 +480,9 @@ class GraspObject():
         else:
             pos.z = arr_pos_z - 20.0
         self.pub1.publish(pos)
-        r2.sleep()
+        rospy.sleep(0.3)
         self.pub2.publish(1)
-        r2.sleep()
+        rospy.sleep(0.5)
         # 提起物体
         pos.x = 220.0
         pos.y = arr_pos_y
