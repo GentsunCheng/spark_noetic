@@ -65,8 +65,13 @@ class Move2Grasp():
         self.move_base.send_goal(goal)
         # If we don't get there in time, abort the goal
         # 如果没有到达，修正朝向再发送
-        for i in range(3):
-            rospy.sleep(2)
+        for i in range(6):
+            if i<2:
+                rospy.sleep(2)
+            elif i == 2:
+                rospy.sleep(1)
+            else:
+                rospy.sleep(0.5)
             (trans, rot) = listener.lookupTransform('map', 'base_link', rospy.Time(0))
             goal.target_pose.pose.orientation.x = rot[0]
             goal.target_pose.pose.orientation.y = rot[1]
