@@ -267,7 +267,7 @@ class GraspObject():
         start_y = 0
         end_y = int(height * 35 / 100)
         # 将上方2/5区域设为白色
-        cv_image1[start_y:end_y, :] = (0,0,0)
+        cv_image1[start_y:end_y, :] = (0, 0, 0)
         # 获取图像尺寸
         height, width, _ = cv_image1.shape
         # 计算圆心坐标和半径
@@ -304,7 +304,8 @@ class GraspObject():
         # 寻找前景区域
         dist_transform = cv2.distanceTransform(cv_image5, cv2.DIST_L2, 5)
         # cv2.imshow("距离变换", dist_transform/dist_transform.max())
-        ret, sure_fg = cv2.threshold(dist_transform, 0.5 * dist_transform.max(), 255, 0)
+        ret, sure_fg = cv2.threshold(
+            dist_transform, 0.5 * dist_transform.max(), 255, 0)
         # cv2.imshow("TEST", sure_fg) # 前景色
         # 找到未知区域
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
@@ -334,20 +335,25 @@ class GraspObject():
 
                 x_mid = (box[0][0] + box[2][0] + box[1][0] + box[3][0]) / 4
                 y_mid = (box[0][1] + box[2][1] + box[1][1] + box[3][1]) / 4
-                cv2.circle(cv_image1, (int(x_mid), int(y_mid)), 5, (0, 0, 255), 2)
+                cv2.circle(cv_image1, (int(x_mid), int(y_mid)),
+                           5, (0, 0, 255), 2)
 
-                w = math.sqrt((box[0][0] - box[1][0]) ** 2 + (box[0][1] - box[1][1]) ** 2)
-                h = math.sqrt((box[0][0] - box[3][0]) ** 2 + (box[0][1] - box[3][1]) ** 2)
+                w = math.sqrt((box[0][0] - box[1][0]) **
+                              2 + (box[0][1] - box[1][1]) ** 2)
+                h = math.sqrt((box[0][0] - box[3][0]) **
+                              2 + (box[0][1] - box[3][1]) ** 2)
                 size = w * h
 
                 p, theta = cmath.polar(complex(x_mid - 320, 480 - y_mid))
                 cn = cmath.rect(p, theta)
-                cv2.line(cv_image1, (320, 480), (int(320 + cn.real), int(480 - cn.imag)), (255, 0, 0), 2)
+                cv2.line(cv_image1, (320, 480), (int(320 + cn.real),
+                         int(480 - cn.imag)), (255, 0, 0), 2)
 
                 if p > 350:
                     continue
 
-                cv2.circle(cv_image1, (int(x_mid), int(y_mid)), 10, (0, 0, 255), 2)
+                cv2.circle(cv_image1, (int(x_mid), int(y_mid)),
+                           10, (0, 0, 255), 2)
                 self.object_union.append((p, theta, w, h, size, x_mid, y_mid))
 
                 if p < p_min:
@@ -355,7 +361,7 @@ class GraspObject():
                     p_min = p
                     xc = x_mid
                     yc = y_mid
-            self.object_union.sort(key=lambda x:x[0]) # 按抓取长度小到大排序
+            self.object_union.sort(key=lambda x: x[0])  # 按抓取长度小到大排序
 
             if self.found_count >= 30:
                 self.found_count = 0
