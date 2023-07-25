@@ -26,11 +26,12 @@ class GraspObject():
         初始化
         '''
 
-        global xc, yc, xc_prev, yc_prev, found_count, angle, debug_mod, mod, auto_mod
+        global xc, yc, xc_prev, yc_prev, found_count, angle, debug_mod, mod, block_mod, auto_mod
         angle = 90.0
         debug_mod = 0
         auto_mod = 0
         mod = 0
+        block_mod = 0
         self.xc = 0
         self.yc = 0
         self.xc_prev = 0
@@ -74,7 +75,7 @@ class GraspObject():
         self.pub1.publish(pos)
 
     def grasp_cp(self, msg):
-        global mod, angle, auto_mod
+        global mod, block_mod, angle, auto_mod
         # 抓取物体
         if msg.data == '0' or msg.data == '0a':
             if msg.data == '0a':
@@ -120,8 +121,17 @@ class GraspObject():
             status.data = '1'
             self.grasp_status_pub.publish(status)
 
+        # 关闭气泵
+        if msg.data == '58':
+            # 放下物体
+            self.is_found_object = False
+            self.pub2.publish(0)
+            status = String()
+            status.data = '1'
+            self.grasp_status_pub.publish(status)
+
         # 机械臂位姿调整
-        if msg.data == '51' or msg.data == '52' or msg.data == '53' or msg.data == '666':
+        if msg.data == '51' or msg.data == '52' or msg.data == '53' or msg.data == '666' or msg.data == '55':
             self.is_found_object = False
             if msg.data == '51':
                 mod = 0
@@ -129,7 +139,13 @@ class GraspObject():
                 mod = 1
             elif msg.data == '53':
                 mod = 2
+            elif msg.data == '55':
+                if block_mod:
+                    block_mod = 0
+                else:
+                    block_mod = 1
             elif msg.data == '666':
+                block_mod = 0
                 mod = 666
             self.arm_pose()
             status = String()
@@ -169,6 +185,7 @@ class GraspObject():
         # 机械臂重置
         if msg.data == '404':
             self.is_found_object = False
+            block_mod = 0
             times = 0
             steps = 0
             angle = 90.0
@@ -388,9 +405,8 @@ class GraspObject():
         self.angle4th_pub.publish(rotate)
 
     # 机械臂位姿调整
-
     def arm_pose(self):
-        global mod
+        global mod, block_mod
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect(('localhost', 8801))
@@ -404,13 +420,21 @@ class GraspObject():
         # go forward
         pos.x = 220.0
         pos.y = arr_pos
-        if mod == 0:
-            pos.z = -30.0
-        elif mod == 1:
-            pos.z = 70.0
-        elif mod == 2:
-            pos.z = 170.0
-        elif mod == 666:
+        if block_mod:
+            if mod == 0:
+                pos.z = -50.0
+            elif mod == 1:
+                pos.z = 50.0
+            elif mod == 2:
+                pos.z = 150.0
+        else:
+            if mod == 0:
+                pos.z = -30.0
+            elif mod == 1:
+                pos.z = 70.0
+            elif mod == 2:
+                pos.z = 170.0
+        if mod == 666:
             pos.z = -130
         self.pub1.publish(pos)
 
