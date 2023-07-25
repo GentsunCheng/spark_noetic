@@ -376,7 +376,7 @@ class GraspObject():
 
     # 释放物体
     def release_object(self):
-        global mod
+        global block_mod
         rotate = angle4th()
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -403,6 +403,7 @@ class GraspObject():
         rospy.sleep(0.5)
         self.pub2.publish(0)
         if block_mod:
+            block_mod = 0
             pos.z = arr_pos_z + 20.0
         else:
             pos.z = arr_pos_z
@@ -453,7 +454,7 @@ class GraspObject():
 
     # 备选方案
     def spare_plan(self):
-        global mod, block_mod
+        global block_mod
         r2 = rospy.Rate(1)     # 1s
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -485,12 +486,9 @@ class GraspObject():
         pos.y = arr_pos_y
         pos.z = arr_pos_z
         self.pub1.publish(pos)
-        mod = 1
 
     # 机械臂恢复默认位姿
     def default_arm(self):
-        global angle
-        angle = 90
         pos = position()
         r2 = rospy.Rate(1)
         rotate = angle4th()   # 1s
