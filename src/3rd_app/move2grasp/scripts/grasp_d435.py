@@ -246,7 +246,7 @@ class GraspObject():
             pos.x = 150.0
             pos.z = 150.0
         else:
-            pos.x = 220.0
+            pos.x = 250.0
             pos.z = 75.0
         self.pub1.publish(pos)
         mod = 1
@@ -402,7 +402,7 @@ class GraspObject():
         arr_pos_y = float(response_y)
         arr_pos_z = float(response_z)
         rotate.angle4th = 90
-        pos.x = 220.0
+        pos.x = 250.0
         pos.y = arr_pos_y
         if block_mod:
             pos.z = arr_pos_z
@@ -434,7 +434,7 @@ class GraspObject():
         client_socket.close()
         arr_pos = float(response)
         # go forward
-        pos.x = 220.0
+        pos.x = 250.0
         pos.y = arr_pos
         if block_mod:
             if mod == 0:
@@ -479,7 +479,7 @@ class GraspObject():
         arr_pos_y = float(response_y)
         arr_pos_z = float(response_z)
         # go forward
-        pos.x = 220.0
+        pos.x = 250.0
         pos.y = arr_pos_y
         if block_mod:
             pos.z = arr_pos_z
@@ -490,7 +490,7 @@ class GraspObject():
         self.pub2.publish(1)
         rospy.sleep(0.5)
         # 提起物体
-        pos.x = 220.0
+        pos.x = 250.0
         pos.y = arr_pos_y
         pos.z = arr_pos_z
         self.pub1.publish(pos)
