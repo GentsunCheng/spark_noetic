@@ -451,7 +451,8 @@ class GraspObject():
             elif mod == 2:
                 pos.z = 170.0
         if mod == 666:
-            pos.z = -130
+            pos.x = 220.0
+            pos.z = -130.0
         self.pub1.publish(pos)
 
     # 第四关节调整
