@@ -407,13 +407,13 @@ class GraspObject():
         if block_mod:
             pos.z = arr_pos_z
         else:
-            pos.z = arr_pos_z - 20.0
+            pos.z = arr_pos_z - 25.0
         self.pub1.publish(pos)
         rospy.sleep(0.5)
         self.pub2.publish(0)
         if block_mod:
             block_mod = 0
-            pos.z = arr_pos_z + 20.0
+            pos.z = arr_pos_z + 25.0
         else:
             pos.z = arr_pos_z
         rospy.sleep(0.5)
@@ -445,11 +445,11 @@ class GraspObject():
                 pos.z = 150.0
         else:
             if mod == 0:
-                pos.z = -30.0
+                pos.z = -25.0
             elif mod == 1:
-                pos.z = 70.0
+                pos.z = 75.0
             elif mod == 2:
-                pos.z = 170.0
+                pos.z = 175.0
         if mod == 666:
             pos.x = 220.0
             pos.z = -130.0
@@ -485,7 +485,7 @@ class GraspObject():
         if block_mod:
             pos.z = arr_pos_z
         else:
-            pos.z = arr_pos_z - 20.0
+            pos.z = arr_pos_z - 25.0
         self.pub1.publish(pos)
         rospy.sleep(0.3)
         self.pub2.publish(1)
