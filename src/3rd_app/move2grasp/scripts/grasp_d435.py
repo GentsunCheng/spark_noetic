@@ -257,67 +257,81 @@ class GraspObject():
         global xc, yc, xc_prev, yc_prev, found_count
         # 使用 opencv 处理
         try:
+            # 将ROS图像消息转换为OpenCV图像格式
             cv_image1 = CvBridge().imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
             print('error')
 
-       # 获取图像尺寸
-        height, width, _ = cv_image1.shape
-        # 计算上方2/5区域的起始和结束位置
-        start_y = 0
-        end_y = int(height * 35 / 100)
-        # 将上方2/5区域设为白色
-        cv_image1[start_y:end_y, :] = (0, 0, 0)
         # 获取图像尺寸
         height, width, _ = cv_image1.shape
+
+        # 计算上方区域的起始和结束位置
+        start_y = 0
+        end_y = int(height * 30 / 100)
+
+        # 将上方区域设为黑色（将上方区域设置为黑色，排除上方可能的干扰信息）
+        cv_image1[start_y:end_y, :] = (0, 0, 0)
+
+        # 获取图像尺寸
+        height, width, _ = cv_image1.shape
+
         # 计算圆心坐标和半径
         center_x = width // 2
         center_y = height - 1
         radius = int(np.sqrt((center_x - center_y) ** 2 + (width // 2) ** 2))
+
         # 创建一个与图像大小相同的黑色图像
         result = np.zeros_like(cv_image1)
-        # 在结果图像上绘制圆形区域（圆心为下中点，半径为侧面中点到下中点的距离）
+
+        # 在结果图像上绘制白色的圆形区域（进一步排除不感兴趣的区域）
         cv2.circle(result, (center_x, center_y), radius, (255, 255, 255), -1)
-        # 将结果图像与原始图像进行按位与运算，将圆外的区域设置为白色
+
+        # 将结果图像与原始图像进行按位与运算，将圆外的区域设置为黑色
         result = cv2.bitwise_and(cv_image1, result)
-        # 调整 rgb 到 hsv
+
+        # 将结果图像转换为HSV颜色空间
         cv_image2 = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
 
-        # 蓝色物体颜色检测范围
+        # 设置蓝色颜色范围
         LowerBlue = np.array([95, 90, 80])
         UpperBlue = np.array([130, 255, 255])
+
+        # 创建蓝色掩膜
         mask = cv2.inRange(cv_image2, LowerBlue, UpperBlue)
+
+        # 通过按位与运算，将蓝色物体提取出来
         cv_image3 = cv2.bitwise_and(cv_image2, cv_image2, mask=mask)
 
-        # 灰度处理
+        # 将提取的蓝色物体转换为灰度图像
         cv_image4 = cv_image3[:, :, 0]
 
-        # 平整图像清除噪点
+        # 使用高斯模糊平滑图像，并进行阈值化处理
         blurred = cv2.GaussianBlur(cv_image4, (9, 9), 0)
         (_, thresh) = cv2.threshold(blurred, 90, 255, cv2.THRESH_BINARY)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
-        cv_image5 = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)  # 闭运算
-        cv_image5 = cv2.erode(cv_image5, None, iterations=4)  # 腐蚀图像
-        cv_image5 = cv2.dilate(cv_image5, None, iterations=4)  # 膨胀图像
 
-        # detect contour
+        # 进行形态学闭运算，清除噪点
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 25))
+        cv_image5 = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        cv_image5 = cv2.erode(cv_image5, None, iterations=4)
+        cv_image5 = cv2.dilate(cv_image5, None, iterations=4)
+
         # 寻找前景区域
         dist_transform = cv2.distanceTransform(cv_image5, cv2.DIST_L2, 5)
-        # cv2.imshow("距离变换", dist_transform/dist_transform.max())
         ret, sure_fg = cv2.threshold(
             dist_transform, 0.5 * dist_transform.max(), 255, 0)
-        # cv2.imshow("TEST", sure_fg) # 前景色
-        # 找到未知区域
+
+        # 形态学操作，找到未知区域
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         sure_fg = np.uint8(sure_fg)
         sure_fg = cv2.morphologyEx(sure_fg, cv2.MORPH_CLOSE, kernel)
         sure_fg = cv2.erode(sure_fg, None, iterations=4)
         sure_fg = cv2.dilate(sure_fg, None, iterations=4)
 
+        # 寻找轮廓
         contours, hier = cv2.findContours(
             sure_fg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        # if find contours, pick the biggest box
+        # 判断是否找到轮廓
         if len(contours) == 0:
             self.is_have_object = False
             self.is_found_object = False
@@ -331,37 +345,46 @@ class GraspObject():
                 rect = cv2.minAreaRect(c)
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
-                # cv2.drawContours(cv_image1, [box], 0, (0, 255, 0), 2)
 
+                # 计算物体中心坐标
                 x_mid = (box[0][0] + box[2][0] + box[1][0] + box[3][0]) / 4
                 y_mid = (box[0][1] + box[2][1] + box[1][1] + box[3][1]) / 4
-                cv2.circle(cv_image1, (int(x_mid), int(y_mid)),
-                           5, (0, 0, 255), 2)
 
+                # 在原图上绘制物体中心点
+                cv2.circle(cv_image1, (int(x_mid), int(y_mid)),
+                        5, (0, 0, 255), 2)
+
+                # 计算物体的宽度和高度
                 w = math.sqrt((box[0][0] - box[1][0]) **
-                              2 + (box[0][1] - box[1][1]) ** 2)
+                            2 + (box[0][1] - box[1][1]) ** 2)
                 h = math.sqrt((box[0][0] - box[3][0]) **
-                              2 + (box[0][1] - box[3][1]) ** 2)
+                            2 + (box[0][1] - box[3][1]) ** 2)
                 size = w * h
 
+                # 计算物体的极坐标
                 p, theta = cmath.polar(complex(x_mid - 320, 480 - y_mid))
                 cn = cmath.rect(p, theta)
                 cv2.line(cv_image1, (320, 480), (int(320 + cn.real),
-                         int(480 - cn.imag)), (255, 0, 0), 2)
+                        int(480 - cn.imag)), (255, 0, 0), 2)
 
+                # 判断物体是否满足一些条件
                 if p > 350:
                     continue
 
                 cv2.circle(cv_image1, (int(x_mid), int(y_mid)),
-                           10, (0, 0, 255), 2)
+                        10, (0, 0, 255), 2)
+
+                # 将物体信息添加到列表中
                 self.object_union.append((p, theta, w, h, size, x_mid, y_mid))
 
+                # 找到最近的物体
                 if p < p_min:
                     index = index + 1
                     p_min = p
                     xc = x_mid
                     yc = y_mid
-            self.object_union.sort(key=lambda x: x[0])  # 按抓取长度小到大排序
+            # 按抓取长度小到大排序
+            self.object_union.sort(key=lambda x: x[0])
 
             if self.found_count >= 30:
                 self.found_count = 0
@@ -369,14 +392,11 @@ class GraspObject():
                 self.xc = xc
                 self.yc = yc
             else:
-                # if box is not moving
+                # 如果物体没有移动
                 if index == -1:
-                    # rospy.logwarn("No object eligible for grasp")
                     self.found_count = 0
                     self.is_found_object = False
                 elif abs(xc - self.xc_prev) <= 8 and abs(yc - self.yc_prev) <= 8:
-                    # cn = cmath.rect(self.object_union['p'][index], self.object_union['theta'][index])
-                    # cv2.line(cv_image1, (320, 480), (int(320 + cn.real), int(480 - cn.imag)), (255, 0, 0), 2)
                     self.found_count = self.found_count + 1
                 else:
                     self.found_count = 0
