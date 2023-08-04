@@ -226,12 +226,11 @@ class GraspObject():
         # 物体所在坐标+标定误差
         pos.x = a[0] * self.yc_prev + a[1]
         pos.y = b[0] * self.xc_prev + b[1]
-        pos.z = -20
-        # pos.z = 20
-        print("z = -20\n")
+        pos.z = -25
+        print("z = -25\n")
         self.pub1.publish(pos)
         r2.sleep()
-        # go down -100
+
         pos.z = -50
         self.pub1.publish(pos)
         print("z = -50\n")
@@ -243,7 +242,7 @@ class GraspObject():
         # 提起物体
         pos.y = 0.0
         if auto_mod == 1:
-            pos.x = 150.0
+            pos.x = 140.0
             pos.z = 150.0
         else:
             pos.x = 250.0
