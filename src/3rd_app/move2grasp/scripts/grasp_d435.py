@@ -352,27 +352,27 @@ class GraspObject():
 
                 # 在原图上绘制物体中心点
                 cv2.circle(cv_image1, (int(x_mid), int(y_mid)),
-                        5, (0, 0, 255), 2)
+                           5, (0, 0, 255), 2)
 
                 # 计算物体的宽度和高度
                 w = math.sqrt((box[0][0] - box[1][0]) **
-                            2 + (box[0][1] - box[1][1]) ** 2)
+                              2 + (box[0][1] - box[1][1]) ** 2)
                 h = math.sqrt((box[0][0] - box[3][0]) **
-                            2 + (box[0][1] - box[3][1]) ** 2)
+                              2 + (box[0][1] - box[3][1]) ** 2)
                 size = w * h
 
                 # 计算物体的极坐标
                 p, theta = cmath.polar(complex(x_mid - 320, 480 - y_mid))
                 cn = cmath.rect(p, theta)
                 cv2.line(cv_image1, (320, 480), (int(320 + cn.real),
-                        int(480 - cn.imag)), (255, 0, 0), 2)
+                                                 int(480 - cn.imag)), (255, 0, 0), 2)
 
                 # 判断物体是否满足一些条件
                 if p > 350:
                     continue
 
                 cv2.circle(cv_image1, (int(x_mid), int(y_mid)),
-                        10, (0, 0, 255), 2)
+                           10, (0, 0, 255), 2)
 
                 # 将物体信息添加到列表中
                 self.object_union.append((p, theta, w, h, size, x_mid, y_mid))
@@ -423,19 +423,19 @@ class GraspObject():
         arr_pos_z = float(response_z)
         rotate.angle4th = 90
         pos.x = 250.0
-        pos.y = arr_pos_y
+        pos.y = int(arr_pos_y)
         if block_mod:
-            pos.z = arr_pos_z
+            pos.z = int(arr_pos_z)
         else:
-            pos.z = arr_pos_z - 25.0
+            pos.z = int(arr_pos_z) - 25.0
         self.pub1.publish(pos)
         rospy.sleep(0.5)
         self.pub2.publish(0)
         if block_mod:
             block_mod = 0
-            pos.z = arr_pos_z + 25.0
+            pos.z = int(arr_pos_z) + 25.0
         else:
-            pos.z = arr_pos_z
+            pos.z = int(arr_pos_z)
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
@@ -455,7 +455,7 @@ class GraspObject():
         arr_pos = float(response)
         # go forward
         pos.x = 250.0
-        pos.y = arr_pos
+        pos.y = int(arr_pos)
         if block_mod:
             if mod == 0:
                 pos.z = -50.0
@@ -501,19 +501,19 @@ class GraspObject():
         arr_pos_z = float(response_z)
         # go forward
         pos.x = 250.0
-        pos.y = arr_pos_y
+        pos.y = int(arr_pos_y)
         if block_mod:
-            pos.z = arr_pos_z
+            pos.z = int(arr_pos_z)
         else:
-            pos.z = arr_pos_z - 25.0
+            pos.z = int(arr_pos_z) - 25.0
         self.pub1.publish(pos)
         rospy.sleep(0.3)
         self.pub2.publish(1)
         rospy.sleep(0.5)
         # 提起物体
         pos.x = 250.0
-        pos.y = arr_pos_y
-        pos.z = arr_pos_z
+        pos.y = int(arr_pos_y)
+        pos.z = int(arr_pos_z)
         self.pub1.publish(pos)
 
     # 机械臂恢复默认位姿
