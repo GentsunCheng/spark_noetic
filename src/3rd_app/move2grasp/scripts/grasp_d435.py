@@ -473,6 +473,7 @@ class GraspObject():
             pos.x = 220.0
             pos.z = -130.0
         self.pub1.publish(pos)
+        rospy.sleep(0.5)
 
     # 第四关节调整
     def forth_pose(self):
@@ -519,7 +520,7 @@ class GraspObject():
     def default_arm(self):
         pos = position()
         r2 = rospy.Rate(1)
-        rotate = angle4th()   # 1s
+        rotate = angle4th()
         pos.x = 110.0
         pos.y = 0.0
         pos.z = 35.0
