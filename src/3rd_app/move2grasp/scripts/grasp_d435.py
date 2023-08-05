@@ -264,15 +264,16 @@ class GraspObject():
         # 获取图像尺寸
         height, width, _ = cv_image1.shape
 
+        # 设置蓝色颜色范围
+        LowerBlue = np.array([95, 90, 80])
+        UpperBlue = np.array([130, 255, 255])
+
         # 计算上方区域的起始和结束位置
         start_y = 0
         end_y = int(height * 30 / 100)
 
         # 将上方区域设为黑色（将上方区域设置为黑色，排除上方可能的干扰信息）
         cv_image1[start_y:end_y, :] = (0, 0, 0)
-
-        # 获取图像尺寸
-        height, width, _ = cv_image1.shape
 
         # 计算圆心坐标和半径
         center_x = width // 2
@@ -290,10 +291,6 @@ class GraspObject():
 
         # 将结果图像转换为HSV颜色空间
         cv_image2 = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
-
-        # 设置蓝色颜色范围
-        LowerBlue = np.array([95, 90, 80])
-        UpperBlue = np.array([130, 255, 255])
 
         # 创建蓝色掩膜
         mask = cv2.inRange(cv_image2, LowerBlue, UpperBlue)
