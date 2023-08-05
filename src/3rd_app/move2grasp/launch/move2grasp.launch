@@ -43,6 +43,7 @@
   	<!-- rviz -->
   	<group if="$(arg open_rviz)">
     		<node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find move2grasp)/rviz/spark_$(arg slam_methods)_$(arg camera_type_tel).rviz"/>
+            <node name="draw_button" pkg="move2grasp" type="draw_button.py" output="screen" />
   	</group>
 
 
