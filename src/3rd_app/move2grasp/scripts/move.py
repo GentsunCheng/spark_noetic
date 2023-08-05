@@ -42,41 +42,42 @@ class Move2Grasp():
         rospy.loginfo("Starting navigation test")
 
     def cp_callback(self, msg):
-        rospy.loginfo("POINT:%f,%f,%f", msg.point.x, msg.point.y, msg.point.z)
-        # Initialize the waypoint goal
-        goal = MoveBaseGoal()
-        # Use the map frame to define goal poses
-        goal.target_pose.header.frame_id = 'map'
-        # Set the time stamp to "now"
-        goal.target_pose.header.stamp = rospy.Time.now()
-        # Set the goal position
-        goal.target_pose.pose.position = Point(
-            msg.point.x, msg.point.y, msg.point.z)
+        if msg.point.x > -2.5 and msg.point.x < 2.5 and msg.point.y > -0.5 and msg.point.y < 4.2:
+            rospy.loginfo("MOVE TO:%f,%f,%f", msg.point.x, msg.point.y, msg.point.z)
+            # Initialize the waypoint goal
+            goal = MoveBaseGoal()
+            # Use the map frame to define goal poses
+            goal.target_pose.header.frame_id = 'map'
+            # Set the time stamp to "now"
+            goal.target_pose.header.stamp = rospy.Time.now()
+            # Set the goal position
+            goal.target_pose.pose.position = Point(
+                msg.point.x, msg.point.y, msg.point.z)
 
-        # Get the current robot position and orientation using tf
-        listener = tf.TransformListener()
-        listener.waitForTransform(
-            'map', 'base_link', rospy.Time(0), rospy.Duration(1.0))
-        (trans, rot) = listener.lookupTransform(
-            'map', 'base_link', rospy.Time(0))
-        # Set the current orientation as the goal orientation
-        goal.target_pose.pose.orientation.x = rot[0]
-        goal.target_pose.pose.orientation.y = rot[1]
-        goal.target_pose.pose.orientation.z = rot[2]
-        goal.target_pose.pose.orientation.w = rot[3]
-        # Start the robot moving toward the goal
-        self.move_base.send_goal(goal)
-        # If we don't get there in time, abort the goal
-        # 如果没有到达，修正朝向再发送
-        for i in range(10):
-            rospy.sleep(0.5)
+            # Get the current robot position and orientation using tf
+            listener = tf.TransformListener()
+            listener.waitForTransform(
+                'map', 'base_link', rospy.Time(0), rospy.Duration(1.0))
             (trans, rot) = listener.lookupTransform(
                 'map', 'base_link', rospy.Time(0))
+            # Set the current orientation as the goal orientation
             goal.target_pose.pose.orientation.x = rot[0]
             goal.target_pose.pose.orientation.y = rot[1]
             goal.target_pose.pose.orientation.z = rot[2]
             goal.target_pose.pose.orientation.w = rot[3]
+            # Start the robot moving toward the goal
             self.move_base.send_goal(goal)
+            # If we don't get there in time, abort the goal
+            # 如果没有到达，修正朝向再发送
+            for i in range(10):
+                rospy.sleep(0.5)
+                (trans, rot) = listener.lookupTransform(
+                    'map', 'base_link', rospy.Time(0))
+                goal.target_pose.pose.orientation.x = rot[0]
+                goal.target_pose.pose.orientation.y = rot[1]
+                goal.target_pose.pose.orientation.z = rot[2]
+                goal.target_pose.pose.orientation.w = rot[3]
+                self.move_base.send_goal(goal)
 
     def shutdown(self):
         rospy.loginfo("Stopping the robot...")
