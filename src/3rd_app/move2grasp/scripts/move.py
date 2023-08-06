@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import os
 import rospy
 import actionlib
 import tf
@@ -91,6 +92,7 @@ class Move2Grasp():
                 goal.target_pose.pose.orientation.w = rot[3]
                 self.move_base.send_goal(goal)
 
+        # 前进
         elif msg.point.x > 5.0 and msg.point.x < 5.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
             if self.speed_mod:
                 speed = 3.0
@@ -98,6 +100,7 @@ class Move2Grasp():
                 speed = 0.15
             turn = 0.0
 
+        # 后退
         elif msg.point.x > 5.0 and msg.point.x < 5.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
             if self.speed_mod:
                 speed = - 3.0
@@ -105,6 +108,7 @@ class Move2Grasp():
                 speed = - 0.15
             turn = 0.0
 
+        # 左转
         elif msg.point.x > 4.5 and msg.point.x < 5.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
                 turn = 0.5
@@ -112,6 +116,7 @@ class Move2Grasp():
                 turn = 1.5
             speed = 0.0
 
+        # 右转
         elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
                 turn = - 0.5
@@ -119,11 +124,69 @@ class Move2Grasp():
                 turn = - 1.5
             speed = 0.0
 
+        # 抓
+        elif msg.point.x > 4.5 and msg.point.x < 5.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
+            msg=String()
+            msg.data='0a'
+            self.grasp_pub.publish(msg)
+
+        # 放
+        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
+            msg=String()
+            msg.data='1'
+            self.grasp_pub.publish(msg)
+
+        # 第四关节左
+        elif msg.point.x > 4.5 and msg.point.x < 5.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
+            msg=String()
+            msg.data='41'
+            self.grasp_pub.publish(msg)
+
+        # 第四关节右
+        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
+            msg=String()
+            msg.data='43'
+            self.grasp_pub.publish(msg)
+
+        # 重置机械臂
+        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 2.25 and msg.point.y < 2.75:
+            os.system("python3 /home/spark/request_spark/armcontrol/scripts/reset.py")
+
+        # 默认位姿
+        elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 2.25 and msg.point.y < 2.75:
+            msg=String()
+            msg.data='403'
+            self.grasp_pub.publish(msg)
+
+        # 机械臂三
+        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
+            msg=String()
+            msg.data='53'
+            self.grasp_pub.publish(msg)
+
+        # 机械臂二
+        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
+            msg=String()
+            msg.data='52'
+            self.grasp_pub.publish(msg)
+
+        # 机械臂一
+        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
+            msg=String()
+            msg.data='51'
+            self.grasp_pub.publish(msg)
+
+        # 切换速度
         elif msg.point.x > 5.0 and msg.point.x < 5.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
                 self.speed_mod = 0
             else:
                 self.speed_mod = 1
+
+        # 刹车
+        else:
+            speed = 0
+            turn = 0
 
         self.cmd.linear.x = speed * self.walk_vel
         self.cmd.angular.z = turn * self.yaw_rate

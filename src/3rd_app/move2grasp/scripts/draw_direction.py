@@ -4,12 +4,16 @@
 import rospy
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
+from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
 
 class LineDrawer:
     def __init__(self):
-        rospy.init_node("draw_button")
-        self.marker_pub = rospy.Publisher("draw_button", Marker, queue_size=10)
+        rospy.init_node("draw_direction")
+        self.marker_pub = rospy.Publisher("draw_direction", Marker, queue_size=10)
+        rospy.Subscriber('clicked_point', PointStamped, self.cp_callback)
         self.rate = rospy.Rate(10)  # Publish rate
+
+        self.speed_mod = 0.0
 
     def draw_line(self):
         marker = Marker()
@@ -23,7 +27,7 @@ class LineDrawer:
         marker.scale.x = 0.01  # Line width
 
         # Set line color (RGBA, 0-1)
-        marker.color.r = 0.0
+        marker.color.r = self.speed_mod
         marker.color.g = 1.0
         marker.color.b = 0.0
         marker.color.a = 1.0
@@ -89,12 +93,6 @@ class LineDrawer:
         point12.y = 1.75
         point12.z = 0.0
 
-        point13 = point1
-        point14 = point4
-        point15 = point7
-        point16 = point10
-        point17 = point1
-
         marker.points.append(point1)
         marker.points.append(point2)
         marker.points.append(point3)
@@ -107,13 +105,21 @@ class LineDrawer:
         marker.points.append(point10)
         marker.points.append(point11)
         marker.points.append(point12)
-        marker.points.append(point13)
-        marker.points.append(point14)
-        marker.points.append(point15)
-        marker.points.append(point16)
-        marker.points.append(point17)
+        marker.points.append(point1)
+        marker.points.append(point4)
+        marker.points.append(point7)
+        marker.points.append(point10)
+        marker.points.append(point1)
 
         self.marker_pub.publish(marker)
+
+    def cp_callback(self, msg):
+        if msg.point.x > 5.0 and msg.point.x < 5.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
+            if self.speed_mod:
+                self.speed_mod = 0
+            else:
+                self.speed_mod = 1
+
 
     def run(self):
         while not rospy.is_shutdown():

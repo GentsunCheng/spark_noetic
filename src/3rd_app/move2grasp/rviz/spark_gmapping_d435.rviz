@@ -8,7 +8,8 @@ Panels:
         - /TF1/Frames1
         - /Map_lidar1
         - /Image1
-        - /Marker1
+        - /Marker_direction1
+        - /Marker_step1
       Splitter Ratio: 0.40835267305374146
     Tree Height: 317
   - Class: rviz/Selection
@@ -253,8 +254,16 @@ Visualization Manager:
       Value: false
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /draw_button
-      Name: Marker
+      Marker Topic: /draw_direction
+      Name: Marker_direction
+      Namespaces:
+        line: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /draw_step
+      Name: Marker_step
       Namespaces:
         line: true
       Queue Size: 100
@@ -279,7 +288,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 6.37047815322876
+      Distance: 6.794215202331543
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -287,9 +296,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.18938520550727844
-        Y: -1.3152073621749878
-        Z: 7.748605526103347e-07
+        X: 3.405658483505249
+        Y: 0.4196920394897461
+        Z: 2.9802345125062857e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
