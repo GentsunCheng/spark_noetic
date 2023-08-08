@@ -55,7 +55,7 @@ class Move2Grasp():
     def cp_callback(self, msg):
         turn = 0.0
         speed = 0.0
-        if msg.point.x > -0.5 and msg.point.x < 3.5 and msg.point.y > -0.5 and msg.point.y < 3.5:
+        if msg.point.x > -2.0 and msg.point.x < 2.5 and msg.point.y > -4.0 and msg.point.y < 0.5:
             rospy.loginfo("MOVE TO:%f,%f,%f", msg.point.x, msg.point.y, msg.point.z)
             # Initialize the waypoint goal
             goal = MoveBaseGoal()
@@ -111,17 +111,17 @@ class Move2Grasp():
         # 左转
         elif msg.point.x > 4.5 and msg.point.x < 5.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                turn = 0.5
-            else:
                 turn = 1.5
+            else:
+                turn = 0.5
             speed = 0.0
 
         # 右转
         elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                turn = - 0.5
-            else:
                 turn = - 1.5
+            else:
+                turn = - 0.5
             speed = 0.0
 
         # 抓
@@ -149,11 +149,11 @@ class Move2Grasp():
             self.grasp_pub.publish(msg)
 
         # 重置机械臂
-        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 2.25 and msg.point.y < 2.75:
+        elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             os.system("python3 /home/spark/request_spark/armcontrol/scripts/reset.py")
 
         # 默认位姿
-        elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 2.25 and msg.point.y < 2.75:
+        elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             msg=String()
             msg.data='403'
             self.grasp_pub.publish(msg)
