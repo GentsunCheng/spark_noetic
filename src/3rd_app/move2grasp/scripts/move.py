@@ -55,7 +55,7 @@ class Move2Grasp():
     def cp_callback(self, msg):
         turn = 0.0
         speed = 0.0
-        if msg.point.x > -2.0 and msg.point.x < 2.5 and msg.point.y > -4.0 and msg.point.y < 0.5:
+        if msg.point.x < 4.0 and msg.point.y < 4.0:
             rospy.loginfo("MOVE TO:%f,%f,%f", msg.point.x, msg.point.y, msg.point.z)
             # Initialize the waypoint goal
             goal = MoveBaseGoal()
@@ -177,7 +177,7 @@ class Move2Grasp():
             self.grasp_pub.publish(msg)
 
         # 气泵上下
-        if msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
+        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
             msg=String()
             msg.data='55'
             self.grasp_pub.publish(msg)
