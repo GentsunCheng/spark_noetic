@@ -10,7 +10,9 @@ class LineDrawer:
     def __init__(self):
         rospy.init_node("draw_step")
         self.marker_pub = rospy.Publisher("draw_step", Marker, queue_size=10)
+        rospy.Subscriber('clicked_point', PointStamped, self.cp_callback)
         self.rate = rospy.Rate(10)  # Publish rate
+        self.step_mod = 0.0
 
     def draw_line(self):
         marker = Marker()
@@ -26,7 +28,7 @@ class LineDrawer:
         # Set line color (RGBA, 0-1)
         marker.color.r = 0.0
         marker.color.g = 1.0
-        marker.color.b = 0.0
+        marker.color.b = self.step_mod
         marker.color.a = 1.0
 
         point1 = Point()
@@ -49,13 +51,35 @@ class LineDrawer:
         point4.y = 0.75
         point4.z = 0.0
 
+        point5 = Point()
+        point5.x = 7.0
+        point5.y = 0.25
+        point5.z = 0.0
+
+        point6 = Point()
+        point6.x = 7.5
+        point6.y = 0.25
+        point6.z = 0.0
+
+        marker.points.append(point4)
         marker.points.append(point1)
         marker.points.append(point2)
         marker.points.append(point3)
         marker.points.append(point4)
-        marker.points.append(point1)
+        marker.points.append(point5)
+        marker.points.append(point6)
+        marker.points.append(point3)
 
         self.marker_pub.publish(marker)
+
+    def cp_callback(self, msg):
+        if msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
+            if self.step_mod:
+                self.step_mod = 0.0
+            else:
+                self.step_mod = 1.0
+        elif (msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75):
+            self.step_mod = 0.0
 
     def run(self):
         while not rospy.is_shutdown():

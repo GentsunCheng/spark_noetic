@@ -116,9 +116,9 @@ class LineDrawer:
     def cp_callback(self, msg):
         if msg.point.x > 5.0 and msg.point.x < 5.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                self.speed_mod = 0
+                self.speed_mod = 0.0
             else:
-                self.speed_mod = 1
+                self.speed_mod = 1.0
 
 
     def run(self):

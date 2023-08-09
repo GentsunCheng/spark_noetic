@@ -111,7 +111,7 @@ class Move2Grasp():
         # 左转
         elif msg.point.x > 4.5 and msg.point.x < 5.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                turn = 1.5
+                turn = 2.0
             else:
                 turn = 0.5
             speed = 0.0
@@ -119,7 +119,7 @@ class Move2Grasp():
         # 右转
         elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                turn = - 1.5
+                turn = - 2.0
             else:
                 turn = - 0.5
             speed = 0.0
@@ -133,7 +133,7 @@ class Move2Grasp():
         # 放
         elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
             msg=String()
-            msg.data='1'
+            msg.data='58'
             self.grasp_pub.publish(msg)
 
         # 第四关节左
@@ -174,6 +174,12 @@ class Move2Grasp():
         elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
             msg=String()
             msg.data='51'
+            self.grasp_pub.publish(msg)
+
+        # 气泵上下
+        if msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
+            msg=String()
+            msg.data='55'
             self.grasp_pub.publish(msg)
 
         # 切换速度
