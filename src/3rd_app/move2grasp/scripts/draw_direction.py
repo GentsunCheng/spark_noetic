@@ -6,10 +6,12 @@ from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
 
+
 class LineDrawer:
     def __init__(self):
         rospy.init_node("draw_direction")
-        self.marker_pub = rospy.Publisher("draw_direction", Marker, queue_size=10)
+        self.marker_pub = rospy.Publisher(
+            "draw_direction", Marker, queue_size=10)
         rospy.Subscriber('clicked_point', PointStamped, self.cp_callback)
         self.rate = rospy.Rate(10)  # Publish rate
 
@@ -28,9 +30,9 @@ class LineDrawer:
 
         # Set line color (RGBA, 0-1)
         marker.color.r = self.speed_mod
-        marker.color.g = 1.0
+        marker.color.g = not self.speed_mod
         marker.color.b = 0.0
-        marker.color.a = 1.0
+        marker.color.a = (not self.speed_mod) / 4.0 + 0.5
 
         # Define line points
         point1 = Point()
@@ -120,11 +122,11 @@ class LineDrawer:
             else:
                 self.speed_mod = 1.0
 
-
     def run(self):
         while not rospy.is_shutdown():
             self.draw_line()
             self.rate.sleep()
+
 
 if __name__ == "__main__":
     try:
