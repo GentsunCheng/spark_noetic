@@ -124,25 +124,25 @@ class Move2Grasp():
             speed = 0.0
 
         # 抓
-        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
+        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 2.25 and msg.point.y < 2.75:
             msg=String()
             msg.data='0a'
             self.grasp_pub.publish(msg)
 
         # 放
-        elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
+        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
             msg=String()
             msg.data='58'
             self.grasp_pub.publish(msg)
 
         # 第四关节左
-        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
+        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             msg=String()
             msg.data='41'
             self.grasp_pub.publish(msg)
 
         # 第四关节右
-        elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
+        elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             msg=String()
             msg.data='43'
             self.grasp_pub.publish(msg)
