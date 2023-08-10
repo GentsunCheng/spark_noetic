@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-import os
+import tf
 import rospy
 import actionlib
-import tf
+import subprocess
 from actionlib_msgs.msg import *
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
 from tf.transformations import quaternion_from_euler
-from visualization_msgs.msg import Marker
 from math import radians, pi
 
 
@@ -150,7 +149,7 @@ class Move2Grasp():
 
         # 重置机械臂
         elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
-            os.system("python3 /home/spark/request_spark/armcontrol/scripts/reset.py")
+            subprocess.Popen(['python3','/home/spark/request_spark/armcontrol/scripts/reset.py'])
 
         # 默认位姿
         elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
