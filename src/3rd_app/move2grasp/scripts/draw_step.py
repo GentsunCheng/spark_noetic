@@ -32,32 +32,32 @@ class LineDrawer:
         marker.color.a = 1.0
 
         point1 = Point()
-        point1.x = 7.0
+        point1.x = 8.0
         point1.y = 2.25
         point1.z = 0.0
 
         point2 = Point()
-        point2.x = 7.5
+        point2.x = 8.5
         point2.y = 2.25
         point2.z = 0.0
 
         point3 = Point()
-        point3.x = 7.5
+        point3.x = 8.5
         point3.y = 0.75
         point3.z = 0.0
 
         point4 = Point()
-        point4.x = 7.0
+        point4.x = 8.0
         point4.y = 0.75
         point4.z = 0.0
 
         point5 = Point()
-        point5.x = 7.0
+        point5.x = 8.0
         point5.y = 0.25
         point5.z = 0.0
 
         point6 = Point()
-        point6.x = 7.5
+        point6.x = 8.5
         point6.y = 0.25
         point6.z = 0.0
 
@@ -73,12 +73,12 @@ class LineDrawer:
         self.marker_pub.publish(marker)
 
     def cp_callback(self, msg):
-        if msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
+        if msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
             if self.step_mod:
                 self.step_mod = 0.0
             else:
                 self.step_mod = 1.0
-        elif (msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.75 and msg.point.y < 2.25):
+        elif (msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.75 and msg.point.y < 2.25):
             self.step_mod = 0.0
 
     def run(self):

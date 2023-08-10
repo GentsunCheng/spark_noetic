@@ -93,7 +93,7 @@ class Move2Grasp():
                 self.move_base.send_goal(goal)
 
         # 前进
-        elif msg.point.x > 5.0 and msg.point.x < 5.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
+        elif msg.point.x > 6.0 and msg.point.x < 6.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
             if self.speed_mod:
                 speed = 3.0
             else:
@@ -101,7 +101,7 @@ class Move2Grasp():
             turn = 0.0
 
         # 后退
-        elif msg.point.x > 5.0 and msg.point.x < 5.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
+        elif msg.point.x > 6.0 and msg.point.x < 6.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
             if self.speed_mod:
                 speed = - 3.0
             else:
@@ -109,7 +109,7 @@ class Move2Grasp():
             turn = 0.0
 
         # 左转
-        elif msg.point.x > 4.5 and msg.point.x < 5.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
                 turn = 2.0
             else:
@@ -117,7 +117,7 @@ class Move2Grasp():
             speed = 0.0
 
         # 右转
-        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+        elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
                 turn = - 2.0
             else:
@@ -125,65 +125,65 @@ class Move2Grasp():
             speed = 0.0
 
         # 抓
-        elif msg.point.x > 4.5 and msg.point.x < 5.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
+        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
             msg=String()
             msg.data='0a'
             self.grasp_pub.publish(msg)
 
         # 放
-        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
+        elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
             msg=String()
             msg.data='58'
             self.grasp_pub.publish(msg)
 
         # 第四关节左
-        elif msg.point.x > 4.5 and msg.point.x < 5.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
+        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
             msg=String()
             msg.data='41'
             self.grasp_pub.publish(msg)
 
         # 第四关节右
-        elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
+        elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
             msg=String()
             msg.data='43'
             self.grasp_pub.publish(msg)
 
         # 重置机械臂
-        elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+        elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             os.system("python3 /home/spark/request_spark/armcontrol/scripts/reset.py")
 
         # 默认位姿
-        elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+        elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             msg=String()
             msg.data='403'
             self.grasp_pub.publish(msg)
 
         # 机械臂三
-        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
+        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
             msg=String()
             msg.data='53'
             self.grasp_pub.publish(msg)
 
         # 机械臂二
-        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
+        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
             msg=String()
             msg.data='52'
             self.grasp_pub.publish(msg)
 
         # 机械臂一
-        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
+        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
             msg=String()
             msg.data='51'
             self.grasp_pub.publish(msg)
 
         # 气泵上下
-        elif msg.point.x > 7.0 and msg.point.x < 7.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
+        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
             msg=String()
             msg.data='55'
             self.grasp_pub.publish(msg)
 
         # 切换速度
-        elif msg.point.x > 5.0 and msg.point.x < 5.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
+        elif msg.point.x > 6.0 and msg.point.x < 6.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
                 self.speed_mod = 0
             else:
