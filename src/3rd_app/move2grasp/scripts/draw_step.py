@@ -3,7 +3,6 @@
 
 import rospy
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
 
 class LineDrawer:
@@ -72,24 +71,14 @@ class LineDrawer:
         point8.z = 0.0
 
         point9 = Point()
-        point9.x = 8.5
-        point9.y = - 0.25
+        point9.x = 7.5
+        point9.y = 0.25
         point9.z = 0.0
 
         point10 = Point()
-        point10.x = 8.0
-        point10.y = - 0.25
+        point10.x = 7.5
+        point10.y = 0.75
         point10.z = 0.0
-
-        point11 = Point()
-        point11.x = 7.5
-        point11.y = 0.25
-        point11.z = 0.0
-
-        point12 = Point()
-        point12.x = 7.5
-        point12.y = 0.75
-        point12.z = 0.0
 
         marker.points.append(point4)
         marker.points.append(point1)
@@ -101,12 +90,8 @@ class LineDrawer:
         marker.points.append(point3)
         marker.points.append(point7)
         marker.points.append(point8)
-        marker.points.append(point6)
         marker.points.append(point9)
         marker.points.append(point10)
-        marker.points.append(point5)
-        marker.points.append(point11)
-        marker.points.append(point12)
         marker.points.append(point4)
 
         self.marker_pub.publish(marker)

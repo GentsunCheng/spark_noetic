@@ -46,6 +46,7 @@
             <node name="draw_direction" pkg="move2grasp" type="draw_direction.py" output="screen" />
             <node name="draw_step" pkg="move2grasp" type="draw_step.py" output="screen" />
             <node name="draw_set" pkg="move2grasp" type="draw_set.py" output="screen" />
+            <node name="draw_grasp" pkg="move2grasp" type="draw_grasp.py" output="screen" />
   	</group>
 
 

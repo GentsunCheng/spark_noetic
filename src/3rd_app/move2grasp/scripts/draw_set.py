@@ -3,7 +3,6 @@
 
 import rospy
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
 
 
@@ -27,10 +26,10 @@ class LineDrawer:
         marker.scale.x = 0.01  # Line width
 
         # Set line color (RGBA, 0-1)
-        marker.color.r = not self.step_mod
-        marker.color.g = 0.75
+        marker.color.r = (not self.step_mod) / 2.0 + 0.25
+        marker.color.g = (not self.step_mod) / 4.0 + 0.5
         marker.color.b = self.step_mod
-        marker.color.a = (not self.step_mod) / 2 + 0.25
+        marker.color.a = (not self.step_mod) / 8.0 + 0.25
 
         point1 = Point()
         point1.x = 7.5
