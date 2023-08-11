@@ -65,7 +65,7 @@ class LineDrawer:
                 self.step_mod = 0.0
             else:
                 self.step_mod = 1.0
-        elif (msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.75 and msg.point.y < 2.25):
+        elif (msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75) or (msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 2.75 and msg.point.y < 3.25):
             self.step_mod = 0.0
 
     def run(self):
