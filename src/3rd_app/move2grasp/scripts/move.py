@@ -110,7 +110,7 @@ class Move2Grasp():
         # 左转
         elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                turn = 2.0
+                turn = 3.0
             else:
                 turn = 0.5
             speed = 0.0
@@ -118,7 +118,7 @@ class Move2Grasp():
         # 右转
         elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                turn = - 2.0
+                turn = - 3.0
             else:
                 turn = - 0.5
             speed = 0.0
