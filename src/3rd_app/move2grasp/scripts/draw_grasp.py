@@ -58,26 +58,6 @@ class LineDrawer:
         point6.y = 2.75
         point6.z = 0.0
 
-        point7 = Point()
-        point7.x = 8.0
-        point7.y = 2.75
-        point7.z = 0.0
-
-        point8 = Point()
-        point8.x = 8.0
-        point8.y = 3.25
-        point8.z = 0.0
-
-        point9 = Point()
-        point9.x = 8.5
-        point9.y = 3.25
-        point9.z = 0.0
-
-        point10 = Point()
-        point10.x = 8.5
-        point10.y = 2.75
-        point10.z = 0.0
-
         marker.points.append(point1)
         marker.points.append(point2)
         marker.points.append(point3)
@@ -85,10 +65,6 @@ class LineDrawer:
         marker.points.append(point5)
         marker.points.append(point1)
         marker.points.append(point6)
-        marker.points.append(point7)
-        marker.points.append(point8)
-        marker.points.append(point9)
-        marker.points.append(point10)
 
         self.marker_pub.publish(marker)
 

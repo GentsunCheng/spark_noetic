@@ -136,7 +136,13 @@ class Move2Grasp():
             self.grasp_pub.publish(msg)
 
         # 放
-        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 2.75 and msg.point.y < 3.25:
+        elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.75 and msg.point.y < 3.25:
+            msg=String()
+            msg.data='1'
+            self.grasp_pub.publish(msg)
+
+        # 断气泵
+        elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.75 and msg.point.y < 3.25:
             msg=String()
             msg.data='58'
             self.grasp_pub.publish(msg)
