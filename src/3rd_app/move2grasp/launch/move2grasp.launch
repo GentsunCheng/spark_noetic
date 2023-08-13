@@ -47,6 +47,7 @@
             <node name="draw_step" pkg="move2grasp" type="draw_step.py" output="screen" />
             <node name="draw_set" pkg="move2grasp" type="draw_set.py" output="screen" />
             <node name="draw_grasp" pkg="move2grasp" type="draw_grasp.py" output="screen" />
+            <node name="draw_release" pkg="move2grasp" type="draw_release.py" output="screen" />
   	</group>
 
 
