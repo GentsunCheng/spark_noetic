@@ -22,7 +22,6 @@ class LineDrawer:
         self.point_t.y = 1.5
         self.point_t.z = 0.0
         self.point_c = self.point_t
-        self.move_mod = 1.0
 
     def draw_line(self):
         marker = Marker()
@@ -39,7 +38,7 @@ class LineDrawer:
         marker.color.r = self.speed_mod
         marker.color.g = not self.speed_mod
         marker.color.b = 0.0
-        marker.color.a = self.move_mod * ((not self.speed_mod) / 4.0 + 0.5)
+        marker.color.a = (not self.speed_mod) / 4.0 + 0.5
 
         point1 = Point()
         point1.x = self.point_c.x - 0.125
@@ -70,7 +69,6 @@ class LineDrawer:
         self.marker_pub.publish(marker)
 
     def cp_callback(self, msg):
-        self.move_mod = msg.point.z
         if msg.point.z == 1.0:
             if msg.point.x < 5.5 or msg.point.x > 7.0 or msg.point.y < 0.75 or msg.point.y > 2.25:
                 if abs(msg.point.x - 0.75 - 6.25) >= abs(msg.point.y - 0.75 - 1.5):
@@ -88,8 +86,6 @@ class LineDrawer:
 
         if msg.point.x > 5.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
             self.point_c = msg.point
-            rospy.sleep(0.3)
-            self.point_c = self.point_t
         if msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > - 0.25 and msg.point.y < 0.25:
             if self.speed_mod:
                 self.speed_mod = 0.0
