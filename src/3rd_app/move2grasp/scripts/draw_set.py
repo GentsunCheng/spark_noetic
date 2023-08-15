@@ -13,7 +13,6 @@ class LineDrawer:
         rospy.Subscriber('clicked_point', PointStamped, self.cp_callback)
         self.rate = rospy.Rate(10)  # Publish rate
         self.step_mod = 0.0
-        self.move_mod = 1.0
 
     def draw_line(self):
         marker = Marker()
@@ -30,7 +29,7 @@ class LineDrawer:
         marker.color.r = (not self.step_mod) / 2.0 + 0.25
         marker.color.g = (not self.step_mod) / 4.0 + 0.5
         marker.color.b = self.step_mod
-        marker.color.a = (not self.move_mod) * (not self.step_mod) / 8.0 + 0.25
+        marker.color.a = (not self.step_mod) / 8.0 + 0.25
 
         point1 = Point()
         point1.x = 7.5
@@ -61,7 +60,6 @@ class LineDrawer:
         self.marker_pub.publish(marker)
 
     def cp_callback(self, msg):
-        self.move_mod = msg.point.z
         if msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
             if self.step_mod:
                 self.step_mod = 0.0
