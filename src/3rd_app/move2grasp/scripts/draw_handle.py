@@ -71,6 +71,21 @@ class LineDrawer:
 
     def cp_callback(self, msg):
         self.move_mod = msg.point.z
+        if msg.point.z == 1.0:
+            if msg.point.x < 5.5 or msg.point.x > 7.0 or msg.point.y < 0.75 or msg.point.y > 2.25:
+                if abs(msg.point.x - 0.75 - 6.25) >= abs(msg.point.y - 0.75 - 1.5):
+                    msg.point.y = (msg.point.y - 1.5) * (msg.point.x - 6.25 - 0.75) / (msg.point.x - 6.25) + 1.5
+                    if msg.point.x - 6.25 == abs(msg.point.x - 6.25):
+                        msg.point.x = 7.0
+                    else:
+                        msg.point.x = 5.5
+                else:
+                    msg.point.x = (msg.point.x - 6.25) * (msg.point.y - 1.5 - 0.75) / (msg.point.y - 1.5) + 6.25
+                    if msg.point.y - 1.5 == abs(msg.point.y - 1.5):
+                        msg.point.y = 1.5
+                    else:
+                        msg.point.y = -1.5
+
         if msg.point.x > 5.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
             self.point_c = msg.point
             rospy.sleep(0.3)

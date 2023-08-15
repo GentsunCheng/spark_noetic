@@ -53,171 +53,187 @@ class Move2Grasp():
     def cp_callback(self, msg):
         turn = 0.0
         speed = 0.0
-        if msg.point.x < 4.0 and msg.point.y < 4.0:
-            rospy.loginfo("MOVE TO:%f,%f,%f", msg.point.x, msg.point.y, msg.point.z)
-            # Initialize the waypoint goal
-            goal = MoveBaseGoal()
-            # Use the map frame to define goal poses
-            goal.target_pose.header.frame_id = 'map'
-            # Set the time stamp to "now"
-            goal.target_pose.header.stamp = rospy.Time.now()
-            # Set the goal position
-            goal.target_pose.pose.position = Point(
-                msg.point.x, msg.point.y, msg.point.z)
+        if msg.point.z == 1.0:
+            if msg.point.x < 5.5 or msg.point.x > 7.0 or msg.point.y < 0.75 or msg.point.y > 2.25:
+                if abs(msg.point.x - 0.75 - 6.25) >= abs(msg.point.y - 0.75 - 1.5):
+                    msg.point.y = (msg.point.y - 1.5) * (msg.point.x - 6.25 - 0.75) / (msg.point.x - 6.25) + 1.5
+                    if msg.point.x - 6.25 == abs(msg.point.x - 6.25):
+                        msg.point.x = 7.0
+                    else:
+                        msg.point.x = 5.5
+                else:
+                    msg.point.x = (msg.point.x - 6.25) * (msg.point.y - 1.5 - 0.75) / (msg.point.y - 1.5) + 6.25
+                    if msg.point.y - 1.5 == abs(msg.point.y - 1.5):
+                        msg.point.y = 1.5
+                    else:
+                        msg.point.y = -1.5
 
-            # Get the current robot position and orientation using tf
-            listener = tf.TransformListener()
-            listener.waitForTransform(
-                'map', 'base_link', rospy.Time(0), rospy.Duration(1.0))
-            (trans, rot) = listener.lookupTransform(
-                'map', 'base_link', rospy.Time(0))
-            # Set the current orientation as the goal orientation
-            goal.target_pose.pose.orientation.x = rot[0]
-            goal.target_pose.pose.orientation.y = rot[1]
-            goal.target_pose.pose.orientation.z = rot[2]
-            goal.target_pose.pose.orientation.w = rot[3]
-            # Start the robot moving toward the goal
-            self.move_base.send_goal(goal)
-            # If we don't get there in time, abort the goal
-            # 如果没有到达，修正朝向再发送
-            for i in range(10):
-                rospy.sleep(0.5)
+            # 前进
+            if msg.point.x > 5.5 and msg.point.x < 7.0 and msg.point.y > 1.625 and msg.point.y < 2.25:
+                if self.speed_mod:
+                    speed = 3.0 * (msg.point.y - 1.5) / 0.75
+                else:
+                    speed = 0.5 * (msg.point.y - 1.5) / 0.75
+                # 左前
+                if msg.point.x > 5.5 and msg.point.x < 6.125 and msg.point.y > 0.75 and msg.point.y < 2.25:
+                    if self.speed_mod:
+                        turn = 3.0 * (6.25 - msg.point.x) / 0.75
+                    else:
+                        turn = 1.0 * (6.25 - msg.point.x) / 0.75
+                # 右前
+                elif msg.point.x > 6.375 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
+                    if self.speed_mod:
+                        turn = - 3.0 * (msg.point.x - 6.25) / 0.75
+                    else:
+                        turn = - 1.0 * (msg.point.x - 6.25) / 0.75
+
+            # 后退
+            elif msg.point.x > 5.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 1.375:
+                if self.speed_mod:
+                    speed = - 3.0 * (1.5 - msg.point.y) / 0.75
+                else:
+                    speed = - 0.5 * (1.5 - msg.point.y) / 0.75
+                # 左后
+                if msg.point.x > 5.5 and msg.point.x < 6.125 and msg.point.y > 0.75 and msg.point.y < 2.25:
+                    if self.speed_mod:
+                        turn = - 3.0 * (6.25 - msg.point.x) / 0.75
+                    else:
+                        turn = - 1.0 * (6.25 - msg.point.x) / 0.75
+                # 右后
+                elif msg.point.x > 6.375 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
+                    if self.speed_mod:
+                        turn = 3.0 * (msg.point.x - 6.25) / 0.75
+                    else:
+                        turn = 1.0 * (msg.point.x - 6.25) / 0.75
+
+            # 左转
+            elif msg.point.x > 5.5 and msg.point.x < 6.125 and msg.point.y > 1.25 and msg.point.y < 1.75:
+                if self.speed_mod:
+                    turn = 3.0 * (6.25 - msg.point.x) / 0.75
+                else:
+                    turn = 1.5 * (6.25 - msg.point.x) / 0.75
+
+            # 右转
+            elif msg.point.x > 6.375 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+                if self.speed_mod:
+                    turn = - 3.0 * (msg.point.x - 6.25) / 0.75
+                else:
+                    turn = - 1.5 * (msg.point.x - 6.25) / 0.75
+
+        elif msg.point.z == 0.0:
+            if msg.point.x < 4.0 and msg.point.y < 4.0:
+                rospy.loginfo("MOVE TO:%f,%f,%f", msg.point.x, msg.point.y, msg.point.z)
+                # Initialize the waypoint goal
+                goal = MoveBaseGoal()
+                # Use the map frame to define goal poses
+                goal.target_pose.header.frame_id = 'map'
+                # Set the time stamp to "now"
+                goal.target_pose.header.stamp = rospy.Time.now()
+                # Set the goal position
+                goal.target_pose.pose.position = Point(
+                    msg.point.x, msg.point.y, msg.point.z)
+
+                # Get the current robot position and orientation using tf
+                listener = tf.TransformListener()
+                listener.waitForTransform(
+                    'map', 'base_link', rospy.Time(0), rospy.Duration(1.0))
                 (trans, rot) = listener.lookupTransform(
                     'map', 'base_link', rospy.Time(0))
+                # Set the current orientation as the goal orientation
                 goal.target_pose.pose.orientation.x = rot[0]
                 goal.target_pose.pose.orientation.y = rot[1]
                 goal.target_pose.pose.orientation.z = rot[2]
                 goal.target_pose.pose.orientation.w = rot[3]
+                # Start the robot moving toward the goal
                 self.move_base.send_goal(goal)
+                # If we don't get there in time, abort the goal
+                # 如果没有到达，修正朝向再发送
+                for i in range(10):
+                    rospy.sleep(0.5)
+                    (trans, rot) = listener.lookupTransform(
+                        'map', 'base_link', rospy.Time(0))
+                    goal.target_pose.pose.orientation.x = rot[0]
+                    goal.target_pose.pose.orientation.y = rot[1]
+                    goal.target_pose.pose.orientation.z = rot[2]
+                    goal.target_pose.pose.orientation.w = rot[3]
+                    self.move_base.send_goal(goal)
 
-        # 前进
-        elif msg.point.x > 5.5 and msg.point.x < 7.0 and msg.point.y > 1.625 and msg.point.y < 2.25:
-            if self.speed_mod:
-                speed = 3.0 * (msg.point.y - 1.5) / 0.75
-            else:
-                speed = 0.5 * (msg.point.y - 1.5) / 0.75
-            # 左前
-            if msg.point.x > 5.5 and msg.point.x < 6.125 and msg.point.y > 0.75 and msg.point.y < 2.25:
+            # 自动抓
+            elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.25 and msg.point.y < 2.75:
+                msg=String()
+                msg.data='0a'
+                self.grasp_pub.publish(msg)
+
+            # 手动抓
+            elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.25 and msg.point.y < 2.75:
+                msg=String()
+                msg.data='200'
+                self.grasp_pub.publish(msg)
+
+            # 放
+            elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.75 and msg.point.y < 3.25:
+                msg=String()
+                msg.data='1'
+                self.grasp_pub.publish(msg)
+
+            # 断气泵
+            elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.75 and msg.point.y < 3.25:
+                msg=String()
+                msg.data='58'
+                self.grasp_pub.publish(msg)
+
+            # 第四关节左
+            elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 0.25 and msg.point.y < 0.75:
+                msg=String()
+                msg.data='41'
+                self.grasp_pub.publish(msg)
+
+            # 第四关节右
+            elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 0.25 and msg.point.y < 0.75:
+                msg=String()
+                msg.data='43'
+                self.grasp_pub.publish(msg)
+
+            # 重置机械臂
+            elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+                subprocess.Popen(['python3','/home/spark/request_spark/armcontrol/scripts/reset.py'])
+
+            # 默认位姿
+            elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+                msg=String()
+                msg.data='403'
+                self.grasp_pub.publish(msg)
+
+            # 机械臂三
+            elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
+                msg=String()
+                msg.data='53'
+                self.grasp_pub.publish(msg)
+
+            # 机械臂二
+            elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
+                msg=String()
+                msg.data='52'
+                self.grasp_pub.publish(msg)
+
+            # 机械臂一
+            elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
+                msg=String()
+                msg.data='51'
+                self.grasp_pub.publish(msg)
+
+            # 气泵上下
+            elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
+                msg=String()
+                msg.data='55'
+                self.grasp_pub.publish(msg)
+
+            # 切换速度
+            elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > - 0.25 and msg.point.y < 0.25:
                 if self.speed_mod:
-                    turn = 3.0 * (6.25 - msg.point.x) / 0.75
+                    self.speed_mod = 0
                 else:
-                    turn = 1.0 * (6.25 - msg.point.x) / 0.75
-            # 右前
-            elif msg.point.x > 6.375 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
-                if self.speed_mod:
-                    turn = - 3.0 * (msg.point.x - 6.25) / 0.75
-                else:
-                    turn = - 1.0 * (msg.point.x - 6.25) / 0.75
-
-        # 后退
-        elif msg.point.x > 5.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 1.375:
-            if self.speed_mod:
-                speed = - 3.0 * (1.5 - msg.point.y) / 0.75
-            else:
-                speed = - 0.5 * (1.5 - msg.point.y) / 0.75
-            # 左后
-            if msg.point.x > 5.5 and msg.point.x < 6.125 and msg.point.y > 0.75 and msg.point.y < 2.25:
-                if self.speed_mod:
-                    turn = - 3.0 * (6.25 - msg.point.x) / 0.75
-                else:
-                    turn = - 1.0 * (6.25 - msg.point.x) / 0.75
-            # 右后
-            elif msg.point.x > 6.375 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
-                if self.speed_mod:
-                    turn = 3.0 * (msg.point.x - 6.25) / 0.75
-                else:
-                    turn = 1.0 * (msg.point.x - 6.25) / 0.75
-
-        # 左转
-        elif msg.point.x > 5.5 and msg.point.x < 6.125 and msg.point.y > 1.25 and msg.point.y < 1.75:
-            if self.speed_mod:
-                turn = 3.0 * (6.25 - msg.point.x) / 0.75
-            else:
-                turn = 1.5 * (6.25 - msg.point.x) / 0.75
-
-        # 右转
-        elif msg.point.x > 6.375 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
-            if self.speed_mod:
-                turn = - 3.0 * (msg.point.x - 6.25) / 0.75
-            else:
-                turn = - 1.5 * (msg.point.x - 6.25) / 0.75
-
-        # 自动抓
-        elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.25 and msg.point.y < 2.75:
-            msg=String()
-            msg.data='0a'
-            self.grasp_pub.publish(msg)
-
-        # 手动抓
-        elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.25 and msg.point.y < 2.75:
-            msg=String()
-            msg.data='200'
-            self.grasp_pub.publish(msg)
-
-        # 放
-        elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.75 and msg.point.y < 3.25:
-            msg=String()
-            msg.data='1'
-            self.grasp_pub.publish(msg)
-
-        # 断气泵
-        elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.75 and msg.point.y < 3.25:
-            msg=String()
-            msg.data='58'
-            self.grasp_pub.publish(msg)
-
-        # 第四关节左
-        elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 0.25 and msg.point.y < 0.75:
-            msg=String()
-            msg.data='41'
-            self.grasp_pub.publish(msg)
-
-        # 第四关节右
-        elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 0.25 and msg.point.y < 0.75:
-            msg=String()
-            msg.data='43'
-            self.grasp_pub.publish(msg)
-
-        # 重置机械臂
-        elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
-            subprocess.Popen(['python3','/home/spark/request_spark/armcontrol/scripts/reset.py'])
-
-        # 默认位姿
-        elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
-            msg=String()
-            msg.data='403'
-            self.grasp_pub.publish(msg)
-
-        # 机械臂三
-        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
-            msg=String()
-            msg.data='53'
-            self.grasp_pub.publish(msg)
-
-        # 机械臂二
-        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
-            msg=String()
-            msg.data='52'
-            self.grasp_pub.publish(msg)
-
-        # 机械臂一
-        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
-            msg=String()
-            msg.data='51'
-            self.grasp_pub.publish(msg)
-
-        # 气泵上下
-        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
-            msg=String()
-            msg.data='55'
-            self.grasp_pub.publish(msg)
-
-        # 切换速度
-        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > - 0.25 and msg.point.y < 0.25:
-            if self.speed_mod:
-                self.speed_mod = 0
-            else:
-                self.speed_mod = 1
+                    self.speed_mod = 1
 
         # 刹车
         else:
