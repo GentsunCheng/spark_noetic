@@ -92,36 +92,56 @@ class Move2Grasp():
                 self.move_base.send_goal(goal)
 
         # 前进
-        elif msg.point.x > 6.0 and msg.point.x < 6.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
+        elif msg.point.x > 5.5 and msg.point.x < 7.0 and msg.point.y > 1.75 and msg.point.y < 2.25:
             if self.speed_mod:
-                speed = 3.0
+                speed = 3.0 * (msg.point.y - 1.5) / 0.75
             else:
-                speed = 0.15
-            turn = 0.0
+                speed = 0.5 * (msg.point.y - 1.5) / 0.75
+            # 左前
+            if msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
+                if self.speed_mod:
+                    turn = 3.0 * (6.25 - msg.point.x) / 0.75
+                else:
+                    turn = 1.5 * (6.25 - msg.point.x) / 0.75
+            # 右前
+            elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
+                if self.speed_mod:
+                    turn = - 3.0 * (msg.point.x - 6.25) / 0.75
+                else:
+                    turn = - 1.5 * (msg.point.x - 6.25) / 0.75
 
         # 后退
-        elif msg.point.x > 6.0 and msg.point.x < 6.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
+        elif msg.point.x > 5.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
             if self.speed_mod:
-                speed = - 3.0
+                speed = - 3.0 * (1.5 - msg.point.y) / 0.75
             else:
-                speed = - 0.15
-            turn = 0.0
+                speed = - 0.5 * (1.5 - msg.point.y) / 0.75
+            # 左后
+            if msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
+                if self.speed_mod:
+                    turn = - 3.0 * (6.25 - msg.point.x) / 0.75
+                else:
+                    turn = - 1.5 * (6.25 - msg.point.x) / 0.75
+            # 右后
+            elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 0.75 and msg.point.y < 2.25:
+                if self.speed_mod:
+                    turn = 3.0 * (msg.point.x - 6.25) / 0.75
+                else:
+                    turn = 1.5 * (msg.point.x - 6.25) / 0.75
 
         # 左转
         elif msg.point.x > 5.5 and msg.point.x < 6.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                turn = 3.0
+                turn = 3.0 * (6.25 - msg.point.x) / 0.75
             else:
-                turn = 0.5
-            speed = 0.0
+                turn = 1.5 * (6.25 - msg.point.x) / 0.75
 
         # 右转
         elif msg.point.x > 6.5 and msg.point.x < 7.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
             if self.speed_mod:
-                turn = - 3.0
+                turn = - 3.0 * (msg.point.x - 6.25) / 0.75
             else:
-                turn = - 0.5
-            speed = 0.0
+                turn = - 1.5 * (msg.point.x - 6.25) / 0.75
 
         # 自动抓
         elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.25 and msg.point.y < 2.75:
@@ -194,7 +214,7 @@ class Move2Grasp():
             self.grasp_pub.publish(msg)
 
         # 切换速度
-        elif msg.point.x > 6.0 and msg.point.x < 6.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
+        elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > - 0.25 and msg.point.y < 0.25:
             if self.speed_mod:
                 self.speed_mod = 0
             else:

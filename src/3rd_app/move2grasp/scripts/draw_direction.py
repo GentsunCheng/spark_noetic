@@ -115,7 +115,7 @@ class LineDrawer:
         self.marker_pub.publish(marker)
 
     def cp_callback(self, msg):
-        if msg.point.x > 6.0 and msg.point.x < 6.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
+        if msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > - 0.25 and msg.point.y < 0.25:
             if self.speed_mod:
                 self.speed_mod = 0.0
             else:
