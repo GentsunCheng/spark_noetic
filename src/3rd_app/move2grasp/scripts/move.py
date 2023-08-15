@@ -158,30 +158,6 @@ class Move2Grasp():
                     goal.target_pose.pose.orientation.w = rot[3]
                     self.move_base.send_goal(goal)
 
-            # 自动抓
-            elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.25 and msg.point.y < 2.75:
-                msg=String()
-                msg.data='0a'
-                self.grasp_pub.publish(msg)
-
-            # 手动抓
-            elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.25 and msg.point.y < 2.75:
-                msg=String()
-                msg.data='200'
-                self.grasp_pub.publish(msg)
-
-            # 放
-            elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.75 and msg.point.y < 3.25:
-                msg=String()
-                msg.data='1'
-                self.grasp_pub.publish(msg)
-
-            # 断气泵
-            elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.75 and msg.point.y < 3.25:
-                msg=String()
-                msg.data='58'
-                self.grasp_pub.publish(msg)
-
             # 第四关节左
             elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 0.25 and msg.point.y < 0.75:
                 msg=String()
@@ -192,16 +168,6 @@ class Move2Grasp():
             elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 0.25 and msg.point.y < 0.75:
                 msg=String()
                 msg.data='43'
-                self.grasp_pub.publish(msg)
-
-            # 重置机械臂
-            elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
-                subprocess.Popen(['python3','/home/spark/request_spark/armcontrol/scripts/reset.py'])
-
-            # 默认位姿
-            elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
-                msg=String()
-                msg.data='403'
                 self.grasp_pub.publish(msg)
 
             # 机械臂三
@@ -234,6 +200,40 @@ class Move2Grasp():
                     self.speed_mod = 0
                 else:
                     self.speed_mod = 1
+
+        # 自动抓
+        elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.25 and msg.point.y < 2.75:
+            msg=String()
+            msg.data='0a'
+            self.grasp_pub.publish(msg)
+
+        # 手动抓
+        elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.25 and msg.point.y < 2.75:
+            msg=String()
+            msg.data='200'
+            self.grasp_pub.publish(msg)
+
+        # 放
+        elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.75 and msg.point.y < 3.25:
+            msg=String()
+            msg.data='1'
+            self.grasp_pub.publish(msg)
+
+        # 断气泵
+        elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.75 and msg.point.y < 3.25:
+            msg=String()
+            msg.data='58'
+            self.grasp_pub.publish(msg)
+
+        # 重置机械臂
+        elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+            subprocess.Popen(['python3','/home/spark/request_spark/armcontrol/scripts/reset.py'])
+
+        # 默认位姿
+        elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
+            msg=String()
+            msg.data='403'
+            self.grasp_pub.publish(msg)
 
         # 刹车
         else:
