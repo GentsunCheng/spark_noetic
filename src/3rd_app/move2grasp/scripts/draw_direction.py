@@ -55,23 +55,23 @@ class LineDrawer:
         point4.z = 0.0
 
         point5 = Point()
-        point5.x = 6.0
-        point5.y = 1.75
+        point5.x = 6.125
+        point5.y = 1.625
         point5.z = 0.0
 
         point6 = Point()
-        point6.x = 6.5
-        point6.y = 1.75
+        point6.x = 6.375
+        point6.y = 1.625
         point6.z = 0.0
 
         point7 = Point()
-        point7.x = 6.5
-        point7.y = 1.25
+        point7.x = 6.375
+        point7.y = 1.375
         point7.z = 0.0
 
         point8 = Point()
-        point8.x = 6.0
-        point8.y = 1.25
+        point8.x = 6.125
+        point8.y = 1.375
         point8.z = 0.0
 
         marker.points.append(point1)
