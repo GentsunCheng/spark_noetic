@@ -13,6 +13,7 @@ Panels:
         - /Marker_set1
         - /Marker_grasp1
         - /Marker_release1
+        - /Marker_handle1
       Splitter Ratio: 0.40835267305374146
     Tree Height: 797
   - Class: rviz/Selection
@@ -294,6 +295,14 @@ Visualization Manager:
       Namespaces:
         line: true
       Queue Size: 10
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /draw_handle
+      Name: Marker_handle
+      Namespaces:
+        line: true
+      Queue Size: 120
       Value: true
   Enabled: true
   Global Options:

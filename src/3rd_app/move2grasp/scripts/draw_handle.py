@@ -8,13 +8,20 @@ from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
 
 class LineDrawer:
     def __init__(self):
-        rospy.init_node("draw_direction")
+        rospy.init_node("draw_handle")
         self.marker_pub = rospy.Publisher(
-            "draw_direction", Marker, queue_size=10)
+            "draw_handle", Marker, queue_size=10)
         rospy.Subscriber('clicked_point', PointStamped, self.cp_callback)
         self.rate = rospy.Rate(10)  # Publish rate
 
+        pointstamped_t = PointStamped()
+        self.point_c = pointstamped_t.point
+        self.point_t = pointstamped_t.point
         self.speed_mod = 0.0
+        self.point_t.x = 6.25
+        self.point_t.y = 1.5
+        self.point_t.z = 0.0
+        self.point_c = self.point_t
 
     def draw_line(self):
         marker = Marker()
@@ -33,25 +40,24 @@ class LineDrawer:
         marker.color.b = 0.0
         marker.color.a = (not self.speed_mod) / 4.0 + 0.5
 
-        # Define line points
         point1 = Point()
-        point1.x = 5.5
-        point1.y = 2.25
+        point1.x = self.point_c.x - 0.125
+        point1.y = self.point_c.y + 0.125
         point1.z = 0.0
 
         point2 = Point()
-        point2.x = 7.0
-        point2.y = 2.25
+        point2.x = self.point_c.x + 0.125
+        point2.y = self.point_c.y + 0.125
         point2.z = 0.0
 
         point3 = Point()
-        point3.x = 7.0
-        point3.y = 0.75
+        point3.x = self.point_c.x + 0.125
+        point3.y = self.point_c.y - 0.125
         point3.z = 0.0
 
         point4 = Point()
-        point4.x = 5.5
-        point4.y = 0.75
+        point4.x = self.point_c.x - 0.125
+        point4.y = self.point_c.y - 0.125
         point4.z = 0.0
 
         marker.points.append(point1)
@@ -63,6 +69,9 @@ class LineDrawer:
         self.marker_pub.publish(marker)
 
     def cp_callback(self, msg):
+        self.point_c = msg.point
+        rospy.sleep(0.3)
+        self.point_c = self.point_t
         if msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > - 0.25 and msg.point.y < 0.25:
             if self.speed_mod:
                 self.speed_mod = 0.0
