@@ -3,7 +3,7 @@
 
 import rospy
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
+from geometry_msgs.msg import Pose, Point, PointStamped
 
 
 class LineDrawer:
