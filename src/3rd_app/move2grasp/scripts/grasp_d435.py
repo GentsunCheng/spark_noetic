@@ -163,6 +163,21 @@ class GraspObject():
             status.data = '0'
             self.grasp_status_pub.publish(status)
 
+        # 扫方块
+        if msg.data == '114':
+            self.is_found_object = False
+            self.swap_square_left()
+            status = String()
+            status.data = '0'
+            self.grasp_status_pub.publish(status)
+
+        if msg.data == '514':
+            self.is_found_object = False
+            self.swap_square_right()
+            status = String()
+            status.data = '0'
+            self.grasp_status_pub.publish(status)
+
         # 第四关节左转
         if msg.data == '41':
             if angle < 180.0:
@@ -511,6 +526,28 @@ class GraspObject():
         pos.x = 250.0
         pos.y = int(arr_pos_y)
         pos.z = int(arr_pos_z)
+        self.pub1.publish(pos)
+
+    # 扫方块左
+    def swap_square_left(self):
+        pos = position()
+        pos.x = 90.0
+        pos.y = 220.0
+        pos.z = 50.0
+        self.pub1.publish(pos)
+        pos.z = -130.0
+        rospy.sleep(0.3)
+        self.pub1.publish(pos)
+
+    # 扫方块右
+    def swap_square_right(self):
+        pos = position()
+        pos.x = 90.0
+        pos.y = - 220.0
+        pos.z = 50.0
+        self.pub1.publish(pos)
+        pos.z = -130.0
+        rospy.sleep(0.3)
         self.pub1.publish(pos)
 
     # 机械臂恢复默认位姿
