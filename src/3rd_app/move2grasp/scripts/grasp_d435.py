@@ -196,6 +196,7 @@ class GraspObject():
             steps = 0
             angle = 90.0
             self.default_arm()
+            self.forth_pose()
             status = String()
             status.data = '403'
             self.grasp_status_pub.publish(status)
@@ -208,6 +209,7 @@ class GraspObject():
             steps = 0
             angle = 90.0
             self.reset_pub.publish(1)
+            self.forth_pose()
             status = String()
             status.data = '403'
             self.grasp_status_pub.publish(status)
