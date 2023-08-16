@@ -12,10 +12,9 @@ Panels:
         - /Marker_step1
         - /Marker_set1
         - /Marker_grasp1
-        - /Marker_release1
         - /Marker_handle1
       Splitter Ratio: 0.40835267305374146
-    Tree Height: 370
+    Tree Height: 797
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -114,6 +113,8 @@ Visualization Manager:
           Value: false
         ir_bumper_right_link:
           Value: false
+        laser_frame:
+          Value: true
         left_wheel_link:
           Value: false
         lidar_link:
@@ -197,7 +198,8 @@ Visualization Manager:
                 left_wheel_link:
                   {}
                 lidar_link:
-                  {}
+                  laser_frame:
+                    {}
                 right_wheel_link:
                   {}
                 room_base_link:
@@ -284,14 +286,6 @@ Visualization Manager:
       Enabled: true
       Marker Topic: /draw_grasp
       Name: Marker_grasp
-      Namespaces:
-        line: true
-      Queue Size: 10
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /draw_release
-      Name: Marker_release
       Namespaces:
         line: true
       Queue Size: 10

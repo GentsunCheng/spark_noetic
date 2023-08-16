@@ -144,50 +144,50 @@ class Move2Grasp():
 
         # 第四关节左
         elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 0.25 and msg.point.y < 0.75:
-            msg=String()
-            msg.data='41'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='41'
+            self.grasp_pub.publish(msgs)
 
         # 第四关节右
         elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 0.25 and msg.point.y < 0.75:
-            msg=String()
-            msg.data='43'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='43'
+            self.grasp_pub.publish(msgs)
 
         # 机械臂三
         elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 1.75 and msg.point.y < 2.25:
-            msg=String()
-            msg.data='53'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='53'
+            self.grasp_pub.publish(msgs)
 
         # 机械臂二
         elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 1.25 and msg.point.y < 1.75:
-            msg=String()
-            msg.data='52'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='52'
+            self.grasp_pub.publish(msgs)
 
         # 机械臂一
         elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.75 and msg.point.y < 1.25:
-            msg=String()
-            msg.data='51'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='51'
+            self.grasp_pub.publish(msgs)
 
         # 扫方块
         elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
-            msg=String()
-            msg.data='114'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='114'
+            self.grasp_pub.publish(msgs)
 
         elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 0.75 and msg.point.y < 1.25:
-            msg=String()
-            msg.data='514'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='514'
+            self.grasp_pub.publish(msgs)
 
         # 气泵上下
         elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > 0.25 and msg.point.y < 0.75:
-            msg=String()
-            msg.data='55'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='55'
+            self.grasp_pub.publish(msgs)
 
         # 切换速度
         elif msg.point.x > 8.0 and msg.point.x < 8.5 and msg.point.y > - 0.25 and msg.point.y < 0.25:
@@ -197,22 +197,22 @@ class Move2Grasp():
                 self.speed_mod = 1
 
         # 抓
-        elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.25 and msg.point.y < 2.75:
-            msg=String()
+        elif msg.point.x > 7.75 and msg.point.x < 8.25 and msg.point.y > 2.25 and msg.point.y < 2.75:
+            msgs=String()
             if msg.point.z == 0.0:
-                msg.data='0a'
-            elif msg.point.z == 1.0:
-                msg.data='200'
-            self.grasp_pub.publish(msg)
+                msgs.data='0a'
+            elif msg.point.z:
+                msgs.data='200'
+            self.grasp_pub.publish(msgs)
 
         # 放
-        elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.75 and msg.point.y < 3.25:
-            msg=String()
+        elif msg.point.x > 8.25 and msg.point.x < 8.75 and msg.point.y > 2.25 and msg.point.y < 2.75:
+            msgs=String()
             if msg.point.z == 0.0:
-                msg.data='1'
+                msgs.data='1'
             elif msg.point.z == 1.0:
-                msg.data='58'
-            self.grasp_pub.publish(msg)
+                msgs.data='58'
+            self.grasp_pub.publish(msgs)
 
         # 重置机械臂
         elif msg.point.x > 8.5 and msg.point.x < 9.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
@@ -220,9 +220,9 @@ class Move2Grasp():
 
         # 默认位姿
         elif msg.point.x > 7.5 and msg.point.x < 8.0 and msg.point.y > 1.25 and msg.point.y < 1.75:
-            msg=String()
-            msg.data='403'
-            self.grasp_pub.publish(msg)
+            msgs=String()
+            msgs.data='403'
+            self.grasp_pub.publish(msgs)
 
         # 刹车
         else:
