@@ -166,12 +166,27 @@ class GraspObject():
         # 扫方块
         if msg.data == '114':
             self.is_found_object = False
-            self.swap_square_left()
+            self.swap_left()
             status = String()
             status.data = '0'
             self.grasp_status_pub.publish(status)
 
         if msg.data == '514':
+            self.is_found_object = False
+            self.swap_right()
+            status = String()
+            status.data = '0'
+            self.grasp_status_pub.publish(status)
+
+        # 扫方块一
+        if msg.data == '1141':
+            self.is_found_object = False
+            self.swap_square_left()
+            status = String()
+            status.data = '0'
+            self.grasp_status_pub.publish(status)
+
+        if msg.data == '5141':
             self.is_found_object = False
             self.swap_square_right()
             status = String()
@@ -531,7 +546,7 @@ class GraspObject():
         self.pub1.publish(pos)
 
     # 扫方块左
-    def swap_square_left(self):
+    def swap_left(self):
         pos = position()
         pos.x = 90.0
         pos.y = 220.0
@@ -542,7 +557,7 @@ class GraspObject():
         self.pub1.publish(pos)
 
     # 扫方块右
-    def swap_square_right(self):
+    def swap_right(self):
         pos = position()
         pos.x = 90.0
         pos.y = - 220.0
@@ -550,6 +565,22 @@ class GraspObject():
         self.pub1.publish(pos)
         pos.z = -130.0
         rospy.sleep(0.3)
+        self.pub1.publish(pos)
+
+    # 扫方块一左
+    def swap_square_left(self):
+        pos = position()
+        pos.x = 90.0
+        pos.y = 220.0
+        pos.z = - 25.0
+        self.pub1.publish(pos)
+
+    # 扫方块一右
+    def swap_square_right(self):
+        pos = position()
+        pos.x = 90.0
+        pos.y = - 220.0
+        pos.z = - 25.0
         self.pub1.publish(pos)
 
     # 机械臂恢复默认位姿
