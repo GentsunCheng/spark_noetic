@@ -547,10 +547,16 @@ class GraspObject():
 
     # 扫方块左
     def swap_left(self):
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect(('localhost', 8801))
+        message = 'get_pos_y'
+        client_socket.sendall(message.encode())
+        response_z = client_socket.recv(1024).decode()
+        arr_pos_z = float(response_z)
         pos = position()
         pos.x = 90.0
         pos.y = 220.0
-        pos.z = 50.0
+        pos.z = arr_pos_z
         self.pub1.publish(pos)
         pos.z = -130.0
         rospy.sleep(0.3)
@@ -558,10 +564,16 @@ class GraspObject():
 
     # 扫方块右
     def swap_right(self):
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect(('localhost', 8801))
+        message = 'get_pos_y'
+        client_socket.sendall(message.encode())
+        response_z = client_socket.recv(1024).decode()
+        arr_pos_z = float(response_z)
         pos = position()
         pos.x = 90.0
         pos.y = - 220.0
-        pos.z = 50.0
+        pos.z = arr_pos_z
         self.pub1.publish(pos)
         pos.z = -130.0
         rospy.sleep(0.3)
@@ -569,18 +581,36 @@ class GraspObject():
 
     # 扫方块一左
     def swap_square_left(self):
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect(('localhost', 8801))
+        message = 'get_pos_y'
+        client_socket.sendall(message.encode())
+        response_z = client_socket.recv(1024).decode()
+        arr_pos_z = float(response_z)
         pos = position()
         pos.x = 90.0
         pos.y = 220.0
+        pos.z = arr_pos_z
+        self.pub1.publish(pos)
         pos.z = - 25.0
+        rospy.sleep(0.3)
         self.pub1.publish(pos)
 
     # 扫方块一右
     def swap_square_right(self):
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect(('localhost', 8801))
+        message = 'get_pos_y'
+        client_socket.sendall(message.encode())
+        response_z = client_socket.recv(1024).decode()
+        arr_pos_z = float(response_z)
         pos = position()
         pos.x = 90.0
         pos.y = - 220.0
+        pos.z = arr_pos_z
+        self.pub1.publish(pos)
         pos.z = - 25.0
+        rospy.sleep(0.3)
         self.pub1.publish(pos)
 
     # 机械臂恢复默认位姿
