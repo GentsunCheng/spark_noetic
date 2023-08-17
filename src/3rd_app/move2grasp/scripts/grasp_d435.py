@@ -109,8 +109,6 @@ class GraspObject():
             # 抓取检测到的物体
             self.grasp()
             status = String()
-            status.data = '0'
-            self.grasp_status_pub.publish(status)
 
         # 释放物体
         if msg.data == '1':
@@ -118,20 +116,15 @@ class GraspObject():
             self.is_found_object = False
             self.release_object()
             status = String()
-            status.data = '1'
-            self.grasp_status_pub.publish(status)
 
         # 关闭气泵
         if msg.data == '58':
             # 放下物体
-            self.is_found_object = False
             self.pub2.publish(0)
             block_mod = 0
             rospy.sleep(0.3)
             self.arm_pose()
             status = String()
-            status.data = '1'
-            self.grasp_status_pub.publish(status)
 
         # 机械臂位姿调整
         if msg.data == '51' or msg.data == '52' or msg.data == '53' or msg.data == '666' or msg.data == '55':
@@ -152,46 +145,33 @@ class GraspObject():
                 mod = 666
             self.arm_pose()
             status = String()
-            status.data = '403'
-            self.grasp_status_pub.publish(status)
 
         # 备选方案
         if msg.data == '200':
-            self.is_found_object = False
             self.spare_plan()
             status = String()
-            status.data = '0'
-            self.grasp_status_pub.publish(status)
 
         # 扫方块
         if msg.data == '114':
-            self.is_found_object = False
             self.swap_left()
             status = String()
-            status.data = '0'
-            self.grasp_status_pub.publish(status)
 
         if msg.data == '514':
-            self.is_found_object = False
             self.swap_right()
             status = String()
-            status.data = '0'
-            self.grasp_status_pub.publish(status)
 
         # 扫方块一
         if msg.data == '1141':
-            self.is_found_object = False
             self.swap_square_left()
             status = String()
-            status.data = '0'
-            self.grasp_status_pub.publish(status)
 
         if msg.data == '5141':
-            self.is_found_object = False
             self.swap_square_right()
             status = String()
-            status.data = '0'
-            self.grasp_status_pub.publish(status)
+
+        # middle
+        if msg.data == 'mid':
+            self.middle()
 
         # 第四关节左转
         if msg.data == '41':
@@ -206,19 +186,15 @@ class GraspObject():
 
         # 机械臂归位
         if msg.data == '403':
-            self.is_found_object = False
             times = 0
             steps = 0
             angle = 90.0
             self.default_arm()
             self.forth_pose()
             status = String()
-            status.data = '403'
-            self.grasp_status_pub.publish(status)
 
         # 机械臂重置
         if msg.data == '404':
-            self.is_found_object = False
             block_mod = 0
             times = 0
             steps = 0
@@ -226,8 +202,6 @@ class GraspObject():
             self.reset_pub.publish(1)
             self.forth_pose()
             status = String()
-            status.data = '403'
-            self.grasp_status_pub.publish(status)
 
     # 执行抓取
     def grasp(self):
@@ -362,7 +336,6 @@ class GraspObject():
         # 判断是否找到轮廓
         if len(contours) == 0:
             self.is_have_object = False
-            self.is_found_object = False
             self.found_count = 0
         else:
             self.is_have_object = True
@@ -467,6 +440,15 @@ class GraspObject():
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
+
+    # middle
+    def middle(self):
+        pos = position()
+        pos.x = 250.0
+        pos.y = 0.0
+        pos.z = 90.0
+        self.pub1.publish(pos)
+        rospy.sleep(0.5)
 
     # 机械臂位姿调整
     def arm_pose(self):
