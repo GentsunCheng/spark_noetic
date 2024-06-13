@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+ #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -7,6 +7,7 @@ import rospy
 import math
 import cmath
 import cv2
+import yolov5
 import numpy as np
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
@@ -15,6 +16,80 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from spark_carry_object.msg import *
 
+
+import platform
+import pathlib
+plt = platform.system()
+if plt != 'Windows':
+  pathlib.WindowsPath = pathlib.PosixPath
+
+
+class spark_detect:
+    class __results__:
+        def __init__(self):
+            self.name = []
+            self.x = []
+            self.y = []
+            self.confidence = []
+            self.image = None
+
+    def __init__(self, model_path):
+        '''
+        初始化YOLOv5检测器
+        :param model_path: YOLOv5模型文件路径
+        '''
+        try:
+            self.model = yolov5.load(model_path)
+        except Exception as e:
+            print("加载模型失败:", e)
+        self.is_detecting = False
+
+    def detect(self, image):
+        '''
+        检测图像中的物体
+        :param image: 输入图像
+        :return: 结果类结构
+                  result.name: 物体名称列表
+                  result.x: 物体中心点x坐标列表
+                  result.y: 物体中心点y坐标列表
+                  result.confidence: 物体置信度列表
+                  result.image: 检测后的图像
+        '''
+        while self.is_detecting:
+            time.sleep(0.5)
+        results = self.model(image, augment=True)
+        self.is_detecting = True
+
+        # 存储检测结果的列表
+        result = self.__results__()
+
+        # 遍历检测结果
+        try:
+            for *xyxy, conf, cls in results.xyxy[0]:
+                label = f'{self.model.model.names[int(cls)]} {conf:.2f}'
+                # 画出矩形框
+                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 2)
+                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+
+                # 计算中心点坐标
+                center_x = int((xyxy[0] + xyxy[2]) / 2)
+                center_y = int((xyxy[1] + xyxy[3]) / 2)
+                # 画出中心点
+                cv2.circle(image, (center_x, center_y), 5, (255, 0, 0), -1)
+
+                # 存储中心点坐标,物体名称,置信度和图像
+                result.name.append(self.model.model.names[int(cls)])
+                result.x.append(center_x)
+                result.y.append(center_y)
+                result.confidence.append(float(conf))
+
+            result.image = image
+        except Exception as e:
+            print("未检测到物体:", e)
+
+        self.is_detecting = False
+
+        return result
 
 class GraspObject():
     '''
@@ -32,6 +107,7 @@ class GraspObject():
         auto_mod = 0
         mod = 0
         block_mod = 0
+        self.detector = spark_detect("~/spark_noetic/vegetable.pt")
         self.xc = 0
         self.yc = 0
         self.xc_prev = 0
@@ -83,6 +159,37 @@ class GraspObject():
             # 订阅摄像头话题,对图像信息进行处理
             self.sub = rospy.Subscriber(
                 "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
+            self.is_found_object = False
+            rate = rospy.Rate(10)
+            times = 0
+            steps = 0
+            while not self.is_found_object:
+                rate.sleep()
+                times += 1
+                # 转圈没有发现可抓取物体,退出抓取
+                if steps >= 2:
+                    self.sub.unregister()
+                    print("stop grasp\n")
+                    status = String()
+                    status.data = '-1'
+                    self.grasp_status_pub.publish(status)
+                    return
+                # 旋转一定角度扫描是否有可供抓取的物体
+                if times >= 30:
+                    times = 0
+                    steps += 1
+                    print("not found\n")
+            print("unregisting sub\n")
+            self.sub.unregister()
+            print("unregisted sub\n")
+            # 抓取检测到的物体
+            self.grasp()
+            status = String()
+
+        # 抓取蔬菜
+        if msg.data == '0v':
+            self.sub = rospy.Subscriber(
+                "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
             self.is_found_object = False
             rate = rospy.Rate(10)
             times = 0
@@ -403,6 +510,41 @@ class GraspObject():
                     self.found_count = 0
         self.xc_prev = xc
         self.yc_prev = yc
+
+    # 抓取蔬菜方块
+    def veg_detect(self, data):
+        # 使用 opencv 处理
+        try:
+            # 将ROS图像消息转换为OpenCV图像格式
+            cv_image_bgr  = CvBridge().imgmsg_to_cv2(data, "bgr8")
+            cv_image_rgb = cv2.cvtColor(cv_image_bgr, cv2.COLOR_BGR2RGB)
+        except CvBridgeError as e:
+            print('CvBridge Error:', e)
+            return
+
+        result = self.detector(cv_image_rgb)
+
+        # 获取图像的宽度和高度
+        height, width, _ = cv_image_rgb.shape
+        center_x = width // 2  # 图像底边中心的x坐标
+        bottom_y = height  # 图像底边的y坐标
+
+        min_distance = float('inf')
+        closest_x = None
+        closest_y = None
+
+        # 遍历所有检测到的物体，找出距离底边中心最近的物体
+        for x, y in zip(result.x, result.y):
+            distance = np.sqrt((x - center_x) ** 2 + (y - bottom_y) ** 2)
+            if distance < min_distance:
+                min_distance = distance
+                closest_x = x
+                closest_y = y
+
+        if closest_x is not None and closest_y is not None:
+            self.xc_prev = closest_x
+            self.yc_prev = closest_y
+        
 
     # 释放物体
     def release_object(self):
