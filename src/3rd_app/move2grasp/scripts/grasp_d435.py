@@ -155,13 +155,12 @@ class GraspObject():
         self.is_found_object = False
         # 抓取物体
         if msg.data == '0' or msg.data == '0v':
+            auto_mod = 1
             if msg.data == '0':
-                auto_mod = 1
                 # 订阅摄像头话题,对图像信息进行处理
                 self.sub = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
             if msg.data == '0v':
-                auto_mod = 1
                 self.sub = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
 
