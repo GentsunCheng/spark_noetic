@@ -56,7 +56,7 @@ class spark_detect:
                   result.image: 检测后的图像
         '''
         while self.is_detecting:
-            time.sleep(0.5)
+            rospy.sleep(0.5)
         results = self.model(image, augment=True)
         self.is_detecting = True
 
@@ -107,7 +107,7 @@ class GraspObject():
         auto_mod = 0
         mod = 0
         block_mod = 0
-        self.detector = spark_detect("~/spark_noetic/vegetable.pt")
+        self.detector = spark_detect("/home/spark/spark_noetic/vegetable.pt")
         self.xc = 0
         self.yc = 0
         self.xc_prev = 0
