@@ -1,4 +1,4 @@
- #!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -152,45 +152,19 @@ class GraspObject():
 
     def grasp_cp(self, msg):
         global mod, block_mod, angle, auto_mod
+        self.is_found_object = False
         # 抓取物体
-        if msg.data == '0' or msg.data == '0a':
-            if msg.data == '0a':
+        if msg.data == '0' or msg.data == '0v':
+            if msg.data == '0':
                 auto_mod = 1
-            # 订阅摄像头话题,对图像信息进行处理
-            self.sub = rospy.Subscriber(
-                "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
-            self.is_found_object = False
-            rate = rospy.Rate(10)
-            times = 0
-            steps = 0
-            while not self.is_found_object:
-                rate.sleep()
-                times += 1
-                # 转圈没有发现可抓取物体,退出抓取
-                if steps >= 2:
-                    self.sub.unregister()
-                    print("stop grasp\n")
-                    status = String()
-                    status.data = '-1'
-                    self.grasp_status_pub.publish(status)
-                    return
-                # 旋转一定角度扫描是否有可供抓取的物体
-                if times >= 30:
-                    times = 0
-                    steps += 1
-                    print("not found\n")
-            print("unregisting sub\n")
-            self.sub.unregister()
-            print("unregisted sub\n")
-            # 抓取检测到的物体
-            self.grasp()
-            status = String()
+                # 订阅摄像头话题,对图像信息进行处理
+                self.sub = rospy.Subscriber(
+                    "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
+            if msg.data == '0v':
+                auto_mod = 1
+                self.sub = rospy.Subscriber(
+                    "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
 
-        # 抓取蔬菜
-        if msg.data == '0v':
-            self.sub = rospy.Subscriber(
-                "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
-            self.is_found_object = False
             rate = rospy.Rate(10)
             times = 0
             steps = 0
@@ -199,7 +173,6 @@ class GraspObject():
                 times += 1
                 # 转圈没有发现可抓取物体,退出抓取
                 if steps >= 2:
-                    self.sub.unregister()
                     print("stop grasp\n")
                     status = String()
                     status.data = '-1'
@@ -211,8 +184,6 @@ class GraspObject():
                     steps += 1
                     print("not found\n")
             print("unregisting sub\n")
-            self.sub.unregister()
-            print("unregisted sub\n")
             # 抓取检测到的物体
             self.grasp()
             status = String()
@@ -339,12 +310,12 @@ class GraspObject():
         # 物体所在坐标+标定误差
         pos.x = a[0] * self.yc_prev + a[1]
         pos.y = b[0] * self.xc_prev + b[1]
-        pos.z = -25
+        pos.z = -25.0
         print("z = -25\n")
         self.pub1.publish(pos)
         r2.sleep()
 
-        pos.z = -50
+        pos.z = -50.0
         self.pub1.publish(pos)
         print("z = -50\n")
 
@@ -508,6 +479,7 @@ class GraspObject():
                     self.found_count = self.found_count + 1
                 else:
                     self.found_count = 0
+
         self.xc_prev = xc
         self.yc_prev = yc
 
@@ -522,7 +494,7 @@ class GraspObject():
             print('CvBridge Error:', e)
             return
 
-        result = self.detector(cv_image_rgb)
+        result = self.detector.detect(cv_image_rgb)
 
         # 获取图像的宽度和高度
         height, width, _ = cv_image_rgb.shape
@@ -542,6 +514,7 @@ class GraspObject():
                 closest_y = y
 
         if closest_x is not None and closest_y is not None:
+            self.is_found_object = True
             self.xc_prev = closest_x
             self.yc_prev = closest_y
         
