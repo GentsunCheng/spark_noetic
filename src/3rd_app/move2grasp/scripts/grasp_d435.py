@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import json
 import socket
 import rospy
 import math
@@ -106,8 +107,6 @@ class GraspObject():
         self.mod = 0
         self.block_mod = 0
         self.detector = spark_detect("/home/spark/spark_noetic/vegetable.pt")
-        self.xc = 0
-        self.yc = 0
         self.xc_prev = 0
         self.yc_prev = 0
         self.found_count = 0
@@ -115,9 +114,9 @@ class GraspObject():
         self.is_found_object = False
         self.object_union = []
         self.last_object_union = []
-        # self.sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
+
         # 订阅机械臂抓取指令
-        self.sub2 = rospy.Subscriber(
+        self.sub = rospy.Subscriber(
             '/grasp', String, self.grasp_cp, queue_size=10)
         # 发布机械臂位姿
         self.pub1 = rospy.Publisher(
@@ -155,10 +154,10 @@ class GraspObject():
             self.is_found_object = False
             if msg.data == '0':
                 # 订阅摄像头话题,对图像信息进行处理
-                self.sub = rospy.Subscriber(
+                self.sub1 = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
-            if msg.data == '0v':
-                self.sub = rospy.Subscriber(
+            elif msg.data == '0v':
+                self.sub1 = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
 
             rate = rospy.Rate(10)
@@ -178,14 +177,14 @@ class GraspObject():
             status = String()
 
         # 释放物体
-        if msg.data == '1':
+        elif msg.data == '1':
             # 放下物体
             self.is_found_object = False
             self.release_object()
             status = String()
 
         # 关闭气泵
-        if msg.data == '58':
+        elif msg.data == '58':
             # 放下物体
             self.is_found_object = False
             self.pub2.publish(0)
@@ -195,7 +194,7 @@ class GraspObject():
             status = String()
 
         # 机械臂位姿调整
-        if msg.data == '51' or msg.data == '52' or msg.data == '53' or msg.data == '666' or msg.data == '55':
+        elif msg.data == '51' or msg.data == '52' or msg.data == '53' or msg.data == '666' or msg.data == '55':
             self.is_found_object = False
             if msg.data == '51':
                 self.mod = 0
@@ -215,45 +214,45 @@ class GraspObject():
             status = String()
 
         # 备选方案
-        if msg.data == '200':
+        elif msg.data == '200':
             self.spare_plan()
             status = String()
 
         # 扫方块
-        if msg.data == '114':
+        elif msg.data == '114':
             self.swap_left()
             status = String()
 
-        if msg.data == '514':
+        elif msg.data == '514':
             self.swap_right()
             status = String()
 
         # 扫方块一
-        if msg.data == '1141':
+        elif msg.data == '1141':
             self.swap_square_left()
             status = String()
 
-        if msg.data == '5141':
+        elif msg.data == '5141':
             self.swap_square_right()
             status = String()
 
         # middle
-        if msg.data == 'mid':
+        elif msg.data == 'mid':
             self.middle()
 
         # 第四关节左转
-        if msg.data == '41':
+        elif msg.data == '41':
             if self.angle < 180.0:
                 self.angle = self.angle + 3.0
                 self.forth_pose()
         # 第四关节右转
-        if msg.data == '43':
+        elif msg.data == '43':
             if self.angle > 0.0:
                 self.angle = self.angle - 3.0
                 self.forth_pose()
 
         # 机械臂归位
-        if msg.data == '403':
+        elif msg.data == '403':
             times = 0
             steps = 0
             self.angle = 90.0
@@ -262,7 +261,7 @@ class GraspObject():
             status = String()
 
         # 机械臂重置
-        if msg.data == '404':
+        elif msg.data == '404':
             self.block_mod = 0
             times = 0
             steps = 0
@@ -270,6 +269,19 @@ class GraspObject():
             self.reset_pub.publish(1)
             self.forth_pose()
             status = String()
+
+        else:
+            try:
+                oprate = json.loads(msg.data)
+                if oprate["cmd"] == "catch":
+                    self.xc_prev, self.yc_prev = oprate["x"], oprate["y"]
+                    self.auto_mod = 0
+                    self.grasp()
+                    status = String()
+            except:
+                print("未知指令")
+                pass
+                
 
     # 执行抓取
     def grasp(self):
@@ -282,16 +294,10 @@ class GraspObject():
         file_pix.close()
         print(s)
         arr = s.split()
-        a1 = arr[0]
-        a2 = arr[1]
-        a3 = arr[2]
-        a4 = arr[3]
-        a = [0]*2
-        b = [0]*2
-        a[0] = float(a1)
-        a[1] = float(a2)
-        b[0] = float(a3)
-        b[1] = float(a4)
+        a1, a2, a3, a4 = arr[0], arr[1], arr[2], arr[3]
+        a, b = [0]*2, [0]*2
+        a[0], a[1] = float(a1), float(a2)
+        b[0], b[1] = float(a3), float(a4)
         print('k and b value:', a[0], a[1], b[0], b[1])
         r2 = rospy.Rate(10)
         pos = position()
@@ -314,16 +320,13 @@ class GraspObject():
         # 提起物体
         pos.y = 0.0
         if self.auto_mod == 1:
-            pos.x = 140.0
-            pos.z = 150.0
+            pos.x, pos.z = 140.0, 150.0
         else:
-            pos.x = 250.0
-            pos.z = 75.0
+            pos.x, pos.z = 250.0, 75.0
         self.pub1.publish(pos)
         self.mod = 1
         self.auto_mod = 0
-        self.xc_prev = 0
-        self.yc_prev = 0
+        self.xc_prev, self.yc_prev = 0, 0
 
     # 使用CV检测物体
     def image_cb(self, data):
@@ -451,8 +454,7 @@ class GraspObject():
                 if p < p_min:
                     index = index + 1
                     p_min = p
-                    xc = x_mid
-                    yc = y_mid
+                    xc, yc = x_mid, y_mid
             # 按抓取长度小到大排序
             self.object_union.sort(key=lambda x: x[0])
 
@@ -470,8 +472,7 @@ class GraspObject():
                 else:
                     self.found_count = 0
 
-        self.xc_prev = xc
-        self.yc_prev = yc
+        self.xc_prev, self.yc_prev = xc, yc
 
     # 抓取蔬菜方块
     def veg_detect(self, data):
@@ -504,8 +505,7 @@ class GraspObject():
                 closest_y = y
 
         if closest_x is not None and closest_y is not None:
-            self.xc_prev = closest_x
-            self.yc_prev = closest_y
+            self.xc_prev, self.yc_prev = closest_x, closest_y
             self.is_found_object = True
         
 
@@ -548,9 +548,7 @@ class GraspObject():
     # middle
     def middle(self):
         pos = position()
-        pos.x = 250.0
-        pos.y = 0.0
-        pos.z = 90.0
+        pos.x, pos.y, pos.z = 250.0, 0.0, 90.0
         self.pub1.publish(pos)
         rospy.sleep(0.5)
 
@@ -567,8 +565,7 @@ class GraspObject():
         client_socket.close()
         arr_pos = float(response)
         # go forward
-        pos.x = 250.0
-        pos.y = int(arr_pos)
+        pos.x, pos.y = 250.0, int(arr_pos)
         if self.block_mod:
             if self.mod == 0:
                 pos.z = -50.0
@@ -584,8 +581,7 @@ class GraspObject():
             elif self.mod == 2:
                 pos.z = 175.0
         if self.mod == 666:
-            pos.x = 220.0
-            pos.z = -130.0
+            pos.x, pos.z = 220.0, -130.0
         self.pub1.publish(pos)
         rospy.sleep(0.5)
 
@@ -609,11 +605,9 @@ class GraspObject():
         message = 'disconnect'
         client_socket.sendall(message.encode())
         client_socket.close()
-        arr_pos_y = float(response_y)
-        arr_pos_z = float(response_z)
+        arr_pos_y, arr_pos_z = float(response_y), float(response_z)
         # go forward
-        pos.x = 250.0
-        pos.y = int(arr_pos_y)
+        pos.x, pos.y = 250.0, int(arr_pos_y)
         if self.block_mod:
             pos.z = int(arr_pos_z)
         else:
@@ -623,60 +617,42 @@ class GraspObject():
         self.pub2.publish(1)
         rospy.sleep(0.5)
         # 提起物体
-        pos.x = 250.0
-        pos.y = int(arr_pos_y)
-        pos.z = int(arr_pos_z)
+        pos.x, pos.y, pos.z = 250.0, int(arr_pos_y), int(arr_pos_z)
         self.pub1.publish(pos)
 
     # 扫方块左
     def swap_left(self):
         pos = position()
-        pos.x = 250.0
-        pos.y = 0.0
-        pos.z = 75.0
+        pos.x, pos.y, pos.z = 250.0, 0.0, 75.0
         self.pub1.publish(pos)
-        pos.x = 90.0
-        pos.y = 220.0
-        pos.z = -130.0
+        pos.x, pos.y, pos.z = 90.0, 220.0, -130.0
         rospy.sleep(0.5)
         self.pub1.publish(pos)
 
     # 扫方块右
     def swap_right(self):
         pos = position()
-        pos.x = 250.0
-        pos.y = 0.0
-        pos.z = 75.0
+        pos.x, pos.y, pos.z = 250.0, 0.0, 75.0
         self.pub1.publish(pos)
-        pos.x = 90.0
-        pos.y = - 220.0
-        pos.z = - 130.0
+        pos.x, pos.y, pos.z = 90.0, -220.0, -130.0
         rospy.sleep(0.5)
         self.pub1.publish(pos)
 
     # 扫方块一左
     def swap_square_left(self):
         pos = position()
-        pos.x = 250.0
-        pos.y = 0.0
-        pos.z = 120.0
+        pos.x, pos.y, pos.z = 250.0, 0.0, 120.0
         self.pub1.publish(pos)
-        pos.x = 90.0
-        pos.y = 220.0
-        pos.z = - 25.0
+        pos.x, pos.y, pos.z = 90.0, 220.0, -25.0
         rospy.sleep(0.5)
         self.pub1.publish(pos)
 
     # 扫方块一右
     def swap_square_right(self):
         pos = position()
-        pos.x = 250.0
-        pos.y = 0.0
-        pos.z = 120.0
+        pos.x, pos.y, pos.z = 250.0, 0.0, 120.0
         self.pub1.publish(pos)
-        pos.x = 90.0
-        pos.y = - 220.0
-        pos.z = - 25.0
+        pos.x, pos.y, pos.z = 90.0, -220.0, -25.0
         rospy.sleep(0.5)
         self.pub1.publish(pos)
 
@@ -685,9 +661,7 @@ class GraspObject():
         pos = position()
         r2 = rospy.Rate(1)
         rotate = angle4th()
-        pos.x = 110.0
-        pos.y = 0.0
-        pos.z = 35.0
+        pos.x, pos.y, pos.z = 110.0, 0.0, 35.0
         rotate.angle4th = 90
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
