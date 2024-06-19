@@ -56,4 +56,6 @@
 		<node pkg="move2grasp" type="grasp_pro_new.py" name="grasp" />
 	</group>
 
+	<include file="$(find move2grasp)/launch/web_video_server.launch" />
+
 </launch>
