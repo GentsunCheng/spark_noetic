@@ -100,13 +100,11 @@ class GraspObject():
         '''
         初始化
         '''
-
-        global xc, yc, xc_prev, yc_prev, found_count, angle, debug_mod, mod, block_mod, auto_mod
-        angle = 90.0
-        debug_mod = 0
-        auto_mod = 0
-        mod = 0
-        block_mod = 0
+        
+        self.angle = 90.0
+        self.auto_mod = 0
+        self.mod = 0
+        self.block_mod = 0
         self.detector = spark_detect("/home/spark/spark_noetic/vegetable.pt")
         self.xc = 0
         self.yc = 0
@@ -151,11 +149,10 @@ class GraspObject():
         self.pub1.publish(pos)
 
     def grasp_cp(self, msg):
-        global mod, block_mod, angle, auto_mod
-        self.is_found_object = False
         # 抓取物体
         if msg.data == '0' or msg.data == '0v':
-            auto_mod = 1
+            self.auto_mod = 1
+            self.is_found_object = False
             if msg.data == '0':
                 # 订阅摄像头话题,对图像信息进行处理
                 self.sub = rospy.Subscriber(
@@ -176,14 +173,7 @@ class GraspObject():
                     status = String()
                     status.data = '-1'
                     self.grasp_status_pub.publish(status)
-                    return
-                # 旋转一定角度扫描是否有可供抓取的物体
-                if times >= 30:
-                    times = 0
-                    steps += 1
-                    print("not found\n")
-            print("unregisting sub\n")
-            # 抓取检测到的物体
+                    return None
             self.grasp()
             status = String()
 
@@ -197,8 +187,9 @@ class GraspObject():
         # 关闭气泵
         if msg.data == '58':
             # 放下物体
+            self.is_found_object = False
             self.pub2.publish(0)
-            block_mod = 0
+            self.block_mod = 0
             rospy.sleep(0.3)
             self.arm_pose()
             status = String()
@@ -207,19 +198,19 @@ class GraspObject():
         if msg.data == '51' or msg.data == '52' or msg.data == '53' or msg.data == '666' or msg.data == '55':
             self.is_found_object = False
             if msg.data == '51':
-                mod = 0
+                self.mod = 0
             elif msg.data == '52':
-                mod = 1
+                self.mod = 1
             elif msg.data == '53':
-                mod = 2
+                self.mod = 2
             elif msg.data == '55':
-                if block_mod:
-                    block_mod = 0
+                if self.block_mod:
+                    self.block_mod = 0
                 else:
-                    block_mod = 1
+                    self.block_mod = 1
             elif msg.data == '666':
-                block_mod = 0
-                mod = 666
+                self.block_mod = 0
+                self.mod = 666
             self.arm_pose()
             status = String()
 
@@ -252,39 +243,37 @@ class GraspObject():
 
         # 第四关节左转
         if msg.data == '41':
-            if angle < 180.0:
-                angle = angle + 3.0
+            if self.angle < 180.0:
+                self.angle = self.angle + 3.0
                 self.forth_pose()
         # 第四关节右转
         if msg.data == '43':
-            if angle > 0.0:
-                angle = angle - 3.0
+            if self.angle > 0.0:
+                self.angle = self.angle - 3.0
                 self.forth_pose()
 
         # 机械臂归位
         if msg.data == '403':
             times = 0
             steps = 0
-            angle = 90.0
+            self.angle = 90.0
             self.default_arm()
             self.forth_pose()
             status = String()
 
         # 机械臂重置
         if msg.data == '404':
-            block_mod = 0
+            self.block_mod = 0
             times = 0
             steps = 0
-            angle = 90.0
+            self.angle = 90.0
             self.reset_pub.publish(1)
             self.forth_pose()
             status = String()
 
     # 执行抓取
     def grasp(self):
-        global mod, auto_mod
         print("start to grasp\n")
-        global found_count
         # stop function
 
         filename = os.environ['HOME'] + "/thefile.txt"
@@ -324,19 +313,20 @@ class GraspObject():
 
         # 提起物体
         pos.y = 0.0
-        if auto_mod == 1:
+        if self.auto_mod == 1:
             pos.x = 140.0
             pos.z = 150.0
         else:
             pos.x = 250.0
             pos.z = 75.0
         self.pub1.publish(pos)
-        mod = 1
-        auto_mod = 0
+        self.mod = 1
+        self.auto_mod = 0
+        self.xc_prev = 0
+        self.yc_prev = 0
 
     # 使用CV检测物体
     def image_cb(self, data):
-        global xc, yc, xc_prev, yc_prev, found_count
         # 使用 opencv 处理
         try:
             # 将ROS图像消息转换为OpenCV图像格式
@@ -396,7 +386,7 @@ class GraspObject():
 
         # 寻找前景区域
         dist_transform = cv2.distanceTransform(cv_image5, cv2.DIST_L2, 5)
-        ret, sure_fg = cv2.threshold(
+        _, sure_fg = cv2.threshold(
             dist_transform, 0.5 * dist_transform.max(), 255, 0)
 
         # 形态学操作，找到未知区域
@@ -407,8 +397,10 @@ class GraspObject():
         sure_fg = cv2.dilate(sure_fg, None, iterations=4)
 
         # 寻找轮廓
-        contours, hier = cv2.findContours(
+        contours, _ = cv2.findContours(
             sure_fg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+        xc, yc = 0, 0
 
         # 判断是否找到轮廓
         if len(contours) == 0:
@@ -419,7 +411,7 @@ class GraspObject():
             index = -1
             p_min = 10000
             self.object_union.clear()
-            for i, c in enumerate(contours):
+            for _, c in enumerate(contours):
                 rect = cv2.minAreaRect(c)
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
@@ -467,8 +459,7 @@ class GraspObject():
             if self.found_count >= 30:
                 self.found_count = 0
                 self.is_found_object = True
-                self.xc = xc
-                self.yc = yc
+
             else:
                 # 如果物体没有移动
                 if index == -1:
@@ -513,14 +504,13 @@ class GraspObject():
                 closest_y = y
 
         if closest_x is not None and closest_y is not None:
-            self.is_found_object = True
             self.xc_prev = closest_x
             self.yc_prev = closest_y
+            self.is_found_object = True
         
 
     # 释放物体
     def release_object(self):
-        global block_mod
         rotate = angle4th()
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -539,15 +529,15 @@ class GraspObject():
         rotate.angle4th = 90
         pos.x = 250.0
         pos.y = int(arr_pos_y)
-        if block_mod:
+        if self.block_mod:
             pos.z = int(arr_pos_z)
         else:
             pos.z = int(arr_pos_z) - 25.0
         self.pub1.publish(pos)
         rospy.sleep(0.5)
         self.pub2.publish(0)
-        if block_mod:
-            block_mod = 0
+        if self.block_mod:
+            self.block_mod = 0
             pos.z = int(arr_pos_z) + 25.0
         else:
             pos.z = int(arr_pos_z)
@@ -566,7 +556,6 @@ class GraspObject():
 
     # 机械臂位姿调整
     def arm_pose(self):
-        global mod, block_mod
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect(('localhost', 8801))
@@ -580,21 +569,21 @@ class GraspObject():
         # go forward
         pos.x = 250.0
         pos.y = int(arr_pos)
-        if block_mod:
-            if mod == 0:
+        if self.block_mod:
+            if self.mod == 0:
                 pos.z = -50.0
-            elif mod == 1:
+            elif self.mod == 1:
                 pos.z = 50.0
-            elif mod == 2:
+            elif self.mod == 2:
                 pos.z = 150.0
         else:
-            if mod == 0:
+            if self.mod == 0:
                 pos.z = -25.0
-            elif mod == 1:
+            elif self.mod == 1:
                 pos.z = 75.0
-            elif mod == 2:
+            elif self.mod == 2:
                 pos.z = 175.0
-        if mod == 666:
+        if self.mod == 666:
             pos.x = 220.0
             pos.z = -130.0
         self.pub1.publish(pos)
@@ -602,14 +591,12 @@ class GraspObject():
 
     # 第四关节调整
     def forth_pose(self):
-        global angle
         rotate = angle4th()
-        rotate.angle4th = angle
+        rotate.angle4th = self.angle
         self.angle4th_pub.publish(rotate)
 
     # 备选方案
     def spare_plan(self):
-        global block_mod
         pos = position()
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect(('localhost', 8801))
@@ -627,7 +614,7 @@ class GraspObject():
         # go forward
         pos.x = 250.0
         pos.y = int(arr_pos_y)
-        if block_mod:
+        if self.block_mod:
             pos.z = int(arr_pos_z)
         else:
             pos.z = int(arr_pos_z) - 25.0

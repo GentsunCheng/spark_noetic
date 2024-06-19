@@ -263,7 +263,7 @@ Visualization Manager:
       Marker Topic: /draw_direction
       Name: Marker_direction
       Namespaces:
-        line: true
+        {}
       Queue Size: 10
       Value: true
     - Class: rviz/Marker
@@ -271,7 +271,7 @@ Visualization Manager:
       Marker Topic: /draw_step
       Name: Marker_step
       Namespaces:
-        line: true
+        {}
       Queue Size: 10
       Value: true
     - Class: rviz/Marker
@@ -279,7 +279,7 @@ Visualization Manager:
       Marker Topic: /draw_set
       Name: Marker_set
       Namespaces:
-        line: true
+        {}
       Queue Size: 10
       Value: true
     - Class: rviz/Marker
@@ -287,7 +287,7 @@ Visualization Manager:
       Marker Topic: /draw_grasp
       Name: Marker_grasp
       Namespaces:
-        line: true
+        {}
       Queue Size: 10
       Value: true
     - Class: rviz/Marker
@@ -295,7 +295,7 @@ Visualization Manager:
       Marker Topic: /draw_handle
       Name: Marker_handle
       Namespaces:
-        line: true
+        {}
       Queue Size: 120
       Value: true
   Enabled: true
@@ -318,7 +318,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 8.678970336914062
+      Distance: 3.8033556938171387
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -326,17 +326,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 5.762896537780762
-        Y: 0.6130630373954773
+        X: 0.876045823097229
+        Y: -0.9643505811691284
         Z: -8.940694442571839e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 1.5647963285446167
       Target Frame: map
-      Yaw: 4.717704772949219
+      Yaw: 1.1276969909667969
     Saved: ~
 Window Geometry:
   Displays:
