@@ -114,6 +114,8 @@ class GraspObject():
         self.is_found_object = False
         self.object_union = []
         self.last_object_union = []
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect(('localhost', 8801))
 
         # 订阅机械臂抓取指令
         self.sub = rospy.Subscriber(
@@ -513,17 +515,14 @@ class GraspObject():
     def release_object(self):
         rotate = angle4th()
         pos = position()
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect(('localhost', 8801))
         message = 'get_pos_y'
-        client_socket.sendall(message.encode())
-        response_y = client_socket.recv(1024).decode()
+        self.client_socket.sendall(message.encode())
+        response_y = self.client_socket.recv(1024).decode()
         message = 'get_pos_z'
-        client_socket.sendall(message.encode())
-        response_z = client_socket.recv(1024).decode()
+        self.client_socket.sendall(message.encode())
+        response_z = self.client_socket.recv(1024).decode()
         message = 'disconnect'
-        client_socket.sendall(message.encode())
-        client_socket.close()
+        self.client_socket.sendall(message.encode())
         arr_pos_y = float(response_y)
         arr_pos_z = float(response_z)
         rotate.angle4th = 90
@@ -555,14 +554,11 @@ class GraspObject():
     # 机械臂位姿调整
     def arm_pose(self):
         pos = position()
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect(('localhost', 8801))
         message = 'get_pos_y'
-        client_socket.sendall(message.encode())
-        response = client_socket.recv(1024).decode()
+        self.client_socket.sendall(message.encode())
+        response = self.client_socket.recv(1024).decode()
         message = 'disconnect'
-        client_socket.sendall(message.encode())
-        client_socket.close()
+        self.client_socket.sendall(message.encode())
         arr_pos = float(response)
         # go forward
         pos.x, pos.y = 250.0, int(arr_pos)
@@ -594,17 +590,14 @@ class GraspObject():
     # 备选方案
     def spare_plan(self):
         pos = position()
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect(('localhost', 8801))
         message = 'get_pos_y'
-        client_socket.sendall(message.encode())
-        response_y = client_socket.recv(1024).decode()
+        self.client_socket.sendall(message.encode())
+        response_y = self.client_socket.recv(1024).decode()
         message = 'get_pos_z'
-        client_socket.sendall(message.encode())
-        response_z = client_socket.recv(1024).decode()
+        self.client_socket.sendall(message.encode())
+        response_z = self.client_socket.recv(1024).decode()
         message = 'disconnect'
-        client_socket.sendall(message.encode())
-        client_socket.close()
+        self.client_socket.sendall(message.encode())
         arr_pos_y, arr_pos_z = float(response_y), float(response_z)
         # go forward
         pos.x, pos.y = 250.0, int(arr_pos_y)
