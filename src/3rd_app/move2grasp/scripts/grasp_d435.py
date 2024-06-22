@@ -521,8 +521,6 @@ class GraspObject():
         message = 'get_pos_z'
         self.client_socket.sendall(message.encode())
         response_z = self.client_socket.recv(1024).decode()
-        message = 'disconnect'
-        self.client_socket.sendall(message.encode())
         arr_pos_y = float(response_y)
         arr_pos_z = float(response_z)
         rotate.angle4th = 90
@@ -557,8 +555,6 @@ class GraspObject():
         message = 'get_pos_y'
         self.client_socket.sendall(message.encode())
         response = self.client_socket.recv(1024).decode()
-        message = 'disconnect'
-        self.client_socket.sendall(message.encode())
         arr_pos = float(response)
         # go forward
         pos.x, pos.y = 250.0, int(arr_pos)
@@ -596,8 +592,6 @@ class GraspObject():
         message = 'get_pos_z'
         self.client_socket.sendall(message.encode())
         response_z = self.client_socket.recv(1024).decode()
-        message = 'disconnect'
-        self.client_socket.sendall(message.encode())
         arr_pos_y, arr_pos_z = float(response_y), float(response_z)
         # go forward
         pos.x, pos.y = 250.0, int(arr_pos_y)
