@@ -165,16 +165,22 @@ class GraspObject():
             rate = rospy.Rate(10)
             times = 0
             steps = 0
+            # while not self.is_found_object:
+            #     rate.sleep()
+            #     times += 1
+            #     # 转圈没有发现可抓取物体,退出抓取
+            #     if steps >= 2:
+            #         print("stop grasp\n")
+            #         status = String()
+            #         status.data = '-1'
+            #         self.grasp_status_pub.publish(status)
+            #         return None
             while not self.is_found_object:
                 rate.sleep()
                 times += 1
-                # 转圈没有发现可抓取物体,退出抓取
-                if steps >= 2:
-                    print("stop grasp\n")
-                    status = String()
-                    status.data = '-1'
-                    self.grasp_status_pub.publish(status)
-                    return None
+                if(times>30):
+                    self.sub1.unregister()
+                    return
             self.grasp()
             status = String()
 
@@ -510,7 +516,7 @@ class GraspObject():
             self.xc_prev, self.yc_prev = closest_x, closest_y
             self.is_found_object = True
         
-
+    
     # 释放物体
     def release_object(self):
         rotate = angle4th()
@@ -521,8 +527,8 @@ class GraspObject():
         message = 'get_pos_z'
         self.client_socket.sendall(message.encode())
         response_z = self.client_socket.recv(1024).decode()
-        arr_pos_y = float(response_y)
-        arr_pos_z = float(response_z)
+        arr_pos_y = float(response_y) // 1
+        arr_pos_z = float(response_z) // 1
         rotate.angle4th = 90
         pos.x = 250.0
         pos.y = int(arr_pos_y)
@@ -531,6 +537,7 @@ class GraspObject():
         else:
             pos.z = int(arr_pos_z) - 25.0
         self.pub1.publish(pos)
+        print("坐标",pos.x,pos.y,pos.z)
         rospy.sleep(0.5)
         self.pub2.publish(0)
         if self.block_mod:
@@ -542,7 +549,6 @@ class GraspObject():
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
 
-    # middle
     def middle(self):
         pos = position()
         pos.x, pos.y, pos.z = 250.0, 0.0, 90.0
@@ -555,7 +561,7 @@ class GraspObject():
         message = 'get_pos_y'
         self.client_socket.sendall(message.encode())
         response = self.client_socket.recv(1024).decode()
-        arr_pos = float(response)
+        arr_pos = float(response) // 1
         # go forward
         pos.x, pos.y = 250.0, int(arr_pos)
         if self.block_mod:
@@ -592,7 +598,7 @@ class GraspObject():
         message = 'get_pos_z'
         self.client_socket.sendall(message.encode())
         response_z = self.client_socket.recv(1024).decode()
-        arr_pos_y, arr_pos_z = float(response_y), float(response_z)
+        arr_pos_y, arr_pos_z = float(response_y) // 1, float(response_z) // 1
         # go forward
         pos.x, pos.y = 250.0, int(arr_pos_y)
         if self.block_mod:
