@@ -521,13 +521,10 @@ class GraspObject():
     def release_object(self):
         rotate = angle4th()
         pos = position()
-        message = 'get_pos_y'
-        self.client_socket.sendall(message.encode())
-        response_y = self.client_socket.recv(1024).decode()
         message = 'get_pos_z'
         self.client_socket.sendall(message.encode())
         response_z = self.client_socket.recv(1024).decode()
-        arr_pos_y = float(response_y) // 1
+        arr_pos_y = 0.0
         arr_pos_z = float(response_z) // 1
         rotate.angle4th = 90
         pos.x = 250.0
