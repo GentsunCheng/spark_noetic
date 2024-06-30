@@ -3,7 +3,6 @@
 
 import os
 import json
-import socket
 import rospy
 import math
 import cmath
@@ -22,7 +21,7 @@ import platform
 import pathlib
 plt = platform.system()
 if plt != 'Windows':
-  pathlib.WindowsPath = pathlib.PosixPath
+    pathlib.WindowsPath = pathlib.PosixPath
 
 
 class spark_detect:

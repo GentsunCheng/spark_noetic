@@ -2,10 +2,90 @@
 # -*- coding: utf-8 -*-
 
 import rospy
+import yolov5
 import math
+import cv2
 from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
+
+
+import platform
+import pathlib
+plt = platform.system()
+if plt != 'Windows':
+    pathlib.WindowsPath = pathlib.PosixPath
+
+
+class spark_detect:
+    class __results__:
+        def __init__(self):
+            self.name = []
+            self.x = []
+            self.y = []
+            self.confidence = []
+            self.image = None
+
+    def __init__(self, model_path):
+        '''
+        初始化YOLOv5检测器
+        :param model_path: YOLOv5模型文件路径
+        '''
+        try:
+            self.model = yolov5.load(model_path)
+        except Exception as e:
+            print("加载模型失败:", e)
+        self.is_detecting = False
+
+    def detect(self, image):
+        '''
+        检测图像中的物体
+        :param image: 输入图像
+        :return: 结果类结构
+                  result.name: 物体名称列表
+                  result.x: 物体中心点x坐标列表
+                  result.y: 物体中心点y坐标列表
+                  result.confidence: 物体置信度列表
+                  result.image: 检测后的图像
+        '''
+        while self.is_detecting:
+            rospy.sleep(0.5)
+        results = self.model(image, augment=True)
+        self.is_detecting = True
+
+        # 存储检测结果的列表
+        result = self.__results__()
+
+        # 遍历检测结果
+        try:
+            for *xyxy, conf, cls in results.xyxy[0]:
+                label = f'{self.model.model.names[int(cls)]} {conf:.2f}'
+                # 画出矩形框
+                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 2)
+                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+
+                # 计算中心点坐标
+                center_x = int((xyxy[0] + xyxy[2]) / 2)
+                center_y = int((xyxy[1] + xyxy[3]) / 2)
+                # 画出中心点
+                cv2.circle(image, (center_x, center_y), 5, (255, 0, 0), -1)
+
+                # 存储中心点坐标,物体名称,置信度和图像
+                result.name.append(self.model.model.names[int(cls)])
+                result.x.append(center_x)
+                result.y.append(center_y)
+                result.confidence.append(float(conf))
+
+            result.image = image
+        except Exception as e:
+            print("未检测到物体:", e)
+
+        self.is_detecting = False
+
+        return result
+
 
 class PID:
     def __init__(self, Kp, Ki, Kd):
@@ -112,6 +192,19 @@ class Task:
             self.cmd.angular.z = 0
             self.move_pub.publish(self.cmd)
 
+        def step_pick(self, detector, image):
+            result = detector.detect(image)
+
+            if result.name:
+                # 按照 result.x 的大小排序，并返回对应的 result.name 列表
+                sorted_names = [name for _, name in sorted(zip(result.x, result.name))]
+                return sorted_names
+            else:
+                rospy.loginfo("未检测到物体")
+                return []
+            
+
+
     class PickTask:
         def __init__(self):
             pass
@@ -122,6 +215,20 @@ class Task:
 
     def __init__(self):
         self.init_task = Task.InitTask()
+        self.obj = []
+        self.detector = spark_detect("/home/spark/auto.pt")
+
+    def __pick__(self, data):
+        # 使用 opencv 处理
+        try:
+            # 将ROS图像消息转换为OpenCV图像格式
+            cv_image_bgr  = CvBridge().imgmsg_to_cv2(data, "bgr8")
+            cv_image_rgb = cv2.cvtColor(cv_image_bgr, cv2.COLOR_BGR2RGB)
+        except CvBridgeError as e:
+            print('CvBridge Error:', e)
+            return
+        self.obj = self.init_task.step_pick(self.detector, cv_image_rgb)
+        print(self.obj)
 
     def init(self):
         self.init_task.step_run(0.5)
@@ -138,6 +245,11 @@ class Task:
 
         self.init_task.step_rot(-90)
         print("step_four done")
+        rospy.sleep(0.5)
+
+        self.img_sub = rospy.Subscriber(
+                    "/camera/rgb/image_raw", Image, callback=self.__pick__, queue_size=10)
+        print("step_five done")
         rospy.sleep(0.5)
 
 if __name__ == '__main__':
