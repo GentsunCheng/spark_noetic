@@ -114,8 +114,6 @@ class GraspObject():
         self.is_found_object = False
         self.object_union = []
         self.last_object_union = []
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect(('localhost', 8801))
 
         # 订阅机械臂抓取指令
         self.sub = rospy.Subscriber(
@@ -147,6 +145,7 @@ class GraspObject():
         pos.x = 110.0
         pos.y = 0.0
         pos.z = 35.0
+        self.arr_pos_z = pos.z
         self.pub1.publish(pos)
 
     def grasp_cp(self, msg):
@@ -521,27 +520,21 @@ class GraspObject():
     def release_object(self):
         rotate = angle4th()
         pos = position()
-        message = 'get_pos_z'
-        self.client_socket.sendall(message.encode())
-        response_z = self.client_socket.recv(1024).decode()
-        arr_pos_y = 0.0
-        arr_pos_z = float(response_z) // 1
         rotate.angle4th = 90
-        pos.x = 250.0
-        pos.y = int(arr_pos_y)
+        pos.x, pos.y = 250.0, 0.0
         if self.block_mod:
-            pos.z = int(arr_pos_z)
+            pos.z = self.arr_pos_z
         else:
-            pos.z = int(arr_pos_z) - 25.0
+            pos.z = self.arr_pos_z - 25.0
         self.pub1.publish(pos)
         print("坐标",pos.x,pos.y,pos.z)
         rospy.sleep(0.5)
         self.pub2.publish(0)
         if self.block_mod:
             self.block_mod = 0
-            pos.z = int(arr_pos_z) + 25.0
+            pos.z = self.arr_pos_z + 25.0
         else:
-            pos.z = int(arr_pos_z)
+            pos.z = self.arr_pos_z
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
@@ -555,12 +548,8 @@ class GraspObject():
     # 机械臂位姿调整
     def arm_pose(self):
         pos = position()
-        message = 'get_pos_y'
-        self.client_socket.sendall(message.encode())
-        response = self.client_socket.recv(1024).decode()
-        arr_pos = float(response) // 1
         # go forward
-        pos.x, pos.y = 250.0, int(arr_pos)
+        pos.x, pos.y = 250.0, 0.0
         if self.block_mod:
             if self.mod == 0:
                 pos.z = -50.0
@@ -577,6 +566,7 @@ class GraspObject():
                 pos.z = 175.0
         if self.mod == 666:
             pos.x, pos.z = 220.0, -130.0
+        self.arr_pos_z = pos.z
         self.pub1.publish(pos)
         rospy.sleep(0.5)
 
@@ -589,25 +579,18 @@ class GraspObject():
     # 备选方案
     def spare_plan(self):
         pos = position()
-        message = 'get_pos_y'
-        self.client_socket.sendall(message.encode())
-        response_y = self.client_socket.recv(1024).decode()
-        message = 'get_pos_z'
-        self.client_socket.sendall(message.encode())
-        response_z = self.client_socket.recv(1024).decode()
-        arr_pos_y, arr_pos_z = float(response_y) // 1, float(response_z) // 1
         # go forward
-        pos.x, pos.y = 250.0, int(arr_pos_y)
+        pos.x, pos.y = 250.0, 0.0
         if self.block_mod:
-            pos.z = int(arr_pos_z)
+            pos.z = self.arr_pos_z
         else:
-            pos.z = int(arr_pos_z) - 25.0
+            pos.z = self.arr_pos_z - 25.0
         self.pub1.publish(pos)
         rospy.sleep(0.3)
         self.pub2.publish(1)
         rospy.sleep(0.5)
         # 提起物体
-        pos.x, pos.y, pos.z = 250.0, int(arr_pos_y), int(arr_pos_z)
+        pos.x, pos.y, pos.z = 250.0, 0.0, self.arr_pos_z
         self.pub1.publish(pos)
 
     # 扫方块左
