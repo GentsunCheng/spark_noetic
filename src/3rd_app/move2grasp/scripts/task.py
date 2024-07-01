@@ -228,7 +228,7 @@ class Task:
             print('CvBridge Error:', e)
             return
         self.obj = self.init_task.step_pick(self.detector, cv_image_rgb)
-        print(self.obj)
+        rospy.loginfo(f"Identify result: {self.obj}")
 
     def init(self):
         self.init_task.step_run(0.5)
@@ -248,8 +248,16 @@ class Task:
         rospy.sleep(0.5)
 
         self.img_sub = rospy.Subscriber(
-                    "/camera/rgb/image_raw", Image, callback=self.__pick__, queue_size=10)
+                    "/camera/rgb/image_raw", Image, self.__pick__, queue_size=10)
         print("step_five done")
+        rospy.sleep(0.5)
+
+        self.init_task.step_rot(180)
+        print("step_five done")
+        rospy.sleep(0.5)
+
+        self.init_task.step_run(1.3)
+        print("step_six done")
         rospy.sleep(0.5)
 
 if __name__ == '__main__':

@@ -57,7 +57,10 @@
 	</group>
 
 	<node pkg="move2grasp" type="resetarm.py" name="resetarm" output="screen"/>
-	<node pkg="move2grasp" type="task.py" name="task" output="screen"/>
+	
+	<node pkg="move2grasp" type="task.py" name="task" output="screen">
+		<remap from="/camera/rgb/image_raw" to="/camera/color/image_raw" if="$(eval arg('camera_type_tel')=='d435')"/>
+	</node>
 	
 	<include file="$(find move2grasp)/launch/web_video_server.launch" />
 
