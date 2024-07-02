@@ -9,6 +9,7 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import Odometry
+from std_msgs.msg import *
 from tf.transformations import euler_from_quaternion
 
 
@@ -36,7 +37,7 @@ class spark_detect:
         try:
             self.model = yolov5.load(model_path)
         except Exception as e:
-            print("加载模型失败:", e)
+            rospy.loginfo("加载模型失败:", e)
         self.is_detecting = False
 
     def detect(self, image):
@@ -80,7 +81,7 @@ class spark_detect:
 
             result.image = image
         except Exception as e:
-            print("未检测到物体:", e)
+            rospy.loginfo("未检测到物体:", e)
 
         self.is_detecting = False
 
@@ -126,8 +127,6 @@ class Task:
 
             position = msg.pose.pose.position
             self.current_position = (position.x, position.y)
-            rospy.loginfo(f"Current yaw: {math.degrees(yaw)} degrees")
-            rospy.loginfo(f"Current position: {self.current_position}")
 
         def step_run(self, distance):
             start_position = self.current_position  # 获取初始位置
@@ -145,11 +144,6 @@ class Task:
                 self.cmd.linear.x = self.walk_vel
                 self.cmd.angular.z = 0
                 self.move_pub.publish(self.cmd)
-
-                rospy.loginfo(f"Start position: {start_position}")
-                rospy.loginfo(f"Current position: {self.current_position}")
-                rospy.loginfo(f"Target distance: {target_distance}")
-                rospy.loginfo(f"Current distance: {current_distance}")
 
                 rate.sleep()
 
@@ -180,11 +174,6 @@ class Task:
                 self.cmd.linear.x = 0
                 self.cmd.angular.z = control_signal
                 self.move_pub.publish(self.cmd)
-
-                rospy.loginfo(f"Initial angle: {math.degrees(initial_angle)} degrees")
-                rospy.loginfo(f"Target angle: {math.degrees(target_angle)} degrees")
-                rospy.loginfo(f"Current angle: {math.degrees(self.current_angle)} degrees")
-                rospy.loginfo(f"Control signal: {control_signal}")
 
                 rate.sleep()
 
@@ -231,7 +220,7 @@ class Task:
         rospy.loginfo(f"Identify result: {self.obj}")
 
     def init(self):
-        self.init_task.step_run(0.5)
+        self.init_task.step_run(0.4)
         print("step_one done")
         rospy.sleep(0.5)
 
@@ -239,7 +228,7 @@ class Task:
         print("step_two done")
         rospy.sleep(0.5)
 
-        self.init_task.step_run(1.3)
+        self.init_task.step_run(1.2)
         print("step_three done")
         rospy.sleep(0.5)
 
@@ -256,11 +245,12 @@ class Task:
         print("step_five done")
         rospy.sleep(0.5)
 
-        self.init_task.step_run(1.3)
+        self.init_task.step_run(0.4)
         print("step_six done")
         rospy.sleep(0.5)
 
 if __name__ == '__main__':
     rospy.init_node('task')
+    rospy.sleep(3)
     task = Task()
     task.init()
