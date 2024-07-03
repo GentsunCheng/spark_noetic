@@ -146,30 +146,8 @@ class GraspObject():
         self.pub1.publish(pos)
 
     def grasp_cp(self, msg):
-        # 抓取物体
-        if msg.data == 'grab_blue_square' or msg.data == 'grab_vegetable':
-            self.auto_mod = 1
-            self.is_found_object = False
-            if msg.data == 'grab_blue_square':
-                # 订阅摄像头话题,对图像信息进行处理
-                self.sub1 = rospy.Subscriber(
-                    "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
-            elif msg.data == 'grab_vegetable':
-                self.sub1 = rospy.Subscriber(
-                    "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
-
-            rate = rospy.Rate(10)
-            times = 0
-            while not self.is_found_object:
-                rate.sleep()
-                times += 1
-                if(times > 30):
-                    self.sub1.unregister()
-                    return
-            self.grasp()
-
         # 释放物体
-        elif msg.data == 'release':
+        if msg.data == 'release':
             # 放下物体
             self.is_found_object = False
             self.release_object()
@@ -183,12 +161,6 @@ class GraspObject():
             rospy.sleep(0.3)
             self.arm_pose()
 
-        # 机械臂位姿调整
-        elif msg.data == '51' or msg.data == '52' or msg.data == '53':
-            self.is_found_object = False
-            self.mod = int(msg.data) - 51
-            self.arm_pose()
-
         elif msg.data == 'pump_up_down':
             self.block_mod = not self.block_mod
             self.arm_pose()
@@ -196,17 +168,6 @@ class GraspObject():
         # 备选方案
         elif msg.data == 'spare':
             self.spare_plan()
-
-        # 扫方块
-        elif msg.data == 'sweep_left':
-            self.sweep_square_left()
-
-        elif msg.data == 'sweep_right':
-            self.sweep_square_right()
-
-        # middle
-        elif msg.data == 'mid':
-            self.middle()
 
         # 气泵左转
         elif msg.data == 'pump_left':
@@ -237,13 +198,39 @@ class GraspObject():
         else:
             try:
                 oprate = json.loads(msg.data)
-                if oprate["cmd"] == "catch":
+                if oprate["cmd"] == "grab":
+                    self.auto_mod = 1
+                    self.is_found_object = False
+                    if oprate["type"] == "blue_square":
+                        self.sub1 = rospy.Subscriber(
+                            "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
+                    elif oprate["type"] == "vegetable":
+                        self.sub1 = rospy.Subscriber(
+                            "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
+                    rate = rospy.Rate(10)
+                    times = 0
+                    while not self.is_found_object:
+                        rate.sleep()
+                        times += 1
+                        if(times > 30):
+                            self.sub1.unregister()
+                            return
+                    self.grasp()
+
+                elif oprate["cmd"] == "catch":
                     self.xc_prev, self.yc_prev = oprate["x"], oprate["y"]
                     self.auto_mod = 0
                     self.grasp()
+
                 elif oprate["cmd"] == "step":
                     self.mod = oprate["step"] - 1
                     self.arm_pose()
+
+                elif oprate["cmd"] == "sweep":
+                    if oprate["dir"] == "left":
+                        self.sweep_square_left()
+                    elif oprate["dir"] == "right":
+                        self.sweep_square_right()
             except:
                 rospy.logwarn("未知指令")
                 pass
@@ -491,12 +478,6 @@ class GraspObject():
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
-
-    def middle(self):
-        pos = position()
-        pos.x, pos.y, pos.z = 250.0, 0.0, 90.0
-        self.pub1.publish(pos)
-        rospy.sleep(0.5)
 
     # 机械臂位姿调整
     def arm_pose(self):
