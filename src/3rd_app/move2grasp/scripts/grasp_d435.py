@@ -203,19 +203,10 @@ class GraspObject():
                     self.is_found_object = False
                     if oprate["type"] == "blue_square":
                         self.sub1 = rospy.Subscriber(
-                            "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
+                            "/camera/rgb/image_raw", Image, self.blue_grab, queue_size=10)
                     elif oprate["type"] == "vegetable":
                         self.sub1 = rospy.Subscriber(
-                            "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
-                    rate = rospy.Rate(10)
-                    times = 0
-                    while not self.is_found_object:
-                        rate.sleep()
-                        times += 1
-                        if(times > 30):
-                            self.sub1.unregister()
-                            return
-                    self.grasp()
+                            "/camera/rgb/image_raw", Image, self.veg_grab, queue_size=10)
 
                 elif oprate["cmd"] == "catch":
                     self.xc_prev, self.yc_prev = oprate["x"], oprate["y"]
@@ -282,7 +273,7 @@ class GraspObject():
         self.xc_prev, self.yc_prev = 0, 0
 
     # 使用CV检测物体
-    def image_cb(self, data):
+    def blue_grab(self, data):
         # 使用 opencv 处理
         try:
             # 将ROS图像消息转换为OpenCV图像格式
@@ -427,9 +418,13 @@ class GraspObject():
                     self.found_count = 0
 
         self.xc_prev, self.yc_prev = xc, yc
+        if self.is_found_object:
+            self.grasp()
+        else:
+            rospy.loginfo("No object found.")
 
     # 抓取蔬菜方块
-    def veg_detect(self, data):
+    def veg_grab(self, data):
         # 使用 opencv 处理
         try:
             # 将ROS图像消息转换为OpenCV图像格式
@@ -461,6 +456,10 @@ class GraspObject():
         if closest_x is not None and closest_y is not None:
             self.xc_prev, self.yc_prev = closest_x, closest_y
             self.is_found_object = True
+            self.grasp()
+        else:
+            self.is_found_object = False
+            rospy.loginfo("No object found.")
 
      # 释放物体
     def release_object(self):
