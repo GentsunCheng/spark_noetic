@@ -104,7 +104,7 @@ class GraspObject():
         self.angle = 90.0
         self.auto_mod = 0
         self.mod = 0
-        self.block_mod = 0
+        self.block_mod = False
         self.detector = spark_detect("/home/spark/spark_noetic/vegetable.pt")
         self.xc_prev = 0
         self.yc_prev = 0
@@ -147,14 +147,14 @@ class GraspObject():
 
     def grasp_cp(self, msg):
         # 抓取物体
-        if msg.data == '0' or msg.data == '0v':
+        if msg.data == 'grab_blue_square' or msg.data == 'grab_vegetable':
             self.auto_mod = 1
             self.is_found_object = False
-            if msg.data == '0':
+            if msg.data == 'grab_blue_square':
                 # 订阅摄像头话题,对图像信息进行处理
                 self.sub1 = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.image_cb, queue_size=10)
-            elif msg.data == '0v':
+            elif msg.data == 'grab_vegetable':
                 self.sub1 = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.veg_detect, queue_size=10)
 
@@ -169,17 +169,17 @@ class GraspObject():
             self.grasp()
 
         # 释放物体
-        elif msg.data == '1':
+        elif msg.data == 'release':
             # 放下物体
             self.is_found_object = False
             self.release_object()
 
         # 关闭气泵
-        elif msg.data == '58':
+        elif msg.data == 'close_pump':
             # 放下物体
             self.is_found_object = False
             self.pub2.publish(0)
-            self.block_mod = 0
+            self.block_mod = False
             rospy.sleep(0.3)
             self.arm_pose()
 
@@ -189,56 +189,46 @@ class GraspObject():
             self.mod = int(msg.data) - 51
             self.arm_pose()
 
-        elif msg.data == '55':
-            if self.block_mod:
-                self.block_mod = 0
-            else:
-                self.block_mod = 1
+        elif msg.data == 'pump_up_down':
+            self.block_mod = not self.block_mod
             self.arm_pose()
 
         # 备选方案
-        elif msg.data == '200':
+        elif msg.data == 'spare':
             self.spare_plan()
 
         # 扫方块
-        elif msg.data == '114':
-            self.swap_left()
+        elif msg.data == 'sweep_left':
+            self.sweep_square_left()
 
-        elif msg.data == '514':
-            self.swap_right()
-
-        # 扫方块一
-        elif msg.data == '1141':
-            self.swap_square_left()
-
-        elif msg.data == '5141':
-            self.swap_square_right()
+        elif msg.data == 'sweep_right':
+            self.sweep_square_right()
 
         # middle
         elif msg.data == 'mid':
             self.middle()
 
-        # 第四关节左转
-        elif msg.data == '41':
+        # 气泵左转
+        elif msg.data == 'pump_left':
             if self.angle < 180.0:
                 self.angle = self.angle + 3.0
                 self.forth_pose()
-        # 第四关节右转
-        elif msg.data == '43':
+        # 气泵右转
+        elif msg.data == 'pump_right':
             if self.angle > 0.0:
                 self.angle = self.angle - 3.0
                 self.forth_pose()
 
         # 机械臂归位
-        elif msg.data == '403':
+        elif msg.data == 'return':
             times = 0
             self.angle = 90.0
             self.default_arm()
             self.forth_pose()
 
         # 机械臂重置
-        elif msg.data == '404':
-            self.block_mod = 0
+        elif msg.data == 'reset':
+            self.block_mod = False
             times = 0
             self.angle = 90.0
             self.reset_pub.publish(1)
@@ -489,19 +479,12 @@ class GraspObject():
         rotate.angle4th = 90
         pos.x, pos.y = 250.0, 0.0
         self.arr_pos_z = -25 + self.mod * 100
-        if self.block_mod:
-            pos.z = self.arr_pos_z
-        else:
-            pos.z = self.arr_pos_z - 25.0
+        pos.z = self.arr_pos_z if self.block_mod else self.arr_pos_z - 25.0
         self.pub1.publish(pos)
         rospy.loginfo(f"释放坐标: x:{pos.x}, y:{pos.y}, z:{pos.z}")
         rospy.sleep(0.5)
         self.pub2.publish(0)
-        if self.block_mod:
-            self.block_mod = 0
-            pos.z = self.arr_pos_z + 25.0
-        else:
-            pos.z = self.arr_pos_z
+        pos.z, self.block_mod = (self.arr_pos_z + 25.0, 0) if self.block_mod else (self.arr_pos_z, self.block_mod)
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
@@ -517,11 +500,7 @@ class GraspObject():
         pos = position()
         # go forward
         pos.x, pos.y = 250.0, 0.0
-        if self.block_mod:
-            pos.z = -50.0 + self.mod * 100
-        else:
-            pos.z = -25.0 + self.mod * 100
-        self.arr_pos_z = pos.z
+        self.arr_pos_z = pos.z = (-50.0 + self.mod * 100) if self.block_mod else (-25.0 + self.mod * 100)
         self.pub1.publish(pos)
         rospy.sleep(0.5)
 
@@ -536,10 +515,7 @@ class GraspObject():
         pos = position()
         # go forward
         pos.x, pos.y = 250.0, 0.0
-        if self.block_mod:
-            pos.z = self.arr_pos_z
-        else:
-            pos.z = self.arr_pos_z - 25.0
+        pos.z = self.arr_pos_z if self.block_mod else self.arr_pos_z - 25.0
         self.pub1.publish(pos)
         rospy.sleep(0.3)
         self.pub2.publish(1)
@@ -549,25 +525,7 @@ class GraspObject():
         self.pub1.publish(pos)
 
     # 扫方块左
-    def swap_left(self):
-        pos = position()
-        pos.x, pos.y, pos.z = 250.0, 0.0, 75.0
-        self.pub1.publish(pos)
-        pos.x, pos.y, pos.z = 90.0, 220.0, -130.0
-        rospy.sleep(0.5)
-        self.pub1.publish(pos)
-
-    # 扫方块右
-    def swap_right(self):
-        pos = position()
-        pos.x, pos.y, pos.z = 250.0, 0.0, 75.0
-        self.pub1.publish(pos)
-        pos.x, pos.y, pos.z = 90.0, -220.0, -130.0
-        rospy.sleep(0.5)
-        self.pub1.publish(pos)
-
-    # 扫方块一左
-    def swap_square_left(self):
+    def sweep_square_left(self):
         pos = position()
         pos.x, pos.y, pos.z = 250.0, 0.0, 120.0
         self.pub1.publish(pos)
@@ -575,8 +533,8 @@ class GraspObject():
         rospy.sleep(0.5)
         self.pub1.publish(pos)
 
-    # 扫方块一右
-    def swap_square_right(self):
+    # 扫方块右
+    def sweep_square_right(self):
         pos = position()
         pos.x, pos.y, pos.z = 250.0, 0.0, 120.0
         self.pub1.publish(pos)
