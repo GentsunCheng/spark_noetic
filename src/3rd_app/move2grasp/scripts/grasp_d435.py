@@ -41,7 +41,7 @@ class spark_detect:
         try:
             self.model = yolov5.load(model_path)
         except Exception as e:
-            print("加载模型失败:", e)
+            rospy.logerr("加载模型失败:", e)
         self.is_detecting = False
 
     def detect(self, image):
@@ -85,7 +85,7 @@ class spark_detect:
 
             result.image = image
         except Exception as e:
-            print("未检测到物体:", e)
+            rospy.logwarn("未检测到物体:", e)
 
         self.is_detecting = False
 
@@ -173,7 +173,6 @@ class GraspObject():
             # 放下物体
             self.is_found_object = False
             self.release_object()
-            status = String()
 
         # 关闭气泵
         elif msg.data == '58':
@@ -183,7 +182,6 @@ class GraspObject():
             self.block_mod = 0
             rospy.sleep(0.3)
             self.arm_pose()
-            status = String()
 
         # 机械臂位姿调整
         elif msg.data == '51' or msg.data == '52' or msg.data == '53':
@@ -201,25 +199,20 @@ class GraspObject():
         # 备选方案
         elif msg.data == '200':
             self.spare_plan()
-            status = String()
 
         # 扫方块
         elif msg.data == '114':
             self.swap_left()
-            status = String()
 
         elif msg.data == '514':
             self.swap_right()
-            status = String()
 
         # 扫方块一
         elif msg.data == '1141':
             self.swap_square_left()
-            status = String()
 
         elif msg.data == '5141':
             self.swap_square_right()
-            status = String()
 
         # middle
         elif msg.data == 'mid':
@@ -239,11 +232,9 @@ class GraspObject():
         # 机械臂归位
         elif msg.data == '403':
             times = 0
-            steps = 0
             self.angle = 90.0
             self.default_arm()
             self.forth_pose()
-            status = String()
 
         # 机械臂重置
         elif msg.data == '404':
@@ -261,20 +252,20 @@ class GraspObject():
                     self.auto_mod = 0
                     self.grasp()
             except:
-                print("未知指令")
+                rospy.logwarn("未知指令")
                 pass
                 
 
     # 执行抓取
     def grasp(self):
-        print("start to grasp\n")
+        rospy.loginfo("start to grasp\n")
         # stop function
 
         filename = os.environ['HOME'] + "/thefile.txt"
         file_pix = open(filename, 'r')
         s = file_pix.read()
         file_pix.close()
-        print(s)
+        rospy.loginfo(s)
         arr = s.split()
         a1, a2, a3, a4 = arr[0], arr[1], arr[2], arr[3]
         a, b = [0]*2, [0]*2
@@ -287,13 +278,13 @@ class GraspObject():
         pos.x = a[0] * self.yc_prev + a[1]
         pos.y = b[0] * self.xc_prev + b[1]
         pos.z = -25.0
-        print("z = -25\n")
+        rospy.loginfo("z = -25\n")
         self.pub1.publish(pos)
         r2.sleep()
 
         pos.z = -50.0
         self.pub1.publish(pos)
-        print("z = -50\n")
+        rospy.loginfo("z = -50\n")
 
         # 开始吸取物体
         self.pub2.publish(1)
@@ -317,7 +308,8 @@ class GraspObject():
             # 将ROS图像消息转换为OpenCV图像格式
             cv_image1 = CvBridge().imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
-            print('error')
+            rospy.logerr(f"CvBridge Error: {e}")
+            return
 
         # 获取图像尺寸
         height, width, _ = cv_image1.shape
@@ -464,7 +456,7 @@ class GraspObject():
             cv_image_bgr  = CvBridge().imgmsg_to_cv2(data, "bgr8")
             cv_image_rgb = cv2.cvtColor(cv_image_bgr, cv2.COLOR_BGR2RGB)
         except CvBridgeError as e:
-            print('CvBridge Error:', e)
+            rospy.logerr(f"CvBridge Error: {e}")
             return
 
         result = self.detector.detect(cv_image_rgb)
@@ -502,7 +494,7 @@ class GraspObject():
         else:
             pos.z = self.arr_pos_z - 25.0
         self.pub1.publish(pos)
-        print("坐标",pos.x,pos.y,pos.z)
+        rospy.loginfo(f"释放坐标: x:{pos.x}, y:{pos.y}, z:{pos.z}")
         rospy.sleep(0.5)
         self.pub2.publish(0)
         if self.block_mod:
