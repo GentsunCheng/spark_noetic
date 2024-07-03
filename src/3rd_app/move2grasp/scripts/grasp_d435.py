@@ -241,6 +241,9 @@ class GraspObject():
                     self.xc_prev, self.yc_prev = oprate["x"], oprate["y"]
                     self.auto_mod = 0
                     self.grasp()
+                elif oprate["cmd"] == "step":
+                    self.mod = oprate["step"] - 1
+                    self.arm_pose()
             except:
                 rospy.logwarn("未知指令")
                 pass
