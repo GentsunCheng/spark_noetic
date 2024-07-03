@@ -45,8 +45,7 @@
     		<node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find move2grasp)/rviz/spark_$(arg slam_methods)_$(arg camera_type_tel).rviz"/>
   	</group>
 
-
-        <node pkg="move2grasp" type="move.py" name="move" />
+	<!-- 通=通用运行程序程序 -->
 	<group if="$(eval arg('camera_type_tel')=='d435')">
 		<node pkg="move2grasp" type="grasp_d435.py" name="grasp" output="screen">
 			<remap from="/camera/rgb/image_raw" to="/camera/color/image_raw" if="$(eval arg('camera_type_tel')=='d435')"/>
@@ -58,11 +57,14 @@
 
 	<node pkg="move2grasp" type="resetarm.py" name="resetarm" output="screen"/>
 
-	<group>
-		<!-- <node pkg="move2grasp" type="parallel_aligner.py" name="parallel_aligner" output="screen" /> -->
+	<!-- 自动赛程序 -->
+	<group if="$(eval arg('camera_type_tel')=='d435')">
 		<node pkg="move2grasp" type="task.py" name="task" output="screen">
 			<remap from="/camera/rgb/image_raw" to="/camera/color/image_raw" if="$(eval arg('camera_type_tel')=='d435')"/>
 		</node>
+	</group>
+	<group if="$(eval arg('camera_type_tel')=='astrapro')">
+		<node pkg="move2grasp" type="task.py" name="task" output="screen" />
 	</group>
 	
 	<include file="$(find move2grasp)/launch/web_video_server.launch" />

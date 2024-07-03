@@ -23,7 +23,7 @@ async def websocket_server(websocket, path):
 
 # 启动 WebSocket 服务器
 async def start_server():
-    server = await websockets.serve(websocket_server, "0.0.0.0", 8801)
+    server = await websockets.serve(websocket_server, None, 8801)
     print(f"WebSocket server started on ws://0.0.0.0:8801")
 
     # 进入事件循环，等待连接和消息

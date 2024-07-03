@@ -141,9 +141,7 @@ class GraspObject():
         # 发布TWist消息控制机器人底盘
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         pos = position()
-        pos.x = 110.0
-        pos.y = 0.0
-        pos.z = 35.0
+        pos.x, pos.y, pos.z = 110.0, 0.0, 35.0
         self.arr_pos_z = pos.z
         self.pub1.publish(pos)
 
@@ -162,25 +160,13 @@ class GraspObject():
 
             rate = rospy.Rate(10)
             times = 0
-            steps = 0
-            # while not self.is_found_object:
-            #     rate.sleep()
-            #     times += 1
-            #     # 转圈没有发现可抓取物体,退出抓取
-            #     if steps >= 2:
-            #         print("stop grasp\n")
-            #         status = String()
-            #         status.data = '-1'
-            #         self.grasp_status_pub.publish(status)
-            #         return None
             while not self.is_found_object:
                 rate.sleep()
                 times += 1
-                if(times>30):
+                if(times > 30):
                     self.sub1.unregister()
                     return
             self.grasp()
-            status = String()
 
         # 释放物体
         elif msg.data == '1':
@@ -200,24 +186,17 @@ class GraspObject():
             status = String()
 
         # 机械臂位姿调整
-        elif msg.data == '51' or msg.data == '52' or msg.data == '53' or msg.data == '666' or msg.data == '55':
+        elif msg.data == '51' or msg.data == '52' or msg.data == '53':
             self.is_found_object = False
-            if msg.data == '51':
-                self.mod = 0
-            elif msg.data == '52':
-                self.mod = 1
-            elif msg.data == '53':
-                self.mod = 2
-            elif msg.data == '55':
-                if self.block_mod:
-                    self.block_mod = 0
-                else:
-                    self.block_mod = 1
-            elif msg.data == '666':
-                self.block_mod = 0
-                self.mod = 666
+            self.mod = int(msg.data) - 51
             self.arm_pose()
-            status = String()
+
+        elif msg.data == '55':
+            if self.block_mod:
+                self.block_mod = 0
+            else:
+                self.block_mod = 1
+            self.arm_pose()
 
         # 备选方案
         elif msg.data == '200':
@@ -270,11 +249,9 @@ class GraspObject():
         elif msg.data == '404':
             self.block_mod = 0
             times = 0
-            steps = 0
             self.angle = 90.0
             self.reset_pub.publish(1)
             self.forth_pose()
-            status = String()
 
         else:
             try:
@@ -283,7 +260,6 @@ class GraspObject():
                     self.xc_prev, self.yc_prev = oprate["x"], oprate["y"]
                     self.auto_mod = 0
                     self.grasp()
-                    status = String()
             except:
                 print("未知指令")
                 pass
@@ -331,7 +307,6 @@ class GraspObject():
             pos.x, pos.z = 250.0, 75.0
         self.pub1.publish(pos)
         self.mod = 1
-        print("抓取",self.mod,pos.z)
         self.auto_mod = 0
         self.xc_prev, self.yc_prev = 0, 0
 
@@ -514,19 +489,18 @@ class GraspObject():
         if closest_x is not None and closest_y is not None:
             self.xc_prev, self.yc_prev = closest_x, closest_y
             self.is_found_object = True
-        
-    
-    #释放物体
+
+     # 释放物体
     def release_object(self):
         rotate = angle4th()
         pos = position()
         rotate.angle4th = 90
         pos.x, pos.y = 250.0, 0.0
-        self.arr_pos_z=-25+self.mod*100
+        self.arr_pos_z = -25 + self.mod * 100
         if self.block_mod:
             pos.z = self.arr_pos_z
         else:
-            pos.z = self.arr_pos_z- 25.0
+            pos.z = self.arr_pos_z - 25.0
         self.pub1.publish(pos)
         print("坐标",pos.x,pos.y,pos.z)
         rospy.sleep(0.5)
@@ -539,28 +513,6 @@ class GraspObject():
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
-    #原代码
-    # def release_object(self):
-    #         rotate = angle4th()
-    #         pos = position()
-    #         rotate.angle4th = 90
-    #         pos.x, pos.y = 250.0, 0.0
-    #         if self.block_mod:
-    #             pos.z = self.arr_pos_z
-    #         else:
-    #             pos.z = self.arr_pos_z - 25.0
-    #         self.pub1.publish(pos)
-    #         print("坐标",pos.x,pos.y,pos.z)
-    #         rospy.sleep(0.5)
-    #         self.pub2.publish(0)
-    #         if self.block_mod:
-    #             self.block_mod = 0
-    #             pos.z = self.arr_pos_z + 25.0
-    #         else:
-    #             pos.z = self.arr_pos_z
-    #         rospy.sleep(0.5)
-    #         self.pub1.publish(pos)
-    #         self.angle4th_pub.publish(rotate)
 
     def middle(self):
         pos = position()
@@ -574,21 +526,9 @@ class GraspObject():
         # go forward
         pos.x, pos.y = 250.0, 0.0
         if self.block_mod:
-            if self.mod == 0:
-                pos.z = -50.0
-            elif self.mod == 1:
-                pos.z = 50.0
-            elif self.mod == 2:
-                pos.z = 150.0
+            pos.z = -50.0 + self.mod * 100
         else:
-            if self.mod == 0:
-                pos.z = -25.0
-            elif self.mod == 1:
-                pos.z = 75.0
-            elif self.mod == 2:
-                pos.z = 175.0
-        if self.mod == 666:
-            pos.x, pos.z = 220.0, -130.0
+            pos.z = -25.0 + self.mod * 100
         self.arr_pos_z = pos.z
         self.pub1.publish(pos)
         rospy.sleep(0.5)
