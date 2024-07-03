@@ -331,6 +331,7 @@ class GraspObject():
             pos.x, pos.z = 250.0, 75.0
         self.pub1.publish(pos)
         self.mod = 1
+        print("抓取",self.mod,pos.z)
         self.auto_mod = 0
         self.xc_prev, self.yc_prev = 0, 0
 
@@ -515,16 +516,17 @@ class GraspObject():
             self.is_found_object = True
         
     
-    # 释放物体
+    #释放物体
     def release_object(self):
         rotate = angle4th()
         pos = position()
         rotate.angle4th = 90
         pos.x, pos.y = 250.0, 0.0
+        self.arr_pos_z=-25+self.mod*100
         if self.block_mod:
             pos.z = self.arr_pos_z
         else:
-            pos.z = self.arr_pos_z - 25.0
+            pos.z = self.arr_pos_z- 25.0
         self.pub1.publish(pos)
         print("坐标",pos.x,pos.y,pos.z)
         rospy.sleep(0.5)
@@ -537,6 +539,28 @@ class GraspObject():
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
+    #原代码
+    # def release_object(self):
+    #         rotate = angle4th()
+    #         pos = position()
+    #         rotate.angle4th = 90
+    #         pos.x, pos.y = 250.0, 0.0
+    #         if self.block_mod:
+    #             pos.z = self.arr_pos_z
+    #         else:
+    #             pos.z = self.arr_pos_z - 25.0
+    #         self.pub1.publish(pos)
+    #         print("坐标",pos.x,pos.y,pos.z)
+    #         rospy.sleep(0.5)
+    #         self.pub2.publish(0)
+    #         if self.block_mod:
+    #             self.block_mod = 0
+    #             pos.z = self.arr_pos_z + 25.0
+    #         else:
+    #             pos.z = self.arr_pos_z
+    #         rospy.sleep(0.5)
+    #         self.pub1.publish(pos)
+    #         self.angle4th_pub.publish(rotate)
 
     def middle(self):
         pos = position()

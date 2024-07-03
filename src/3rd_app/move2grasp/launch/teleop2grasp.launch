@@ -49,7 +49,7 @@
   	</group>
 
 	<group if="$(eval arg('camera_type_tel')=='d435')">
-		<node pkg="move2grasp" type="grasp_d435.py" name="grasp" output="screen">
+		<node pkg="move2grasp" type="grasp_d435_lzk.py" name="grasp" output="screen">
 			<remap from="/camera/rgb/image_raw" to="/camera/color/image_raw" if="$(eval arg('camera_type_tel')=='d435')"/>
 		</node>
 	</group>
