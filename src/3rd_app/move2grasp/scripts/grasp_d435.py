@@ -150,6 +150,7 @@ class GraspObject():
         # 释放物体
         if msg.data == 'release':
             # 放下物体
+            self.pump_up_down_mod = False
             self.is_found_object = False
             self.release_object()
 
