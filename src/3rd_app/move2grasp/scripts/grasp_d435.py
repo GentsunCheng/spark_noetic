@@ -102,9 +102,10 @@ class GraspObject():
         '''
         
         self.angle = 90.0
+        self.block_height = 100
         self.auto_mod = 0
-        self.mod = 0
-        self.block_mod = False
+        self.step = 1
+        self.pump_up_down_mod = False
         self.detector = spark_detect("/home/spark/spark_noetic/vegetable.pt")
         self.xc_prev = 0
         self.yc_prev = 0
@@ -119,25 +120,25 @@ class GraspObject():
             '/grasp', String, self.grasp_cp, queue_size=10)
         # 发布机械臂位姿
         self.pub1 = rospy.Publisher(
-            'position_write_topic', position, queue_size=10)
+            'position_write_topic', position, queue_size=1)
         # 发布机械臂吸盘
         self.pub2 = rospy.Publisher(
-            'pump_topic', status, queue_size=10)
+            'pump_topic', status, queue_size=1)
         # 发布第一关节状态
         self.angle1st_pub = rospy.Publisher(
-            'angle1st_topic', angle1st, queue_size=10)
+            'angle1st_topic', angle1st, queue_size=1)
         # 发布第二关节状态
         self.angle2nd_pub = rospy.Publisher(
-            'angle2nd_topic', angle2nd, queue_size=10)
+            'angle2nd_topic', angle2nd, queue_size=1)
         # 发布第三关节状态
         self.angle3rd_pub = rospy.Publisher(
-            'angle3rd_topic', angle3rd, queue_size=10)
+            'angle3rd_topic', angle3rd, queue_size=1)
         # 发布第四关节状态
         self.angle4th_pub = rospy.Publisher(
-            'angle4th_topic', angle4th, queue_size=10)
+            'angle4th_topic', angle4th, queue_size=1)
         # 发布机械臂状态
         self.grasp_status_pub = rospy.Publisher(
-            'grasp_status', String, queue_size=10)
+            'grasp_status', String, queue_size=1)
         # 发布TWist消息控制机器人底盘
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         pos = position()
@@ -157,12 +158,12 @@ class GraspObject():
             # 放下物体
             self.is_found_object = False
             self.pub2.publish(0)
-            self.block_mod = False
+            self.pump_up_down_mod = False
             rospy.sleep(0.3)
             self.arm_pose()
 
         elif msg.data == 'pump_up_down':
-            self.block_mod = not self.block_mod
+            self.pump_up_down_mod = not self.pump_up_down_mod
             self.arm_pose()
 
         # 备选方案
@@ -182,15 +183,13 @@ class GraspObject():
 
         # 机械臂归位
         elif msg.data == 'return':
-            times = 0
             self.angle = 90.0
             self.default_arm()
             self.forth_pose()
 
         # 机械臂重置
         elif msg.data == 'reset':
-            self.block_mod = False
-            times = 0
+            self.pump_up_down_mod = False
             self.angle = 90.0
             self.reset_pub.publish(1)
             self.forth_pose()
@@ -203,10 +202,10 @@ class GraspObject():
                     self.is_found_object = False
                     if oprate["type"] == "blue_square":
                         self.sub1 = rospy.Subscriber(
-                            "/camera/rgb/image_raw", Image, self.blue_grab, queue_size=10)
+                            "/camera/rgb/image_raw", Image, self.blue_grab, queue_size=1)
                     elif oprate["type"] == "vegetable":
                         self.sub1 = rospy.Subscriber(
-                            "/camera/rgb/image_raw", Image, self.veg_grab, queue_size=10)
+                            "/camera/rgb/image_raw", Image, self.veg_grab, queue_size=1)
 
                 elif oprate["cmd"] == "catch":
                     self.xc_prev, self.yc_prev = oprate["x"], oprate["y"]
@@ -214,7 +213,7 @@ class GraspObject():
                     self.grasp()
 
                 elif oprate["cmd"] == "step":
-                    self.mod = oprate["step"] - 1
+                    self.step = oprate["step"]
                     self.arm_pose()
 
                 elif oprate["cmd"] == "sweep":
@@ -240,9 +239,8 @@ class GraspObject():
         arr = s.split()
         a1, a2, a3, a4 = arr[0], arr[1], arr[2], arr[3]
         a, b = [0]*2, [0]*2
-        a[0], a[1] = float(a1), float(a2)
-        b[0], b[1] = float(a3), float(a4)
-        print('k and b value:', a[0], a[1], b[0], b[1])
+        a[0], a[1], b[0], b[1] = float(a1), float(a2), float(a3), float(a4)
+        rospy.loginfo('k and b value:', a[0], a[1], b[0], b[1])
         r2 = rospy.Rate(10)
         pos = position()
         # 物体所在坐标+标定误差
@@ -268,12 +266,15 @@ class GraspObject():
         else:
             pos.x, pos.z = 250.0, 75.0
         self.pub1.publish(pos)
-        self.mod = 1
+        self.step = 2
         self.auto_mod = 0
         self.xc_prev, self.yc_prev = 0, 0
 
     # 使用CV检测物体
     def blue_grab(self, data):
+        if self.sub1 is not None:
+            self.sub1.unregister()
+            self.sub1 = None
         # 使用 opencv 处理
         try:
             # 将ROS图像消息转换为OpenCV图像格式
@@ -425,6 +426,9 @@ class GraspObject():
 
     # 抓取蔬菜方块
     def veg_grab(self, data):
+        if self.sub1 is not None:
+            self.sub1.unregister()
+            self.sub1 = None
         # 使用 opencv 处理
         try:
             # 将ROS图像消息转换为OpenCV图像格式
@@ -467,13 +471,13 @@ class GraspObject():
         pos = position()
         rotate.angle4th = 90
         pos.x, pos.y = 250.0, 0.0
-        self.arr_pos_z = -25 + self.mod * 100
-        pos.z = self.arr_pos_z if self.block_mod else self.arr_pos_z - 25.0
+        self.arr_pos_z = -125 + self.step * self.block_height
+        pos.z = self.arr_pos_z if self.pump_up_down_mod else self.arr_pos_z - 25.0
         self.pub1.publish(pos)
         rospy.loginfo(f"释放坐标: x:{pos.x}, y:{pos.y}, z:{pos.z}")
         rospy.sleep(0.5)
         self.pub2.publish(0)
-        pos.z, self.block_mod = (self.arr_pos_z + 25.0, 0) if self.block_mod else (self.arr_pos_z, self.block_mod)
+        pos.z, self.pump_up_down_mod = (self.arr_pos_z + 25.0, 0) if self.pump_up_down_mod else (self.arr_pos_z, self.pump_up_down_mod)
         rospy.sleep(0.5)
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
@@ -483,7 +487,7 @@ class GraspObject():
         pos = position()
         # go forward
         pos.x, pos.y = 250.0, 0.0
-        self.arr_pos_z = pos.z = (-50.0 + self.mod * 100) if self.block_mod else (-25.0 + self.mod * 100)
+        self.arr_pos_z = pos.z = (-150.0 + self.step * self.block_height) if self.pump_up_down_mod else (-125.0 + self.step * self.block_height)
         self.pub1.publish(pos)
         rospy.sleep(0.5)
 
@@ -498,7 +502,7 @@ class GraspObject():
         pos = position()
         # go forward
         pos.x, pos.y = 250.0, 0.0
-        pos.z = self.arr_pos_z if self.block_mod else self.arr_pos_z - 25.0
+        pos.z = self.arr_pos_z if self.pump_up_down_mod else self.arr_pos_z - 25.0
         self.pub1.publish(pos)
         rospy.sleep(0.3)
         self.pub2.publish(1)
@@ -535,7 +539,7 @@ class GraspObject():
         self.pub1.publish(pos)
         self.angle4th_pub.publish(rotate)
         r2.sleep()
-        return 'reset completed'
+        return 'return completed'
 
 
 if __name__ == '__main__':
