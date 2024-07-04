@@ -20,4 +20,5 @@ if __name__ == "__main__":
         sub = rospy.Subscriber('/armreset', String, resetarm, queue_size=1)
         rospy.spin()
     except rospy.ROSInterruptException:
+        rospy.loginfo("program interrupted before completion")
         pass
