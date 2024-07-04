@@ -994,8 +994,7 @@ spark_carry_game() {
         pwd
     )
     source ${PROJECTPATH}/devel/setup.bash
-    gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N spark_game; roslaunch move2grasp move2grasp.launch camera_type_tel:=${CAMERATYPE}  lidar_type_tel:=${LIDARTYPE}'"
-    gnome-terminal --tab --active -e "bash -c 'wmctrl -r :ACTIVE: -N armcontrol; armcontrol'"
+    roslaunch move2grasp move2grasp.launch camera_type_tel:=${CAMERATYPE}  lidar_type_tel:=${LIDARTYPE}
 }
 
 #进阶赛示例程序
