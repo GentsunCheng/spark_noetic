@@ -231,6 +231,7 @@ class Task:
                     "y": closest_y
                 }
                 self.pub_grab.publish(json.dumps(data))
+                rospy.loginfo(f"catched: {result.name[index]}")
                 return result.name[index]
                 
 
@@ -255,7 +256,7 @@ class Task:
             cv_image_bgr  = CvBridge().imgmsg_to_cv2(data, "bgr8")
             cv_image_rgb = cv2.cvtColor(cv_image_bgr, cv2.COLOR_BGR2RGB)
         except CvBridgeError as e:
-            print('CvBridge Error:', e)
+            rospy.loginfo('CvBridge Error:{e}')
             return
         self.obj = self.base_task.step_pick(self.detector, cv_image_rgb)
         rospy.loginfo(f"Identify result: {self.obj}")
@@ -270,46 +271,46 @@ class Task:
             cv_image_bgr  = CvBridge().imgmsg_to_cv2(data, "bgr8")
             cv_image_rgb = cv2.cvtColor(cv_image_bgr, cv2.COLOR_BGR2RGB)
         except CvBridgeError as e:
-            print('CvBridge Error:', e)
+            rospy.loginfo(f'CvBridge Error:{e}')
             return
         self.target = self.pick_task.pick(self.detector, cv_image_rgb)
         rospy.loginfo(f"Identify result: {self.obj}")
 
     def init(self):
         self.base_task.step_run(0.35)
-        print("step_one done")
+        rospy.loginfo("step_one done")
         rospy.sleep(0.5)
 
         self.base_task.step_rot(-90)
-        print("step_two done")
+        rospy.loginfo("step_two done")
         rospy.sleep(0.5)
 
         self.base_task.step_run(1.2)
-        print("step_three done")
+        rospy.loginfo("step_three done")
         rospy.sleep(0.5)
 
         self.base_task.step_rot(-90)
-        print("step_four done")
+        rospy.loginfo("step_four done")
         rospy.sleep(0.5)
 
         self.img_sub = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.__pick__, queue_size=10)
-        print("step_five done")
+        rospy.loginfo("step_five done")
         rospy.sleep(0.5)
 
         self.base_task.step_rot(180)
-        print("step_five done")
+        rospy.loginfo("step_five done")
         rospy.sleep(0.5)
 
         self.base_task.step_run(0.4)
-        print("step_six done")
+        rospy.loginfo("step_six done")
         rospy.sleep(0.5)
 
     def pick(self):
         self.img_sub_grab = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.__grab__, queue_size=10)
-        print("grab done")
-        rospy.sleep(0.5)
+        rospy.loginfo("grab done")
+        rospy.sleep(1.5)
 
 if __name__ == '__main__':
     rospy.init_node('task')
