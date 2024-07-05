@@ -12,6 +12,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from nav_msgs.msg import Odometry
 from std_msgs.msg import *
+from spark_carry_object.msg import *
 from tf.transformations import euler_from_quaternion
 
 
@@ -235,18 +236,71 @@ class Task:
                 
 
     class PlaceTask:
-        def __init__(self, obj):
+        def __init__(self, obj, base_task):
+            self.base_task = base_task
             self.obj = obj
-            pass
+            self.main_pub = rospy.Publisher(
+                '/grasp', String, queue_size=10)
+            self.pos_pub = rospy.Publisher(
+                'position_write_topic', position, queue_size=1)
 
         def __go2b__(self):
             rospy.loginfo("go to b")
+            self.base_task.step_rot(90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(0.6)
+            rospy.sleep(0.5)
+            pos = position()
+            pos.x, pos.y, pos.z = 10.0, -160.0, 150.0
+            self.pos_pub.publish(pos)
+            rospy.sleep(0.5)
+            self.base_task.step_run(0.6)
+            rospy.sleep(0.5)
+            self.base_task.step_rot(-90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(1.3)
+            rospy.sleep(0.5)
+            data = {
+                    "cmd": "step",
+                    "step": 1
+                }
+            self.main_pub.publish(json.dumps(data))
+            rospy.sleep(0.5)
+            self.main_pub.publish("release")
+            rospy.sleep(0.5)
+            self.main_pub.publish("return")
+            self.base_task.step_rot(180)
+            rospy.sleep(0.5)
+            self.base_task.step_run(1.3)
+            rospy.sleep(0.5)
+            self.base_task.step_rot(90)
+            rospy.sleep(0.5)
 
         def __go2c__(self):
             rospy.loginfo("go to c")
+            self.base_task.step_rot(-90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(1.2)
+            rospy.sleep(0.5)
+            self.base_task.step_rot(90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(1.6)
+            rospy.sleep(0.5)
+            self.base_task.step_run(1.2)
+            rospy.sleep(0.5)
+            self.base_task.step_rot(90)
+            rospy.sleep(0.5)
 
         def __go2d__(self):
             rospy.loginfo("go to d")
+            self.base_task.step_rot(-90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(1.2)
+            rospy.sleep(0.5)
+            self.base_task.step_rot(-90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(0.35)
+            rospy.sleep(0.5)
 
         def place(self, name):
             index = -1
@@ -299,7 +353,11 @@ class Task:
         rospy.loginfo(f"Identify result: {self.obj}")
 
     def init(self):
-        self.base_task.step_run(0.35)
+        self.base_task.step_rot(45)
+        rospy.loginfo("done")
+        rospy.sleep(0.5)
+
+        self.base_task.step_run(0.3)
         rospy.loginfo("step_one done")
         rospy.sleep(0.5)
 
@@ -324,11 +382,11 @@ class Task:
         rospy.loginfo("step_five done")
         rospy.sleep(0.5)
 
-        self.base_task.step_run(0.4)
+        self.base_task.step_run(0.43)
         rospy.loginfo("step_six done")
         rospy.sleep(0.5)
 
-        self.place_task = self.PlaceTask(self.obj)
+        self.place_task = self.PlaceTask(self.obj, self.base_task)
 
     def pick2place(self):
         self.img_sub_grab = rospy.Subscriber(
@@ -338,9 +396,19 @@ class Task:
         self.place_task.place(self.target)
         
 
+def start(bool):
+    if bool:
+        rospy.loginfo("start")
+    try:
+        task = Task()
+        task.init()
+        task.pick2place()
+    except Exception as e:
+        rospy.logerr(f'Error:{e}')
+
 if __name__ == '__main__':
     rospy.init_node('task')
     rospy.sleep(3)
-    task = Task()
-    task.init()
-    task.pick2place()
+    start_sig = rospy.Subscriber('/task_start', Bool, callback=start)
+    rospy.spin()
+
