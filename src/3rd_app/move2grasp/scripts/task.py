@@ -213,17 +213,16 @@ class Task:
                 min_distance = float('inf')
                 closest_x = None
                 closest_y = None
-                i = 0
+                closest_index = -1
 
                 # 遍历所有检测到的物体，找出距离底边中心最近的物体
-                for x, y in zip(result.x, result.y):
-                    i = i + 1
+                for i, (x, y) in enumerate(zip(result.x, result.y)):
                     distance = np.sqrt((x - center_x) ** 2 + (y - bottom_y) ** 2)
                     if distance < min_distance:
                         min_distance = distance
+                        closest_index = i
                         closest_x = x
                         closest_y = y
-                        index = i
                 
                 data = {
                     "cmd": "catch",
@@ -231,13 +230,36 @@ class Task:
                     "y": closest_y
                 }
                 self.pub_grab.publish(json.dumps(data))
-                rospy.loginfo(f"catched: {result.name[index]}")
-                return result.name[index]
+                rospy.loginfo(f"catched: {result.name[closest_index]}")
+                return result.name[closest_index]
                 
 
     class PlaceTask:
-        def __init__(self):
+        def __init__(self, obj):
+            self.obj = obj
             pass
+
+        def __go2b__(self):
+            rospy.loginfo("go to b")
+
+        def __go2c__(self):
+            rospy.loginfo("go to c")
+
+        def __go2d__(self):
+            rospy.loginfo("go to d")
+
+        def place(self, name):
+            index = -1
+            for i, obj in enumerate(self.obj):
+                if obj == name:
+                    index = i
+                    
+            if index == 0:
+                self.__go2b__()
+            elif index == 1:
+                self.__go2c__()
+            elif index == 2:
+                self.__go2d__()
 
     def __init__(self):
         self.base_task = self.BaseTask()
@@ -306,15 +328,19 @@ class Task:
         rospy.loginfo("step_six done")
         rospy.sleep(0.5)
 
-    def pick(self):
+        self.place_task = self.PlaceTask(self.obj)
+
+    def pick2place(self):
         self.img_sub_grab = rospy.Subscriber(
                     "/camera/rgb/image_raw", Image, self.__grab__, queue_size=10)
         rospy.loginfo("grab done")
         rospy.sleep(1.5)
+        self.place_task.place(self.target)
+        
 
 if __name__ == '__main__':
     rospy.init_node('task')
     rospy.sleep(3)
     task = Task()
     task.init()
-    task.pick()
+    task.pick2place()
