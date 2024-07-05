@@ -109,7 +109,6 @@ class GraspObject():
         self.detector = spark_detect("/home/spark/spark_noetic/vegetable.pt")
         self.xc_prev = 0
         self.yc_prev = 0
-        self.found_count = 0
         self.is_have_object = False
         self.is_found_object = False
         self.object_union = []
@@ -354,7 +353,6 @@ class GraspObject():
         # 判断是否找到轮廓
         if len(contours) == 0:
             self.is_have_object = False
-            self.found_count = 0
         else:
             self.is_have_object = True
             index = -1
@@ -403,20 +401,6 @@ class GraspObject():
                     xc, yc = x_mid, y_mid
             # 按抓取长度小到大排序
             self.object_union.sort(key=lambda x: x[0])
-
-            if self.found_count >= 30:
-                self.found_count = 0
-                self.is_found_object = True
-
-            else:
-                # 如果物体没有移动
-                if index == -1:
-                    self.found_count = 0
-                    self.is_found_object = False
-                elif abs(xc - self.xc_prev) <= 8 and abs(yc - self.yc_prev) <= 8:
-                    self.found_count = self.found_count + 1
-                else:
-                    self.found_count = 0
 
         self.xc_prev, self.yc_prev = xc, yc
         if self.is_found_object:

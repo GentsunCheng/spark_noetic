@@ -208,6 +208,9 @@ class Task:
         self.detector = spark_detect("/home/spark/auto.pt")
 
     def __pick__(self, data):
+        if self.img_sub is not None:
+            self.img_sub.unregister()
+            self.img_sub = None
         # 使用 opencv 处理
         try:
             # 将ROS图像消息转换为OpenCV图像格式
