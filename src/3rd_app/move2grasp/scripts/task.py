@@ -258,7 +258,7 @@ class Task:
             rospy.sleep(0.5)
             self.base_task.step_rot(-90)
             rospy.sleep(0.5)
-            self.base_task.step_run(1.3)
+            self.base_task.step_run(1.2)
             rospy.sleep(0.5)
             data = {
                     "cmd": "step",
@@ -269,18 +269,27 @@ class Task:
             self.main_pub.publish("release")
             rospy.sleep(0.5)
             self.main_pub.publish("return")
+            rospy.sleep(1.0)
             self.base_task.step_rot(180)
             rospy.sleep(0.5)
-            self.base_task.step_run(1.3)
+            self.base_task.step_run(1.2)
             rospy.sleep(0.5)
             self.base_task.step_rot(90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(1.2)
             rospy.sleep(0.5)
 
         def __go2c__(self):
             rospy.loginfo("go to c")
             self.base_task.step_rot(-90)
             rospy.sleep(0.5)
-            self.base_task.step_run(1.2)
+            self.base_task.step_run(0.6)
+            rospy.sleep(0.5)
+            pos = position()
+            pos.x, pos.y, pos.z = 10.0, 160.0, 150.0
+            self.pos_pub.publish(pos)
+            rospy.sleep(0.5)
+            self.base_task.step_run(0.6)
             rospy.sleep(0.5)
             self.base_task.step_rot(90)
             rospy.sleep(0.5)
@@ -290,16 +299,59 @@ class Task:
             rospy.sleep(0.5)
             self.base_task.step_rot(90)
             rospy.sleep(0.5)
-
-        def __go2d__(self):
-            rospy.loginfo("go to d")
-            self.base_task.step_rot(-90)
+            data = {
+                    "cmd": "step",
+                    "step": 1
+                }
+            self.main_pub.publish(json.dumps(data))
+            rospy.sleep(0.5)
+            self.main_pub.publish("release")
+            rospy.sleep(0.5)
+            self.main_pub.publish("return")
+            rospy.sleep(1.0)
+            self.base_task.step_rot(180)
             rospy.sleep(0.5)
             self.base_task.step_run(1.2)
             rospy.sleep(0.5)
             self.base_task.step_rot(-90)
             rospy.sleep(0.5)
+            self.base_task.step_run(1.2)
+
+        def __go2d__(self):
+            rospy.loginfo("go to d")
+            self.base_task.step_rot(-90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(0.6)
+            rospy.sleep(0.5)
+            pos = position()
+            pos.x, pos.y, pos.z = 10.0, -160.0, 150.0
+            self.pos_pub.publish(pos)
+            rospy.sleep(0.5)
+            self.base_task.step_run(0.6)
+            rospy.sleep(0.5)
+            self.base_task.step_rot(-90)
+            rospy.sleep(0.5)
             self.base_task.step_run(0.35)
+            rospy.sleep(0.5)
+            data = {
+                    "cmd": "step",
+                    "step": 1
+                }
+            self.main_pub.publish(json.dumps(data))
+            rospy.sleep(0.5)
+            self.main_pub.publish("release")
+            rospy.sleep(0.5)
+            self.main_pub.publish("return")
+            rospy.sleep(1.0)
+            self.base_task.step_rot(180)
+            rospy.sleep(0.5)
+            self.base_task.step_run(0.35)
+            rospy.sleep(0.5)
+            self.base_task.step_rot(90)
+            rospy.sleep(0.5)
+            self.base_task.step_run(1.2)
+            rospy.sleep(0.5)
+            self.base_task.step_rot(90)
             rospy.sleep(0.5)
 
         def place(self, name):
@@ -353,10 +405,6 @@ class Task:
         rospy.loginfo(f"Identify result: {self.obj}")
 
     def init(self):
-        self.base_task.step_rot(45)
-        rospy.loginfo("done")
-        rospy.sleep(0.5)
-
         self.base_task.step_run(0.3)
         rospy.loginfo("step_one done")
         rospy.sleep(0.5)
