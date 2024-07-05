@@ -5,6 +5,8 @@ import rospy
 import yolov5
 import math
 import cv2
+import json
+import numpy as np
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
@@ -103,7 +105,7 @@ class PID:
         return self.Kp * error + self.Ki * self.integral + self.Kd * derivative
 
 class Task:
-    class InitTask:
+    class BaseTask:
         def __init__(self):
             self.cmd = Twist()
             self.walk_vel = rospy.get_param('walk_vel', 0.15)
@@ -196,14 +198,50 @@ class Task:
 
     class PickTask:
         def __init__(self):
+            self.pub_grab = rospy.Publisher('/grasp', String, queue_size=10)
             pass
+
+        def pick(self, detector, image):
+            result = detector.detect(image)
+
+            if result.name:
+                # 获取图像的宽度和高度
+                height, width, _ = image.shape
+                center_x = width // 2  # 图像底边中心的x坐标
+                bottom_y = height  # 图像底边的y坐标
+
+                min_distance = float('inf')
+                closest_x = None
+                closest_y = None
+                i = 0
+
+                # 遍历所有检测到的物体，找出距离底边中心最近的物体
+                for x, y in zip(result.x, result.y):
+                    i = i + 1
+                    distance = np.sqrt((x - center_x) ** 2 + (y - bottom_y) ** 2)
+                    if distance < min_distance:
+                        min_distance = distance
+                        closest_x = x
+                        closest_y = y
+                        index = i
+                
+                data = {
+                    "cmd": "catch",
+                    "x": closest_x,
+                    "y": closest_y
+                }
+                self.pub_grab.publish(json.dumps(data))
+                return result.name[index]
+                
 
     class PlaceTask:
         def __init__(self):
             pass
 
     def __init__(self):
-        self.init_task = Task.InitTask()
+        self.base_task = self.BaseTask()
+        self.pick_task = self.PickTask()
+        self.target = None
         self.obj = []
         self.detector = spark_detect("/home/spark/auto.pt")
 
@@ -219,23 +257,38 @@ class Task:
         except CvBridgeError as e:
             print('CvBridge Error:', e)
             return
-        self.obj = self.init_task.step_pick(self.detector, cv_image_rgb)
+        self.obj = self.base_task.step_pick(self.detector, cv_image_rgb)
+        rospy.loginfo(f"Identify result: {self.obj}")
+
+    def __grab__(self, data):
+        if self.img_sub_grab is not None:
+            self.img_sub_grab.unregister()
+            self.img_sub_grab = None
+        # 使用 opencv 处理
+        try:
+            # 将ROS图像消息转换为OpenCV图像格式
+            cv_image_bgr  = CvBridge().imgmsg_to_cv2(data, "bgr8")
+            cv_image_rgb = cv2.cvtColor(cv_image_bgr, cv2.COLOR_BGR2RGB)
+        except CvBridgeError as e:
+            print('CvBridge Error:', e)
+            return
+        self.target = self.pick_task.pick(self.detector, cv_image_rgb)
         rospy.loginfo(f"Identify result: {self.obj}")
 
     def init(self):
-        self.init_task.step_run(0.4)
+        self.base_task.step_run(0.35)
         print("step_one done")
         rospy.sleep(0.5)
 
-        self.init_task.step_rot(-90)
+        self.base_task.step_rot(-90)
         print("step_two done")
         rospy.sleep(0.5)
 
-        self.init_task.step_run(1.2)
+        self.base_task.step_run(1.2)
         print("step_three done")
         rospy.sleep(0.5)
 
-        self.init_task.step_rot(-90)
+        self.base_task.step_rot(-90)
         print("step_four done")
         rospy.sleep(0.5)
 
@@ -244,12 +297,18 @@ class Task:
         print("step_five done")
         rospy.sleep(0.5)
 
-        self.init_task.step_rot(180)
+        self.base_task.step_rot(180)
         print("step_five done")
         rospy.sleep(0.5)
 
-        self.init_task.step_run(0.4)
+        self.base_task.step_run(0.4)
         print("step_six done")
+        rospy.sleep(0.5)
+
+    def pick(self):
+        self.img_sub_grab = rospy.Subscriber(
+                    "/camera/rgb/image_raw", Image, self.__grab__, queue_size=10)
+        print("grab done")
         rospy.sleep(0.5)
 
 if __name__ == '__main__':
@@ -257,3 +316,4 @@ if __name__ == '__main__':
     rospy.sleep(3)
     task = Task()
     task.init()
+    task.pick()

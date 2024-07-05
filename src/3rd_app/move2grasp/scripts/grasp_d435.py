@@ -197,6 +197,10 @@ class GraspObject():
         else:
             try:
                 oprate = json.loads(msg.data)
+            except:
+                rospy.logwarn("未知指令")
+                return
+            finally:
                 if oprate["cmd"] == "grab":
                     self.auto_mod = 1
                     self.is_found_object = False
@@ -221,9 +225,7 @@ class GraspObject():
                         self.sweep_square_left()
                     elif oprate["dir"] == "right":
                         self.sweep_square_right()
-            except:
-                rospy.logwarn("未知指令")
-                pass
+            
                 
 
     # 执行抓取
