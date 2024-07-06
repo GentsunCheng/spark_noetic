@@ -30,6 +30,8 @@ class YoloDetect:
             self.name = []
             self.x = []
             self.y = []
+            self.size_x = []
+            self.size_y = []
             self.confidence = []
             self.image = None
 
@@ -74,11 +76,16 @@ class YoloDetect:
                 # 计算中心点坐标
                 center_x = int((xyxy[0] + xyxy[2]) / 2)
                 center_y = int((xyxy[1] + xyxy[3]) / 2)
+                # 计算尺寸
+                size_x = int(xyxy[2] - xyxy[0])
+                size_y = int(xyxy[3] - xyxy[1])
                 # 画出中心点
                 cv2.circle(image, (center_x, center_y), 5, (255, 0, 0), -1)
 
                 # 存储中心点坐标,物体名称,置信度和图像
                 result.name.append(self.model.model.names[int(cls)])
+                result.size_x.append(size_x)
+                result.size_y.append(size_y)
                 result.x.append(center_x)
                 result.y.append(center_y)
                 result.confidence.append(float(conf))
@@ -141,9 +148,14 @@ class CamAction:
     def __init__(self):
         self.detector = YoloDetect("/home/spark/auto.pt")
         self.img = None
+        self.im_sub = None
         self.ids = {"bear": 88, "wine": 46, "clock": 85}
 
     def img_callback(self, msg):
+        if self.im_sub is not None:
+            self.im_sub.unregister()
+        self.im_sub = None
+
         try:
             img = CvBridge().imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
@@ -160,12 +172,10 @@ class CamAction:
         cube_list[i][1][0]:代表第i个物体的x方向上的位置;     cube_list[i][1][1]:代表第i个物体的y方向上的位置
         '''
         cube_list = []
-        rospy.Subscriber(
-            "/image", Image, self.img_callback, queue_size=1)
-        
-        rospy.sleep(2.0)
+        self.im_sub = rospy.Subscriber(
+            "/camera/color/image_raw", Image, self.img_callback, queue_size=1)
+
         results = self.detector.detect(self.img)
-        rospy.sleep(3.0) 
         
         # 提取
         for index, in range(len(results.name)):
