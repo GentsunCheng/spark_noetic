@@ -293,11 +293,7 @@ class Task:
             rospy.sleep(0.5)
             self.base_task.step_rot(90)
             rospy.sleep(0.5)
-            self.base_task.step_run(1.6)
-            rospy.sleep(0.5)
             self.base_task.step_run(1.2)
-            rospy.sleep(0.5)
-            self.base_task.step_rot(90)
             rospy.sleep(0.5)
             data = {
                     "cmd": "step",
@@ -331,7 +327,7 @@ class Task:
             rospy.sleep(0.5)
             self.base_task.step_rot(-90)
             rospy.sleep(0.5)
-            self.base_task.step_run(0.35)
+            self.base_task.step_run(0.4)
             rospy.sleep(0.5)
             data = {
                     "cmd": "step",
@@ -345,13 +341,13 @@ class Task:
             rospy.sleep(1.0)
             self.base_task.step_rot(180)
             rospy.sleep(0.5)
-            self.base_task.step_run(0.35)
+            self.base_task.step_run(0.4)
             rospy.sleep(0.5)
             self.base_task.step_rot(90)
             rospy.sleep(0.5)
             self.base_task.step_run(1.2)
             rospy.sleep(0.5)
-            self.base_task.step_rot(90)
+            self.base_task.step_rot(-90)
             rospy.sleep(0.5)
 
         def place(self, name):
@@ -450,7 +446,8 @@ def start(bool):
     try:
         task = Task()
         task.init()
-        task.pick2place()
+        while True:
+            task.pick2place()
     except Exception as e:
         rospy.logerr(f'Error:{e}')
 
