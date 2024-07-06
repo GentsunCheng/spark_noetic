@@ -189,7 +189,7 @@ class ArmAction:
     def __init__(self):
 
         self.cam = CamAction()
-        self.img_sub = rospy.Subscriber("/camera/image_raw", Image, self.img_callback, queue_size=1, buff_size=2**24)
+        self.img_sub = rospy.Subscriber("image", Image, self.img_callback, queue_size=1, buff_size=2**24)
         self.img = None
 
         self.bridge = CvBridge()

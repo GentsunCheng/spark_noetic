@@ -29,16 +29,6 @@
 	<!-- <include file="$(find lidar_driver_transfer)/launch/$(arg lidar_type_tel).launch"> -->
 	<include file="$(find lidar_driver_transfer)/launch/$(arg lidar_type_tel).launch">
 	</include>
-		
-
-	<!-- tensorflow物体位置识别 -->
-	<node pkg= "auto_match" name="detect_ros" type="detect_ros.py"  output="screen">
-	<!-- <node pkg= "auto_match" name="detect_ros" type="detect_ros.py"  output="screen">  -->
-        <remap from="/camera/color/image_raw" to="image" if="$(eval arg('camera_type_tel')=='d435')"/>
-        <remap from="image" to="/camera/rgb/image_raw" if="$(eval arg('camera_type_tel')=='astrapro')"/>
-        <remap from="image" to="/camera/rgb/image_raw" if="$(eval arg('camera_type_tel')=='astra')"/>
-       
-    </node>
 
 	<!-- 地点记录 -->
 	<node pkg="auto_match" name="mark_move" type="mark_move.py" output="screen"/>
@@ -74,7 +64,11 @@
 		<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" unless="$(arg open_guide)"/>
 		
 		<!-- 流程程序 -->
-	<node pkg="auto_match" name="runtask" type="runtask.py" output="screen" launch-prefix="xterm -e" unless="$(arg open_guide)"/>
+	<node pkg="auto_match" name="runtask" type="runtask.py" output="screen" launch-prefix="xterm -e" unless="$(arg open_guide)">
+		<remap from="/camera/color/image_raw" to="image" if="$(eval arg('camera_type_tel')=='d435')"/>
+        <remap from="image" to="/camera/rgb/image_raw" if="$(eval arg('camera_type_tel')=='astrapro')"/>
+        <remap from="image" to="/camera/rgb/image_raw" if="$(eval arg('camera_type_tel')=='astra')"/>
+	</node>
     <!-- <node pkg="auto_match" name="runtask" type="runtask.py" output="screen" launch-prefix="xterm -e" unless="$(arg open_guide)"/> -->
 		
 		<!-- AMCL-->
