@@ -426,7 +426,7 @@ class Task:
         rospy.loginfo("step_five done")
         rospy.sleep(0.5)
 
-        self.base_task.step_run(0.43)
+        self.base_task.step_run(0.45)
         rospy.loginfo("step_six done")
         rospy.sleep(0.5)
 
@@ -453,7 +453,7 @@ def start(bool):
 
 if __name__ == '__main__':
     rospy.init_node('task')
-    rospy.sleep(3)
+    rospy.sleep(0.5)
     start_sig = rospy.Subscriber('/task_start', Bool, callback=start)
     rospy.spin()
 
