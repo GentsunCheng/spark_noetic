@@ -1,14 +1,21 @@
 #!/usr/bin/python3
 
-import sys
 import os
-import yaml
-import _thread
 import threading
-import pickle
 
+import cv2
+import yolov5
+
+import platform
+import pathlib
+plt = platform.system()
+if plt != 'Windows':
+  pathlib.WindowsPath = pathlib.PosixPath
+
+
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
 import rospy
-import rospkg
 import actionlib
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import MoveBaseActionResult, MoveBaseResult
@@ -20,6 +27,81 @@ import swiftpro.msg
 from std_msgs.msg import String
 from swiftpro.msg import position
 from vision_msgs.msg import Detection2DArray
+
+
+class YoloDetect:
+    class __results__:
+        def __init__(self):
+            self.name = []
+            self.x = []
+            self.y = []
+            self.size_x = []
+            self.size_y = []
+            self.confidence = []
+            self.image = None
+
+    def __init__(self, model_path):
+        '''
+        初始化YOLOv5检测器
+        :param model_path: YOLOv5模型文件路径
+        '''
+        try:
+            self.model = yolov5.load(model_path)
+        except Exception as e:
+            print("加载模型失败:", e)
+        self.is_detecting = False
+
+    def detect(self, image):
+        '''
+        检测图像中的物体
+        :param image: 输入图像
+        :return: 结果类结构
+                  result.name: 物体名称列表
+                  result.x: 物体中心点x坐标列表
+                  result.y: 物体中心点y坐标列表
+                  result.confidence: 物体置信度列表
+                  result.image: 检测后的图像
+        '''
+        while self.is_detecting:
+            rospy.sleep(0.5)
+        results = self.model(image, augment=True)
+        self.is_detecting = True
+
+        # 存储检测结果的列表
+        result = self.__results__()
+
+        # 遍历检测结果
+        try:
+            for *xyxy, conf, cls in results.xyxy[0]:
+                label = f'{self.model.model.names[int(cls)]} {conf:.2f}'
+                # 画出矩形框
+                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 2)
+                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+
+                # 计算中心点坐标
+                center_x = int((xyxy[0] + xyxy[2]) / 2)
+                center_y = int((xyxy[1] + xyxy[3]) / 2)
+                # 计算尺寸
+                size_x = int(xyxy[2] - xyxy[0])
+                size_y = int(xyxy[3] - xyxy[1])
+                # 画出中心点
+                cv2.circle(image, (center_x, center_y), 5, (255, 0, 0), -1)
+
+                # 存储中心点坐标,物体名称,置信度和图像
+                result.name.append(self.model.model.names[int(cls)])
+                result.size_x.append(size_x)
+                result.size_y.append(size_y)
+                result.x.append(center_x)
+                result.y.append(center_y)
+                result.confidence.append(float(conf))
+
+            result.image = image
+        except Exception as e:
+            print("未检测到物体:", e)
+
+        self.is_detecting = False
+
+        return result
 
 
 class SwiftProInterface:
@@ -69,26 +151,11 @@ class SwiftProInterface:
 
 class CamAction:
     def __init__(self):
-        # 获取标定文件相关信息
-        rospack = rospkg.RosPack()
-        package_path = os.path.join(rospack.get_path('auto_match'))          # 获取功能包路径
-        items_path = os.path.join(package_path, 'config', 'items_config.yaml')  # 获取物体标签路径
-        try:
-            with open(items_path, "r", encoding="utf8") as f:
-                items_content = yaml.load(f.read(), Loader=yaml.FullLoader)
-        except Exception:
-            rospy.logerr("can't not open file")
-            sys.exit(1)
-        if isinstance(items_content, type(None)):
-            rospy.logerr("items file empty")
-            sys.exit(1)
+        self.detector = YoloDetect("/home/spark/auto.pt")
 
-        # 根据yaml文件，确定抓取物品的id号
-        self.search_id = [
-            items_content["items"][items_content["objects"]["objects_a"]]
-        ]
+        self.ids = {"teddybear":88, "wine glass":46, "clock":85}
 
-    def detector(self):
+    def detect(self, img):
         '''
         获取需要抓取的物品在显示屏上的坐标位置
         @return: 需要抓取的物品列表cube_list
@@ -102,20 +169,18 @@ class CamAction:
         obj_array = None
 
         try:
-            obj_array = rospy.wait_for_message(
-                "/objects", Detection2DArray, timeout=5)
+            results = self.detector.detect(img)
         except Exception:
             cube_list.clear()
             return cube_list
         
+        index = -1
         # 提取
-        for obj in obj_array.detections:
-            obj_dist[obj.results[0].id] = [obj.bbox.center.x, obj.bbox.center.y, 0]
-
-        # 筛选出需要的物品 cube_list中的key代表识别物体的ID，value代表位置信息
-        for key, value in obj_dist.items():
-            if key in self.search_id:
-                cube_list.append([key, value])
+        for name, in results.name:
+            index = index + 1
+            cube_list[index][0] = self.ids[name]
+            cube_list[index][1][1] = results.x[index]
+            cube_list[index][1][2] = results.y[index]
 
         return cube_list
 
@@ -124,6 +189,10 @@ class ArmAction:
     def __init__(self):
 
         self.cam = CamAction()
+        self.img_sub = rospy.Subscriber("/camera/image_raw", Image, self.img_callback, queue_size=1, buff_size=2**24)
+        self.img = None
+
+        self.bridge = CvBridge()
 
         # 获取标定文件数据
         filename = os.environ['HOME'] + "/thefile.txt"
@@ -137,7 +206,17 @@ class ArmAction:
         self.interface = SwiftProInterface()
 
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
- 
+
+
+    def img_callback(self, msg):
+        try:
+            img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+        
+        # 转换为rgb
+        self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
     
     def grasp(self):
         '''
@@ -151,7 +230,7 @@ class ArmAction:
         z = 0
 
         # 寻找物品
-        cube_list = self.cam.detector()
+        cube_list = self.cam.detect(self.img)
         # rospy.sleep(2)
         if len(cube_list) == 0:
             rospy.logwarn("没有找到物品啊。。。去下一个地方")
@@ -209,7 +288,7 @@ class ArmAction:
             self.interface.set_pose(0, 225, 160)
             # r1.sleep()
             rospy.sleep(2)
-            cube_list = self.detector()
+            cube_list = self.cam.detect(self.img)
             if len(cube_list) > 0:
                 x = self.x_kb[0] * cube_list[0][1][1] + self.x_kb[1]
                 y = self.y_kb[0] * cube_list[0][1][0] + self.y_kb[1]

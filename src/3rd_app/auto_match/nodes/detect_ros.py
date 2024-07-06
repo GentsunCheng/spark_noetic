@@ -108,8 +108,6 @@ class spark_detect:
 class Detector:
 
     def __init__(self):
-        self.image_pub = rospy.Publisher("debug_image",Image, queue_size=1)
-        self.object_pub = rospy.Publisher("objects", Detection2DArray, queue_size=1)
         self.bridge = CvBridge()
         # self.image_sub = rospy.Subscriber("image", Image, self.image_cb, queue_size=1, buff_size=2**24)
         self.image_sub = rospy.Subscriber("image", Image, self.image_cb, queue_size=1, buff_size=2**24)
