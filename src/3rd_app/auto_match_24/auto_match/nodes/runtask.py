@@ -6,11 +6,8 @@ import threading
 import cv2
 import yolov5
 
-import platform
 import pathlib
-plt = platform.system()
-if plt != 'Windows':
-  pathlib.WindowsPath = pathlib.PosixPath
+pathlib.WindowsPath = pathlib.PosixPath
 
 
 from sensor_msgs.msg import Image
@@ -33,8 +30,6 @@ class YoloDetect:
             self.name = []
             self.x = []
             self.y = []
-            self.size_x = []
-            self.size_y = []
             self.confidence = []
             self.image = None
 
@@ -79,16 +74,11 @@ class YoloDetect:
                 # 计算中心点坐标
                 center_x = int((xyxy[0] + xyxy[2]) / 2)
                 center_y = int((xyxy[1] + xyxy[3]) / 2)
-                # 计算尺寸
-                size_x = int(xyxy[2] - xyxy[0])
-                size_y = int(xyxy[3] - xyxy[1])
                 # 画出中心点
                 cv2.circle(image, (center_x, center_y), 5, (255, 0, 0), -1)
 
                 # 存储中心点坐标,物体名称,置信度和图像
                 result.name.append(self.model.model.names[int(cls)])
-                result.size_x.append(size_x)
-                result.size_y.append(size_y)
                 result.x.append(center_x)
                 result.y.append(center_y)
                 result.confidence.append(float(conf))
@@ -150,31 +140,39 @@ class SwiftProInterface:
 class CamAction:
     def __init__(self):
         self.detector = YoloDetect("/home/spark/auto.pt")
-
+        self.img = None
         self.ids = {"bear": 88, "wine": 46, "clock": 85}
 
-    def detect(self, img):
+    def img_callback(self, msg):
+        try:
+            img = CvBridge().imgmsg_to_cv2(msg, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+        self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    def detect(self):
         '''
         获取需要抓取的物品在显示屏上的坐标位置
         @return: 需要抓取的物品列表cube_list
 
         cube_list[i]:代表第几个物体
         cube_list[i][0]:代表第i个物体的ID信息;               cube_list[i][1]:代表第i个物体的位置信息
-        cube_list[i][1][1]:代表第i个物体的x方向上的位置;     cube_list[i][1][2]:代表第i个物体的y方向上的位置
+        cube_list[i][1][0]:代表第i个物体的x方向上的位置;     cube_list[i][1][1]:代表第i个物体的y方向上的位置
         '''
         cube_list = []
-
-        try:
-            results = self.detector.detect(img)
-        except Exception:
-            cube_list.clear()
-            return cube_list
+        rospy.Subscriber(
+            "/image", Image, self.img_callback, queue_size=1)
+        
+        rospy.sleep(2.0)
+        results = self.detector.detect(self.img)
+        rospy.sleep(3.0) 
         
         # 提取
         for index, in range(len(results.name)):
-            cube_list[index][0] = self.ids[results.name[index]]
-            cube_list[index][1][1] = results.x[index]
-            cube_list[index][1][2] = results.y[index]
+            cube_list[index] = [
+                self.ids[results.name[index]], 
+                [results.x[index], results.y[index]]
+            ]
 
         return cube_list
 
@@ -183,8 +181,6 @@ class ArmAction:
     def __init__(self):
 
         self.cam = CamAction()
-        self.img_sub = rospy.Subscriber("/image", Image, self.img_callback, queue_size=1, buff_size=2**24)
-        self.img = None
 
         # 获取标定文件数据
         filename = os.environ['HOME'] + "/thefile.txt"
@@ -198,15 +194,6 @@ class ArmAction:
         self.interface = SwiftProInterface()
 
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
-
-
-    def img_callback(self, msg):
-        try:
-            img = CvBridge().imgmsg_to_cv2(msg, "bgr8")
-        except CvBridgeError as e:
-            print(e)
-        self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
     
     def grasp(self):
         '''
@@ -220,7 +207,7 @@ class ArmAction:
         z = 0
 
         # 寻找物品
-        cube_list = self.cam.detect(self.img)
+        cube_list = self.cam.detect()
         # rospy.sleep(2)
         if len(cube_list) == 0:
             rospy.logwarn("没有找到物品啊。。。去下一个地方")
@@ -230,8 +217,8 @@ class ArmAction:
         cube_list = sorted(cube_list, key=lambda x: x[1][1], reverse=False)
 
         # 获取机械臂目标位置
-        x = self.x_kb[0] * cube_list[0][1][1] + self.x_kb[1]
-        y = self.y_kb[0] * cube_list[0][1][0] + self.y_kb[1]
+        x = self.x_kb[0] * cube_list[0][1][0] + self.x_kb[1]
+        y = self.y_kb[0] * cube_list[0][1][1] + self.y_kb[1]
         z = -55
 
         print(f"找到物品了！它在: {x}, {y}, {z}")
@@ -278,10 +265,10 @@ class ArmAction:
             self.interface.set_pose(0, 225, 160)
             # r1.sleep()
             rospy.sleep(2)
-            cube_list = self.cam.detect(self.img)
+            cube_list = self.cam.detect()
             if len(cube_list) > 0:
-                x = self.x_kb[0] * cube_list[0][1][1] + self.x_kb[1]
-                y = self.y_kb[0] * cube_list[0][1][0] + self.y_kb[1]
+                x = self.x_kb[0] * cube_list[0][1][0] + self.x_kb[1]
+                y = self.y_kb[0] * cube_list[0][1][1] + self.y_kb[1]
                 z = 120
 
         # 默认放置位置
