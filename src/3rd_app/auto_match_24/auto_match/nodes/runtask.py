@@ -170,11 +170,9 @@ class CamAction:
             cube_list.clear()
             return cube_list
         
-        index = -1
         # 提取
-        for name, in results.name:
-            index = index + 1
-            cube_list[index][0] = self.ids[name]
+        for index, in range(len(results.name)):
+            cube_list[index][0] = self.ids[results.name[index]]
             cube_list[index][1][1] = results.x[index]
             cube_list[index][1][2] = results.y[index]
 
