@@ -18,15 +18,13 @@ from cv_bridge import CvBridge, CvBridgeError
 import rospy
 import actionlib
 from actionlib_msgs.msg import *
-from move_base_msgs.msg import MoveBaseActionResult, MoveBaseResult
+from move_base_msgs.msg import MoveBaseActionResult
 import common.msg
 import common.srv
 from common.msg import MoveStraightDistanceAction, TurnBodyDegreeAction
-# import common.action
 import swiftpro.msg
 from std_msgs.msg import String
 from swiftpro.msg import position
-from vision_msgs.msg import Detection2DArray
 
 
 class YoloDetect:
@@ -153,7 +151,7 @@ class CamAction:
     def __init__(self):
         self.detector = YoloDetect("/home/spark/auto.pt")
 
-        self.ids = {"teddybear":88, "wine glass":46, "clock":85}
+        self.ids = {"bear": 88, "wine": 46, "clock": 85}
 
     def detect(self, img):
         '''
@@ -164,9 +162,7 @@ class CamAction:
         cube_list[i][0]:代表第i个物体的ID信息;               cube_list[i][1]:代表第i个物体的位置信息
         cube_list[i][1][1]:代表第i个物体的x方向上的位置;     cube_list[i][1][2:代表第i个物体的y方向上的位置
         '''
-        obj_dist = {}
         cube_list = []
-        obj_array = None
 
         try:
             results = self.detector.detect(img)
@@ -189,10 +185,8 @@ class ArmAction:
     def __init__(self):
 
         self.cam = CamAction()
-        self.img_sub = rospy.Subscriber("image", Image, self.img_callback, queue_size=1, buff_size=2**24)
+        self.img_sub = rospy.Subscriber("/image", Image, self.img_callback, queue_size=1, buff_size=2**24)
         self.img = None
-
-        self.bridge = CvBridge()
 
         # 获取标定文件数据
         filename = os.environ['HOME'] + "/thefile.txt"
@@ -210,11 +204,9 @@ class ArmAction:
 
     def img_callback(self, msg):
         try:
-            img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            img = CvBridge().imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
             print(e)
-        
-        # 转换为rgb
         self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     
