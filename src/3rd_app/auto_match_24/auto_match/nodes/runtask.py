@@ -160,7 +160,7 @@ class CamAction:
 
         cube_list[i]:代表第几个物体
         cube_list[i][0]:代表第i个物体的ID信息;               cube_list[i][1]:代表第i个物体的位置信息
-        cube_list[i][1][1]:代表第i个物体的x方向上的位置;     cube_list[i][1][2:代表第i个物体的y方向上的位置
+        cube_list[i][1][1]:代表第i个物体的x方向上的位置;     cube_list[i][1][2]:代表第i个物体的y方向上的位置
         '''
         cube_list = []
 
