@@ -174,8 +174,13 @@ class CamAction:
         cube_list = []
         self.im_sub = rospy.Subscriber(
             "/camera/color/image_raw", Image, self.img_callback, queue_size=1)
+        
+        while self.img is None:
+            rospy.sleep(0.1)
 
         results = self.detector.detect(self.img)
+
+        self.img = None
         
         # 提取
         for index, in range(len(results.name)):
