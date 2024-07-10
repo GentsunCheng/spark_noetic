@@ -12,4 +12,5 @@ items:
   wine glass: 46
 objects:
   objects_a: clock
-
+  objects_b: teddybear
+  objects_c: wine glass

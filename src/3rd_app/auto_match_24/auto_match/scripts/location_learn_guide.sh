@@ -7,6 +7,12 @@ echo -e "${Info} 脚本运行过程任意时候可按 Ctrl+C 退出脚本"
 echo -e ""
 echo -e "${Info} 接下来请根据提示进行操作"
 
+# echo -e ""
+# echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}收取区A${Font_color_suffix}\c"
+# echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+# rostopic pub /mark_nav std_msgs/String "data: 'learn Collection_A'" -1 >/dev/null
+# echo -e "${Info} 地点名为 ${Yellow_background_prefix}sp${Font_color_suffix}"
+
 echo -e ""
 echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分类区${Font_color_suffix}\c"
 echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
@@ -20,6 +26,23 @@ echo && stty erase '^H' && read -p "       然后在这个界面内按回车..."
 rostopic pub /mark_nav std_msgs/String "data: 'learn Collection_B'" -1 >/dev/null
 echo -e "${Info} 地点名为 ${Yellow_background_prefix}Collection_B${Font_color_suffix}"
 
+echo -e ""
+echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}收取区C${Font_color_suffix}\c"
+echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+rostopic pub /mark_nav std_msgs/String "data: 'learn Collection_C'" -1 >/dev/null
+echo -e "${Info} 地点名为 ${Yellow_background_prefix}Collection_C${Font_color_suffix}"
+
+echo -e ""
+echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}收取区D${Font_color_suffix}\c"
+echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+rostopic pub /mark_nav std_msgs/String "data: 'learn Collection_D'" -1 >/dev/null
+echo -e "${Info} 地点名为 ${Yellow_background_prefix}Collection_D${Font_color_suffix}"
+
+echo -e ""
+echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区东${Font_color_suffix}\c"
+echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_E'" -1 >/dev/null
+echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_E${Font_color_suffix}"
 
 echo -e ""
 echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区北${Font_color_suffix}\c"
@@ -33,6 +56,12 @@ echo && stty erase '^H' && read -p "       然后在这个界面内按回车..."
 rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_W'" -1 >/dev/null
 echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_W${Font_color_suffix}"
 
+echo -e ""
+echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区南${Font_color_suffix}\c"
+echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_S'" -1 >/dev/null
+echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_S${Font_color_suffix}"
+
 
 echo -e ""
 echo -e "${Info} 是否标记完成,保存地图？ \c"
@@ -42,6 +71,55 @@ rostopic pub /mark_nav std_msgs/String "data: 'finish'" -1 >/dev/null
 CURRENTPATH=$(cd `dirname $0`; pwd)
 gnome-terminal -x bash -c "rosrun map_server map_saver -f $CURRENTPATH/../config/test_map"
 echo -e "${Info} 结束标记地点,已保存地图"
+
+echo -e ""
+echo -e "${Info} 是否启动比赛程序？ \c"
+echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+rostopic pub /task_start_flag std_msgs/String "data: 'true'" -1 >/dev/null
+echo -e "${Info} 开始比赛"
+
+# echo -e ""
+# echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}收取区D${Font_color_suffix}\c"
+# echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+# rostopic pub /mark_nav std_msgs/String "data: 'learn Collection_D'" -1 >/dev/null
+# echo -e "${Info} 地点名为 ${Yellow_background_prefix}wp_1${Font_color_suffix}"
+
+# echo -e ""
+# echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}收取区C${Font_color_suffix}\c"
+# echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+# rostopic pub /mark_nav std_msgs/String "data: 'learn Collection_C'" -1 >/dev/null
+# echo -e "${Info} 地点名为 ${Yellow_background_prefix}wp_1${Font_color_suffix}"
+
+# echo -e ""
+# echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}收取区B${Font_color_suffix}\c"
+# echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+# rostopic pub /mark_nav std_msgs/String "data: 'learn Collection_B'" -1 >/dev/null
+# echo -e "${Info} 地点名为 ${Yellow_background_prefix}wp_1${Font_color_suffix}"
+
+# echo -e ""
+# echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区北${Font_color_suffix}\c"
+# echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+# rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_N'" -1 >/dev/null
+# echo -e "${Info} 地点名为 ${Yellow_background_prefix}wp_1${Font_color_suffix}"
+
+# echo -e ""
+# echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区西${Font_color_suffix}\c"
+# echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+# rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_W'" -1 >/dev/null
+# echo -e "${Info} 地点名为 ${Yellow_background_prefix}wp_1${Font_color_suffix}"
+
+# echo -e ""
+# echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区南${Font_color_suffix}\c"
+# echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+# rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_S'" -1 >/dev/null
+# echo -e "${Info} 地点名为 ${Yellow_background_prefix}wp_1${Font_color_suffix}"
+
+# echo -e ""
+# echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区东${Font_color_suffix}\c"
+# echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
+# rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_E'" -1 >/dev/null
+# echo -e "${Info} 地点名为 ${Yellow_background_prefix}wp_1${Font_color_suffix}"
+
 
 echo -e ""
 echo -e "${Info} 地点记录已完成\c"

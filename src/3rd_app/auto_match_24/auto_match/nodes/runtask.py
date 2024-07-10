@@ -1,103 +1,23 @@
 #!/usr/bin/python3
 
+import sys
 import os
+import yaml
 import threading
 
-import cv2
-import yolov5
-
-import pathlib
-pathlib.WindowsPath = pathlib.PosixPath
-
-
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
 import rospy
+import rospkg
 import actionlib
 from actionlib_msgs.msg import *
-from move_base_msgs.msg import MoveBaseActionResult
+from move_base_msgs.msg import MoveBaseActionResult, MoveBaseResult
 import common.msg
 import common.srv
 from common.msg import MoveStraightDistanceAction, TurnBodyDegreeAction
 import swiftpro.msg
 from std_msgs.msg import String
 from swiftpro.msg import position
-
-
-class YoloDetect:
-    class __results__:
-        def __init__(self):
-            self.name = []
-            self.x = []
-            self.y = []
-            self.size_x = []
-            self.size_y = []
-            self.confidence = []
-            self.image = None
-
-    def __init__(self, model_path):
-        '''
-        初始化YOLOv5检测器
-        :param model_path: YOLOv5模型文件路径
-        '''
-        try:
-            self.model = yolov5.load(model_path)
-        except Exception as e:
-            print("加载模型失败:", e)
-        self.is_detecting = False
-
-    def detect(self, image):
-        '''
-        检测图像中的物体
-        :param image: 输入图像
-        :return: 结果类结构
-                  result.name: 物体名称列表
-                  result.x: 物体中心点x坐标列表
-                  result.y: 物体中心点y坐标列表
-                  result.confidence: 物体置信度列表
-                  result.image: 检测后的图像
-        '''
-        while self.is_detecting:
-            rospy.sleep(0.5)
-        results = self.model(image, augment=True)
-        self.is_detecting = True
-
-        # 存储检测结果的列表
-        result = self.__results__()
-
-        # 遍历检测结果
-        try:
-            for *xyxy, conf, cls in results.xyxy[0]:
-                label = f'{self.model.model.names[int(cls)]} {conf:.2f}'
-                # 画出矩形框
-                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 2)
-                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
-
-                # 计算中心点坐标
-                center_x = int((xyxy[0] + xyxy[2]) / 2)
-                center_y = int((xyxy[1] + xyxy[3]) / 2)
-                # 计算尺寸
-                size_x = int(xyxy[2] - xyxy[0])
-                size_y = int(xyxy[3] - xyxy[1])
-                # 画出中心点
-                cv2.circle(image, (center_x, center_y), 5, (255, 0, 0), -1)
-
-                # 存储中心点坐标,物体名称,置信度和图像
-                result.name.append(self.model.model.names[int(cls)])
-                result.size_x.append(size_x)
-                result.size_y.append(size_y)
-                result.x.append(center_x)
-                result.y.append(center_y)
-                result.confidence.append(float(conf))
-
-            result.image = image
-        except Exception as e:
-            print("未检测到物体:", e)
-
-        self.is_detecting = False
-
-        return result
-
+from vision_msgs.msg import Detection2DArray
+from geometry_msgs.msg import Twist
 
 class SwiftProInterface:
     def __init__(self):
@@ -120,7 +40,7 @@ class SwiftProInterface:
         pos.z = z
         # rospy.loginfo(f"set pose {x},{y},{z}")
         self.arm_position_pub.publish(pos)
-        rospy.sleep(3)
+        rospy.sleep(1.5)
 
     def set_pump(self, enable:bool):
         '''
@@ -146,50 +66,116 @@ class SwiftProInterface:
 
 class CamAction:
     def __init__(self):
-        self.detector = YoloDetect("/home/spark/auto.pt")
-        self.img = None
-        self.im_sub = None
-        self.ids = {"bear": 88, "wine": 46, "clock": 85}
-
-    def img_callback(self, msg):
-        if self.im_sub is not None:
-            self.im_sub.unregister()
-        self.im_sub = None
-
+        # 获取标定文件相关信息
+        rospack = rospkg.RosPack()
+        package_path = os.path.join(rospack.get_path('auto_match'))          # 获取功能包路径
+        items_path = os.path.join(package_path, 'config', 'items_config.yaml')  # 获取物体标签路径
         try:
-            img = CvBridge().imgmsg_to_cv2(msg, "bgr8")
-        except CvBridgeError as e:
-            print(e)
-        self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            with open(items_path, "r", encoding="utf8") as f:
+                items_content = yaml.load(f.read(), Loader=yaml.FullLoader)
+        except Exception:
+            rospy.logerr("can't not open file")
+            sys.exit(1)
+        if isinstance(items_content, type(None)):
+            rospy.logerr("items file empty")
+            sys.exit(1)
 
-    def detect(self):
+        # 根据yaml文件，确定抓取物品的id号
+        self.search_id = [
+            items_content["items"][items_content["objects"]["objects_a"]],
+            items_content["items"][items_content["objects"]["objects_b"]],
+            items_content["items"][items_content["objects"]["objects_c"]]
+        ]
+
+    def detector(self):
         '''
         获取需要抓取的物品在显示屏上的坐标位置
         @return: 需要抓取的物品列表cube_list
 
         cube_list[i]:代表第几个物体
         cube_list[i][0]:代表第i个物体的ID信息;               cube_list[i][1]:代表第i个物体的位置信息
-        cube_list[i][1][0]:代表第i个物体的x方向上的位置;     cube_list[i][1][1]:代表第i个物体的y方向上的位置
+        cube_list[i][1][1]:代表第i个物体的x方向上的位置;     cube_list[i][1][2:代表第i个物体的y方向上的位置
         '''
+        obj_dist = {}
         cube_list = []
-        self.im_sub = rospy.Subscriber(
-            "/camera/color/image_raw", Image, self.img_callback, queue_size=1)
-        
-        while self.img is None:
-            rospy.sleep(0.1)
+        obj_array = None
 
-        results = self.detector.detect(self.img)
-
-        self.img = None
+        try:
+            obj_array = rospy.wait_for_message(
+                "/objects", Detection2DArray, timeout=5)
+        except Exception:
+            cube_list.clear()
+            return cube_list
         
         # 提取
-        for index, in range(len(results.name)):
-            cube_list[index] = [
-                self.ids[results.name[index]], 
-                [results.x[index], results.y[index]]
-            ]
+        for obj in obj_array.detections:
+            obj_dist[obj.results[0].id] = [obj.bbox.center.x, obj.bbox.center.y, 0]
 
+        # 筛选出需要的物品 cube_list中的key代表识别物体的ID，value代表位置信息
+        for key, value in obj_dist.items():
+            if key in self.search_id:
+                cube_list.append([key, value])
+
+        # 按识别次数排列并选择次数最高的物品
+        # cube_list.sort(key=lambda x: x[1][2], reverse=True)
         return cube_list
+
+    # ======获取物品对应的收取区位置=======
+    def get_recriving_area_location(self):
+        '''
+        获取物体对应的收取区位置
+        @return: items_place_dict{} 物品id与收取区对应关系的字典
+        键key为物品id,值value为导航地点名称
+        '''
+        finding = True
+        self.robot = RobotMoveAction()
+        while(finding):              
+            items_place_dict = {} # 创建一个字典放置对饮关系
+            cube_list = self.detector() # 获取识别到的物体信息
+            # print("cube_list:",cube_list)
+
+            if len(cube_list) < 3:
+                if len(cube_list) == 0:
+                    rospy.logwarn("objects not found...")
+                    self.robot.step_go(0.03)
+                    rospy.sleep(2)
+                    continue
+                rospy.logwarn("finding object...")
+                self.robot.move_action_cli.send_goal_and_wait(
+                    common.msg.MoveStraightDistanceGoal(
+                    type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
+                    const_rot_vel=0.1,
+                    move_distance=0.03,
+                    ),
+                rospy.Duration.from_sec(5)  # 超过5s为超时
+                )
+                rospy.sleep(2)
+            elif len(cube_list) >= 3 :
+                print("finded 3 objects")
+                # 根据 cube_list[i][1][0] 的值对 cube_list 进行排序
+                sorted_cube_list = sorted(cube_list, key=lambda x: x[1][0], reverse=False)
+
+                # 建立对应关系 sorted_cube_list[0][0]代表识别到的物体ID
+                items_place_dict[sorted_cube_list[0][0]] = "Collection_B" # 最左边的物体对应收取区D
+                items_place_dict[sorted_cube_list[1][0]] = "Collection_C" # 中间的物体对应收取区C
+                items_place_dict[sorted_cube_list[2][0]] = "Collection_D" # 最右边的物体对应收取区B
+                
+                print("readying to turn back")
+                self.robot.move_action_cli.send_goal_and_wait(
+                    common.msg.MoveStraightDistanceGoal(
+                    type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
+                    const_rot_vel=-0.1,
+                    move_distance=0.1,
+                    ), 
+                rospy.Duration.from_sec(5)  # 超过5s为超时
+                )
+                rospy.sleep(3)
+
+                finding = False
+                print(items_place_dict)
+            
+        return items_place_dict
+
 
 
 class ArmAction:
@@ -209,20 +195,19 @@ class ArmAction:
         self.interface = SwiftProInterface()
 
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
+ 
     
     def grasp(self):
         '''
         使用深度学习找到所需物品在图像上的位置, 估算物品实际位置, 让机械臂抓取
         @return: 抓取到物品的id, 0为未识别到需要的物品
         '''
-        r1 = rospy.Rate(0.25)
-        r2 = rospy.Rate(10)
         x = 0
         y = 0
         z = 0
 
         # 寻找物品
-        cube_list = self.cam.detect()
+        cube_list = self.cam.detector()
         # rospy.sleep(2)
         if len(cube_list) == 0:
             rospy.logwarn("没有找到物品啊。。。去下一个地方")
@@ -232,32 +217,27 @@ class ArmAction:
         cube_list = sorted(cube_list, key=lambda x: x[1][1], reverse=False)
 
         # 获取机械臂目标位置
-        x = self.x_kb[0] * cube_list[0][1][0] + self.x_kb[1]
-        y = self.y_kb[0] * cube_list[0][1][1] + self.y_kb[1]
+        x = self.x_kb[0] * cube_list[0][1][1] + self.x_kb[1]
+        y = self.y_kb[0] * cube_list[0][1][0] + self.y_kb[1]
         z = -55
 
         print(f"找到物品了！它在: {x}, {y}, {z}")
 
         # 机械臂移动到目标位置上方
         self.interface.set_pose(x, y, z + 20)
-        rospy.sleep(1)
+        # rospy.sleep(0.3)
 
         # 打开气泵，进行吸取
         self.interface.set_pump(True)
-        rospy.sleep(1)
+        # rospy.sleep(0.2)
 
         # 机械臂移动到目标位置
         self.interface.set_pose(x, y, z)
-        rospy.sleep(1)
-
-        
-        # r2.sleep()
 
         # 抬起目标方块
         print(f"我把物品抬起来了")
         self.interface.set_pose(x, y, z + 120)
-        rospy.sleep(2)
-        # r1.sleep()
+        rospy.sleep(0.2)
 
         self.grasp_status_pub.publish(String("0"))
 
@@ -269,8 +249,6 @@ class ArmAction:
         @param check: 是否判断有无方块, 默认判断
         @return item_id: 执行结果
         '''
-        r1 = rospy.Rate(0.25)
-        r2 = rospy.Rate(10)
         x = 300
         y = 0
         z = 120
@@ -280,26 +258,22 @@ class ArmAction:
             self.interface.set_pose(0, 225, 160)
             # r1.sleep()
             rospy.sleep(2)
-            cube_list = self.cam.detect()
+            cube_list = self.detector()
             if len(cube_list) > 0:
-                x = self.x_kb[0] * cube_list[0][1][0] + self.x_kb[1]
-                y = self.y_kb[0] * cube_list[0][1][1] + self.y_kb[1]
+                x = self.x_kb[0] * cube_list[0][1][1] + self.x_kb[1]
+                y = self.y_kb[0] * cube_list[0][1][0] + self.y_kb[1]
                 z = 120
 
         # 默认放置位置
         self.interface.set_pose(x, y, z)
-        rospy.sleep(2)
-
+        rospy.sleep(0.15)
 
         # 关闭气泵
         self.interface.set_pump(0)
-        # r2.sleep()
-        rospy.sleep(2)
+        rospy.sleep(0.35)
 
-        # self.interface.set_pose(300, 0, 120)
-        # r1.sleep()
         self.arm_grasp_ready()  # 移动机械臂到其他地方
-        rospy.sleep(2)
+        rospy.sleep(0.1)
 
         self.grasp_status_pub.publish(String("0"))
 
@@ -321,20 +295,23 @@ class ArmAction:
         '''
         self.interface.set_pose(130, 0, 35)
         if block:
-            rospy.sleep(3)
+            rospy.sleep(1.0)
 
     def arm_grasp_ready(self, block=False):
         '''
         移动机械臂到摄像头看不到的地方，以方便识别与抓取
         '''
-        self.interface.set_pose(50, 180, 160)  
+        self.interface.set_pose(50, 180, 160)   # 50  180  160
         if block:
-            rospy.sleep(3)
+            rospy.sleep(1.0)
 
     def arm_grasp_laser(self, block=False):
+        '''
+        移动机械臂到摄像头看不到的地方，以方便识别与抓取
+        '''
         self.interface.set_pose(160, 0, 20)
         if block:
-            rospy.sleep(3)
+            rospy.sleep(1.0)
 
 class RobotMoveAction:
     def __init__(self):
@@ -350,11 +327,17 @@ class RobotMoveAction:
         self.turn_action_cli.wait_for_server(
             timeout=rospy.Duration.from_sec(3))
 
+        self.cmd_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
 
         # 创建获取spark前后距离的service客户端
         rospy.wait_for_service('/get_distance')
         self.distance_srv = rospy.ServiceProxy(
             'get_distance', common.srv.GetFrontBackDistance)
+
+        # 创建根据定位码调整spark移动到台前的action客户端
+        # self.tag_adjustment_client = actionlib.SimpleActionClient(
+        #     'spark_alignment_mark', TagAdjustmentAction)
+        # self.tag_adjustment_client.wait_for_server()
 
         # 创建导航地点的话题发布者
         self.goto_local_pub = rospy.Publisher(
@@ -367,7 +350,7 @@ class RobotMoveAction:
         '''
 
         # 发布目标位置
-        self.goto_local_pub.publish("go "+name)
+        self.goto_local_pub.publish("go " + name)
 
         # 设定1分钟的时间限制，进行阻塞等待
         try:
@@ -391,6 +374,36 @@ class RobotMoveAction:
         else:
             rospy.loginfo("==========Goal succeeded==========")
             return True
+
+    def adjust_by_tag(self):
+        '''
+        利用定位码, 调整 spark 在台前位置, 让其对准台面
+        @return: True 为调整成功, False 为调整失败
+        '''
+        # 调整spark位置，让其正对准台面
+        '''
+        self.tag_adjustment_client.send_goal_and_wait(
+            TagAdjustmentGoal(
+                adjustment_type=TagAdjustmentGoal.TYPE_JUST_FACE
+            )
+        )
+        
+        # 正对台面的操作是否成功
+        if self.tag_adjustment_client.get_result().result != TagAdjustmentResult.SUCCESS:
+            rospy.logwarn("spark_adjust aciton failed!")
+            return False
+        '''
+        # 调整spark与台面的距离，设定预期距离为 0.25m
+        walk_distance = self.distance_srv(None).front_distance - 0.25
+        self.move_action_cli.send_goal_and_wait(
+            common.msg.MoveStraightDistanceGoal(
+                type=common.msg.MoveStraightDistanceGoal.TYPE_SCAN,
+                const_rot_vel = 0.1,
+                move_distance = walk_distance,
+            ),
+            rospy.Duration.from_sec(5)  # 超过5s为超时
+        )
+        return True
     
     def step_back(self):
         '''
@@ -420,6 +433,24 @@ class RobotMoveAction:
             ),
             rospy.Duration.from_sec(5)  # 超过5s为超时
         )
+        return True
+
+    def step_rotate(self, rad):
+        twist = Twist()
+        twist.angular.z = rad
+        self.cmd_pub.publish(twist)
+
+    def step_go_pro(self, value):
+        twist_go = Twist()
+        twist_go.linear.x = value
+        self.cmd_pub.publish(twist_go)
+
+    # 检查是否成功抓取，成功返回True，反之返回False
+    def check_grasp_state(self, value):
+        print("laser check start!!!!")
+        self.success_grasp_num = 0
+        scan_num = value
+        print(scan_num)
         return True
 
 
@@ -465,6 +496,7 @@ class AutoAction:
 
         # ==== 离开起始区,避免在膨胀区域中，导致导航失败 =====
         self.robot.step_go(0.3)
+        # self.robot.step_rotate(-0.5)
 
         if self.stop_flag: return
 
@@ -472,17 +504,25 @@ class AutoAction:
         self.arm.arm_position_reset()  # 重置机械臂坐标系
         self.arm.arm_grasp_ready()  # 移动机械臂到其他地方
 
+        
+
         # ===== 导航到分类区 =====
         if self.robot.goto_local("Classification_area"):
             rospy.sleep(2)
+            items_place_dict = self.cam.get_recriving_area_location()
         else :
             rospy.logerr("Navigation to Classification_area failed,please run task again ")
             self.stop_flag = True
+        # print("========向后退一点===== ")
+        # self.robot.step_back()  # 后退
+
 
         # 创建任务安排字典，设定前往的抓取地点与次数
         sorting_status_times = {
-            "Sorting_N":1,
-            "Sorting_W":1,
+            "Sorting_N":3,
+            "Sorting_W":3,
+            "Sorting_S":3,
+            "Sorting_E":3,
         }
         sorting_name = "Sorting_N"
 
@@ -500,17 +540,77 @@ class AutoAction:
             # =====导航到目标地点====
 
             ret = self.robot.goto_local(sorting_name) # 导航到目标点
-            rospy.sleep(1) # 停稳
+            rospy.sleep(1.0) # 停稳
+
+
+            if sorting_name == "Sorting_N":
+                value = 0.21
+                # self.robot.step_rotate(-0.05)
+                rospy.sleep(0.5)
+                
+            elif sorting_name == "Sorting_W":
+                value = 0.21
+                # self.robot.step_rotate(0.05)
+                rospy.sleep(0.5)
+
+            elif sorting_name == "Sorting_S":
+                value = 0.18
+                # self.robot.step_rotate(0.05)
+                rospy.sleep(0.5)
+
+            elif sorting_name == "Sorting_E":
+                value = 0.17
+                # self.robot.step_rotate(0.05)
+                rospy.sleep(0.5)
+
+            go_num = 0
+            while True:     # 新增##############################################################
+                cube_list = self.cam.detector() # 获取识别到的物体信息
+                # print("cube_list:",cube_list)
+                if len(cube_list) < 1:
+                    self.robot.step_go_pro(0.1)
+                    go_num += 1
+                    print("go_num:", go_num)
+                    if go_num > 100:
+                        self.robot.step_go_pro(0)
+                        break
+                else:
+                    self.robot.step_go_pro(0)
+                    break
+
 
             if self.stop_flag: return
 
             # =====识别并抓取物体====
             item_type = 0
+
+
             if ret: # 判断是否成功到达目标点
+                print("========往前走看清一点===== ")
+                # self.robot.step_go(0.02)  # 前进
+                # self.robot.step_go(value)   ############################################
+                rospy.sleep(1.5) # 停稳
                 print("========扫描中，准备抓取===== ")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 print("========向后退一点===== ")
                 self.robot.step_back()  # 后退
+
+                rospy.sleep(1)
+                #self.arm.arm_grasp_laser()
+                #rospy.sleep(1)
+
+                grasp_ctrl_state = True  # ==========================================
+                print("grasp_:", grasp_ctrl_state)
+                #rospy.sleep(4)
+                if grasp_ctrl_state != True:
+                    self.arm.arm_grasp_ready()
+                    self.robot.step_go(0.23)
+                    rospy.sleep(1.5) # 停稳
+                    item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
+                    if item_type != 0:         # 新增##############################################################################
+                        grasp_ctrl_state = True
+                    self.robot.step_back()  # 后退
+                
 
                 if self.stop_flag: return
 
@@ -518,25 +618,26 @@ class AutoAction:
                 sorting_status_times[sorting_name] = 0
                 continue
 
-            
-            # ====放置物品====
-            self.arm.arm_grasp_ready()
-            print("========前往放置区===== ")
-            ret = self.robot.goto_local("Collection_B") # 根据抓到的物品类型，导航到对应的放置区
-            rospy.sleep(2) # 停稳
-            if self.stop_flag: return
-
-            if ret: 
-                self.arm.drop()  # 放下物品
-                self.robot.step_back()  # 后退
+            if grasp_ctrl_state != False:
+                # ====放置物品====
+                self.arm.arm_grasp_ready()
+                print("========前往放置区===== ")
+                ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
+                rospy.sleep(1.5) # 停稳
                 if self.stop_flag: return
-            else:
-                rospy.logerr("task error: navigation to the drop_place fails")
-                self.arm.drop()
-            if self.stop_flag: return
+
+                if ret: 
+                    self.arm.drop()  # 放下物品
+                    self.robot.step_back()  # 后退
+                    if self.stop_flag: return
+                else:
+                    rospy.logerr("task error: navigation to the drop_place fails")
+                    self.arm.drop()
+                if self.stop_flag: return
 
                 # 下一步
             sorting_status_times[sorting_name] = sorting_status_times[sorting_name] - 1
+
 
         self.arm.arm_home()
         # act.goto_local("sp")

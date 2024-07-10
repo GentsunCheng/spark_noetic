@@ -1,8 +1,6 @@
 <!--move2grab-->
 <!--SPARK技术讨论与反馈群：8346256-->
 <launch>
-    <!-- 启动 rosbridge_server 节点 -->
-    <node name="rosbridge_server" pkg="rosbridge_server" type="rosbridge_websocket" output="screen" />
 	<!-- Arguments -->
 	<arg name="slam_methods" default="gmapping" doc="slam type [gmapping, cartographer, hector, karto, frontier_exploration]"/>
 	<arg name="configuration_basename" default="spark_lds_2d.lua"/>
@@ -26,9 +24,27 @@
 	<!-- 3D sensor -->
 	<arg name="3d_sensor" default="3i_lidar"/>
 	<!-- 启动雷达 -->
-	<!-- <include file="$(find lidar_driver_transfer)/launch/$(arg lidar_type_tel).launch"> -->
 	<include file="$(find lidar_driver_transfer)/launch/$(arg lidar_type_tel).launch">
 	</include>
+		
+
+	<!-- 定位码位置识别与调整程序
+	<group if="$(arg use_indiv)">
+		<include file="$(find ar_track_alvar)/launch/d435_indiv_no_kinect.launch"/>
+		<node pkg="spark_camera_frame_cali" name="camera_frame_publisher" type="camera_frame_publisher.py" output="screen" />
+		<node name="adjustment_3d_node" pkg="spark_alignment_mark" type="adjustment_3d_node.py" output="screen" />
+	</group>
+	<group unless="$(arg use_indiv)">
+		<include file="$(find ar_track_alvar)/launch/d435_center_only.launch"/>
+		<node name="adjustment_node" pkg="spark_alignment_mark" type="adjustment_node.py" output="screen" />
+	</group>-->
+
+	<!-- tensorflow物体位置识别 -->
+	<node pkg= "auto_match" name="detect_ros" type="detect_ros.py"  output="screen"> 
+		<remap from="image" to="/camera/color/image_raw" if="$(eval arg('camera_type_tel')=='d435')"/>
+		<remap from="image" to="/camera/rgb/image_raw" if="$(eval arg('camera_type_tel')=='astrapro')"/>
+		<remap from="image" to="/camera/rgb/image_raw" if="$(eval arg('camera_type_tel')=='astra')"/>
+	</node>
 
 	<!-- 地点记录 -->
 	<node pkg="auto_match" name="mark_move" type="mark_move.py" output="screen"/>
@@ -39,7 +55,6 @@
 		<node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find auto_match)/rviz/auto_match.rviz"/>
 	</group>
 	
-
 	<!-- =====一开始准备记录地点====== -->
 	<group if="$(arg open_guide)">
 
@@ -52,8 +67,7 @@
 		<node pkg="auto_match" type="cmd_location_learn_guide.sh" name="cmd_location_learn_guide" />
 
 		<!--创建新的终端，spark键盘控制 “wsad”分别代表“前后左右”-->
-		<!-- <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="kc" if="$(arg open_guide)"/> -->
-		<!-- <node pkg="spark_teleop" type="keyboard_control.sh" name="kc_2d" /> -->
+		<node pkg="spark_teleop" type="keyboard_control.sh" name="kc" if="$(arg open_guide)"/>
 
 	</group>
 	
@@ -64,12 +78,8 @@
 		<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" unless="$(arg open_guide)"/>
 		
 		<!-- 流程程序 -->
-	<node pkg="auto_match" name="runtask" type="runtask.py" output="screen" launch-prefix="gnome-terminal -e" unless="$(arg open_guide)">
-		<remap from="/camera/color/image_raw" to="image" if="$(eval arg('camera_type_tel')=='d435')"/>
-        <remap from="image" to="/camera/rgb/image_raw" if="$(eval arg('camera_type_tel')=='astrapro')"/>
-        <remap from="image" to="/camera/rgb/image_raw" if="$(eval arg('camera_type_tel')=='astra')"/>
-	</node>
-    <!-- <node pkg="auto_match" name="runtask" type="runtask.py" output="screen" launch-prefix="xterm -e" unless="$(arg open_guide)"/> -->
+	<node pkg="auto_match" name="runtask" type="runtask.py" output="screen" launch-prefix="gnome-terminal -e" unless="$(arg open_guide)"/>
+
 		
 		<!-- AMCL-->
 		<arg name="custom_amcl_launch_file" default="$(find auto_match)/config/amcl.launch.xml"/>
@@ -92,6 +102,5 @@
 		<include file="$(find move_demo)/launch/move_demo.launch" />
 	
 	</group>
-		<include file="$(find move2grasp)/launch/web_video_server.launch" />
 
 </launch>

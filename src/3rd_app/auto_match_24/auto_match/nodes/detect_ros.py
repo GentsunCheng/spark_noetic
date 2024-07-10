@@ -1,163 +1,137 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ## Author: Rohit
 ## Date: July, 25, 2017
 # Purpose: Ros node to detect objects using tensorflow
-
 import os
 import sys
 import cv2
+import yolov5
 import numpy as np
-try:
-    import tensorflow as tf
-except ImportError:
-    print("unable to import TensorFlow. Is it installed?")
-    print("  sudo apt install python-pip")
-    print("  sudo pip install tensorflow")
-    sys.exit(1)
-
-# ROS related imports
 import rospy
-import rospkg
-from std_msgs.msg import String , Header
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
+import platform
+import pathlib
+plt = platform.system()
+if plt != 'Windows':
+    pathlib.WindowsPath = pathlib.PosixPath
 
-# Object detection module imports
-import object_detection
-from object_detection.utils import label_map_util
-from object_detection.utils import visualization_utils as vis_util
+class SparkDetect:
+    class __results__:
+        def __init__(self):
+            self.name = []
+            self.x = []
+            self.y = []
+            self.size_x = []
+            self.size_y = []
+            self.confidence = []
+            self.image = None
 
-# SET FRACTION OF GPU YOU WANT TO USE HERE
-GPU_FRACTION = 0.4
+    def __init__(self, model_path):
+        '''
+        初始化YOLOv5检测器
+        :param model_path: YOLOv5模型文件路径
+        '''
+        try:
+            self.model = yolov5.load(model_path)
+        except Exception as e:
+            print("加载模型失败:", e)
 
-# get an instance of RosPack with the default search paths
-rospack = rospkg.RosPack()
-# list all packages, equivalent to rospack list
-rospack.list() 
-# get the file path for tensorflow_object_detector
-PACKAGE_PATH = os.path.join(rospack.get_path('tensorflow_object_detector'))
+    def detect(self, image):
+        '''
+        检测图像中的物体
+        :param image: 输入图像
+        :return: 结果类结构
+                  result.name: 物体名称列表
+                  result.x: 物体中心点x坐标列表
+                  result.y: 物体中心点y坐标列表
+                  result.confidence: 物体置信度列表
+                  result.image: 检测后的图像
+        '''
+        results = self.model(image, augment=True)
+        self.is_detecting = True
 
-######### Set model here ############
-MODEL_NAME =  'ssd_mobilenet_v1_coco_11_06_2017'
-# By default models are stored in data/models/
-MODEL_PATH = os.path.join(PACKAGE_PATH,'data','models' , MODEL_NAME)
-# Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = MODEL_PATH + '/frozen_inference_graph.pb'
-######### Set the label map file here ###########
-LABEL_NAME = 'mscoco_label_map.pbtxt'
-# By default label maps are stored in data/labels/
-PATH_TO_LABELS = os.path.join(PACKAGE_PATH,'data','labels', LABEL_NAME)
-######### Set the number of classes here #########
-NUM_CLASSES = 90
+        # 存储检测结果的列表
+        result = self.__results__()
 
-detection_graph = tf.compat.v1.Graph()
-with detection_graph.as_default():
-    od_graph_def = tf.compat.v1.GraphDef()
-    with tf.io.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
-        serialized_graph = fid.read()
-        od_graph_def.ParseFromString(serialized_graph)
-        tf.compat.v1.import_graph_def(od_graph_def, name='')
+        # 遍历检测结果
+        try:
+            for *xyxy, conf, cls in results.xyxy[0]:
+                label = f'{self.model.model.names[int(cls)]} {conf:.2f}'
+                # 画出矩形框
+                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 2)
+                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
 
-## Loading label map
-# Label maps map indices to category names, so that when our convolution network predicts `5`,
-# we know that this corresponds to `airplane`.  Here we use internal utility functions,
-# but anything that returns a dictionary mapping integers to appropriate string labels would be fine
-label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
-category_index = label_map_util.create_category_index(categories)
+                # 计算中心点坐标
+                center_x = int((xyxy[0] + xyxy[2]) / 2)
+                center_y = int((xyxy[1] + xyxy[3]) / 2)
+                # 计算大小
+                size_x = int(xyxy[2] - xyxy[0])
+                size_y = int(xyxy[3] - xyxy[1])
+                # 画出中心点
+                cv2.circle(image, (center_x, center_y), 5, (255, 0, 0), -1)
 
-# Setting the GPU options to use fraction of gpu that has been set
-config = tf.compat.v1.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = GPU_FRACTION
+                # 存储中心点坐标,物体名称,置信度和图像
+                result.size_x.append(size_x)
+                result.size_y.append(size_y)
+                result.name.append(self.model.model.names[int(cls)])
+                result.x.append(center_x)
+                result.y.append(center_y)
+                result.confidence.append(float(conf))
 
-# Detection
+            result.image = image
+        except Exception as _:
+            pass
+
+        return result
+
 
 class Detector:
-
     def __init__(self):
         self.image_pub = rospy.Publisher("debug_image",Image, queue_size=1)
-        self.object_pub = rospy.Publisher("objects", Detection2DArray, queue_size=1)
+        self.object_pub = rospy.Publisher("/objects", Detection2DArray, queue_size=1)
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("image", Image, self.image_cb, queue_size=1, buff_size=2**24)
-        self.sess = tf.compat.v1.Session(graph=detection_graph,config=config)
+        self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**26)
+        self.obj_id = {'wine': 46, 'bear': 88, 'clock': 85}
+        self.detector = SparkDetect("/home/spark/auto.pt")
 
     def image_cb(self, data):
         objArray = Detection2DArray()
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-            
         except CvBridgeError as e:
             print(e)
-        image=cv2.cvtColor(cv_image,cv2.COLOR_BGR2RGB)
-
-        # the array based representation of the image will be used later in order to prepare the
-        # result image with boxes and labels on it.
-        image_np = np.asarray(image)
-        # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
-        image_np_expanded = np.expand_dims(image_np, axis=0)
-        image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
-        # Each box represents a part of the image where a particular object was detected.
-        boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
-        # Each score represent how level of confidence for each of the objects.
-        # Score is shown on the result image, together with the class label.
-        scores = detection_graph.get_tensor_by_name('detection_scores:0')
-        classes = detection_graph.get_tensor_by_name('detection_classes:0')
-        num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-
-        (boxes, scores, classes, num_detections) = self.sess.run([boxes, scores, classes, num_detections],
-            feed_dict={image_tensor: image_np_expanded})
-
-        objects=vis_util.visualize_boxes_and_labels_on_image_array(
-            image,
-            np.squeeze(boxes),
-            np.squeeze(classes).astype(np.int32),
-            np.squeeze(scores),
-            category_index,
-            use_normalized_coordinates=True,
-            line_thickness=10
-            )
-
-        objArray.detections =[]
-        objArray.header=data.header
-        object_count=1
-
-        for i in range(len(objects)):
-            object_count+=1
-            objArray.detections.append(self.object_predict(objects[i],data.header,image_np,cv_image))
-
-        self.object_pub.publish(objArray)
-
-        img=cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
-        image_out = Image()
+        image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+        objArray.header = data.header
         try:
-            image_out = self.bridge.cv2_to_imgmsg(img,"bgr8")
+            results = self.detector.detect(image)
+            img = results.image
+            for i in range(len(results.name)):
+                if results.y[i] < 180:
+                    continue
+                obj = Detection2D()
+                obj.header = data.header
+                obj_hypothesis = ObjectHypothesisWithPose()
+                obj_hypothesis.id = int(self.obj_id[results.name[i]])
+                obj_hypothesis.score = results.confidence[i]
+                obj.results.append(obj_hypothesis)
+                obj.bbox.size_y = int(results.size_y[i])
+                obj.bbox.size_x = int(results.size_x[i])
+                obj.bbox.center.x = int(results.x[i])
+                obj.bbox.center.y = int(results.y[i])
+                objArray.detections.append(obj)
+        except:
+            img = image
+        self.object_pub.publish(objArray)
+        try:
+            image_out = self.bridge.cv2_to_imgmsg(img, "bgr8")
         except CvBridgeError as e:
             print(e)
         image_out.header = data.header
         self.image_pub.publish(image_out)
 
-    def object_predict(self,object_data, header, image_np,image):
-        image_height,image_width,channels = image.shape
-        obj=Detection2D()
-        obj_hypothesis= ObjectHypothesisWithPose()
-
-        object_id=object_data[0]
-        object_score=object_data[1]
-        dimensions=object_data[2]
-
-        obj.header=header
-        obj_hypothesis.id = object_id
-        obj_hypothesis.score = object_score
-        obj.results.append(obj_hypothesis)
-        obj.bbox.size_y = int((dimensions[2]-dimensions[0])*image_height)
-        obj.bbox.size_x = int((dimensions[3]-dimensions[1] )*image_width)
-        obj.bbox.center.x = int((dimensions[1] + dimensions [3])*image_width/2)
-        obj.bbox.center.y = int((dimensions[0] + dimensions[2])*image_height/2)
-
-        return obj
-
-def main(args):
+if __name__=='__main__':
     rospy.init_node('detector_node')
     obj=Detector()
     try:
@@ -165,6 +139,3 @@ def main(args):
     except KeyboardInterrupt:
         print("ShutDown")
     cv2.destroyAllWindows()
-
-if __name__=='__main__':
-    main(sys.argv)

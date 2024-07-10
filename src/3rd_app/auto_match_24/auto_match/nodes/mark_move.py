@@ -5,14 +5,10 @@ import rospy
 import actionlib
 from actionlib_msgs.msg import *
 from std_msgs.msg import String
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist, PointStamped
+from geometry_msgs.msg import *
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import tf
 import tf.transformations as tf_transformations
-from visualization_msgs.msg import Marker
-from math import radians, pi
-import numpy as np
-import yaml
 import rospkg
 import os
 import pickle
@@ -21,8 +17,6 @@ class MarkNav():
     def __init__(self):
         # 初始化节点
         rospy.init_node('MarkNav')
-        # 发布TWist消息控制机器人
-        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         # 订阅move_base服务器的消息
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         # 等待move_base服务器建立
@@ -66,7 +60,7 @@ class MarkNav():
             print("mark_dict=",self.mark_map)
             # 提取mark名称
             mark_name = (mark_name.split())[2]
-            # 判断地点位置是否在地点字典中 
+            # 判断地点位置是否在地点字典中
             if mark_name in self.mark_map:
                 self.navigation(mark_name)
             else:

@@ -16,7 +16,7 @@ from sensor_msgs.msg import Image
 from swiftpro.msg import *
 from cv_bridge import CvBridge, CvBridgeError
 from sklearn.linear_model import LinearRegression
-print("进入了程序呀无无无")
+
 xc = 0
 yc = 0
 
@@ -179,7 +179,7 @@ def main(threadName, delay):
     r3 = rospy.Rate(0.2)  # 5s
     r4 = rospy.Rate(0.4)  # 2.5s
 
-    cam_sub = rospy.Subscriber("image", Image, image_CB)
+    cam_sub = rospy.Subscriber("/camera/color/image_raw", Image, image_CB)
     arm_position_pub = rospy.Publisher(
         "position_write_topic", position, queue_size=1)
 
