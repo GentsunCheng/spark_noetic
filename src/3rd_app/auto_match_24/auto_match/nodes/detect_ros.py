@@ -114,9 +114,7 @@ class Detector:
         # 在结果图像上绘制白色的圆形区域（进一步排除不感兴趣的区域）
         cv2.circle(result, (center_x, center_y), radius, (255, 255, 255), -1)
         # 将结果图像与原始图像进行按位与运算，将圆外的区域设置为黑色
-        result = cv2.bitwise_and(image, result)
-        # 将结果图像转换为HSV颜色空间
-        image = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
+        image = cv2.bitwise_and(image, result)
 
         objArray.header = data.header
         try:
