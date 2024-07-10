@@ -260,6 +260,7 @@ class ArmAction:
         print(f"我把物品抬起来了")
         self.interface.set_pose(x, y, z + 120)
         rospy.sleep(0.2)
+        self.interface.set_pose(10, 180, 150)
 
         self.grasp_status_pub.publish(String("0"))
         self.time[id] = self.time[id] + 1
@@ -316,14 +317,6 @@ class ArmAction:
         移动机械臂到摄像头看不到的地方，以方便识别与抓取
         '''
         self.interface.set_pose(50, 180, 160)   # 50  180  160
-        if block:
-            rospy.sleep(1.0)
-
-    def arm_grasp_laser(self, block=False):
-        '''
-        移动机械臂到摄像头看不到的地方，以方便识别与抓取
-        '''
-        self.interface.set_pose(10, -180, 150)
         if block:
             rospy.sleep(1.0)
 
@@ -609,9 +602,7 @@ class AutoAction:
                 print("========向后退一点===== ")
                 self.robot.step_back()  # 后退
 
-                rospy.sleep(1)
-                self.arm.arm_grasp_laser()
-                #rospy.sleep(1)
+                rospy.sleep(0.5)
 
                 grasp_ctrl_state = True  # ==========================================
                 print("grasp_:", grasp_ctrl_state)
