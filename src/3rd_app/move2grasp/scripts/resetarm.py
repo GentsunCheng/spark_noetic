@@ -3,15 +3,17 @@
 
 import rospy
 from std_msgs.msg import String
-from uarm.wrapper import SwiftAPI
+from swiftpro.msg import *
 
-# 连接uarm swift pro，指定设备路径
-swift = SwiftAPI(port="/dev/ttyACM0")
 
 def resetarm(data):
+    pub = rospy.Publisher(
+            "swiftpro_status_topic", status, queue_size=1)
     if data.data == "reset":
-        swift.reset(timeout=3, x=110, y=0, z=35)
-
+        pub.publish(status(0))
+        rospy.sleep(0.5)
+        pub.publish(status(1))
+        rospy.sleep(0.5)
 
 
 if __name__ == "__main__":

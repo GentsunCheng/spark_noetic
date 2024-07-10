@@ -219,7 +219,7 @@ class ArmAction:
         # 获取机械臂目标位置
         x = self.x_kb[0] * cube_list[0][1][1] + self.x_kb[1]
         y = self.y_kb[0] * cube_list[0][1][0] + self.y_kb[1]
-        z = -55
+        z = -50.0
 
         print(f"找到物品了！它在: {x}, {y}, {z}")
 
