@@ -260,7 +260,7 @@ class ArmAction:
         print(f"我把物品抬起来了")
         self.interface.set_pose(x, y, z + 120)
         rospy.sleep(0.2)
-        self.interface.set_pose(10, 180, 150)
+        self.interface.set_pose(10, 180, 175)
 
         self.grasp_status_pub.publish(String("0"))
         self.time[id] = self.time[id] + 1
