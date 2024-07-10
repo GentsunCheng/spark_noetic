@@ -108,7 +108,7 @@ class Detector:
             results = self.detector.detect(image)
             img_bgr = results.image
             for i in range(len(results.name)):
-                if results.y[i] < 180:
+                if results.y[i] < 150:
                     continue
                 obj = Detection2D()
                 obj.header = data.header
