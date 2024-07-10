@@ -89,7 +89,7 @@ class SparkDetect:
 
 class Detector:
     def __init__(self):
-        self.image_pub = rospy.Publisher("debug_image",Image, queue_size=1)
+        self.image_pub = rospy.Publisher("result_image",Image, queue_size=1)
         self.object_pub = rospy.Publisher("/objects", Detection2DArray, queue_size=1)
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**26)
@@ -106,7 +106,7 @@ class Detector:
         objArray.header = data.header
         try:
             results = self.detector.detect(image)
-            img = results.image
+            img_bgr = results.image
             for i in range(len(results.name)):
                 if results.y[i] < 180:
                     continue
@@ -122,8 +122,9 @@ class Detector:
                 obj.bbox.center.y = int(results.y[i])
                 objArray.detections.append(obj)
         except:
-            img = image
+            img_bgr = image
         self.object_pub.publish(objArray)
+        img = cv2.cvtColor(img_bgr, cv2.COLOR_RGB2BGR)
         try:
             image_out = self.bridge.cv2_to_imgmsg(img, "bgr8")
         except CvBridgeError as e:
