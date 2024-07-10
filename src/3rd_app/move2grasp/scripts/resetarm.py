@@ -7,13 +7,16 @@ from swiftpro.msg import *
 
 
 def resetarm(data):
-    pub = rospy.Publisher(
+    pub1 = rospy.Publisher(
             "swiftpro_status_topic", status, queue_size=1)
+    pub2 = rospy.Publisher(
+            'position_write_topic', position, queue_size=1)
     if data.data == "reset":
-        pub.publish(status(0))
+        pub1.publish(status(0))
         rospy.sleep(0.5)
-        pub.publish(status(1))
+        pub1.publish(status(1))
         rospy.sleep(0.5)
+        pub2.publish(position(110.0, 0.0, 35.0))
 
 
 if __name__ == "__main__":
