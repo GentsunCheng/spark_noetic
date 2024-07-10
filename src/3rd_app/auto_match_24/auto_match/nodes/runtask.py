@@ -272,9 +272,9 @@ class ArmAction:
         @param check: 是否判断有无方块, 默认判断
         @return item_id: 执行结果
         '''
-        x = 250
+        x = 280
         y = 0
-        z = 150
+        z = 175
         self.interface.set_pose(x, y, z)
         rospy.sleep(0.1)
         z = -125 + self.time[item] * self.block_height
