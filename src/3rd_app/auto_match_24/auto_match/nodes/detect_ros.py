@@ -102,14 +102,27 @@ class Detector:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
             print(e)
+
         image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+        height, width, _ = image.shape
+        # 计算圆心坐标和半径
+        center_x = width // 2
+        center_y = height - 1
+        radius = int(np.sqrt((center_x - center_y) ** 2 + (width // 2) ** 2))
+        # 创建一个与图像大小相同的黑色图像
+        result = np.zeros_like(image)
+        # 在结果图像上绘制白色的圆形区域（进一步排除不感兴趣的区域）
+        cv2.circle(result, (center_x, center_y), radius, (255, 255, 255), -1)
+        # 将结果图像与原始图像进行按位与运算，将圆外的区域设置为黑色
+        result = cv2.bitwise_and(image, result)
+        # 将结果图像转换为HSV颜色空间
+        image = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
+
         objArray.header = data.header
         try:
             results = self.detector.detect(image)
             img_bgr = results.image
             for i in range(len(results.name)):
-                if results.y[i] < 150:
-                    continue
                 obj = Detection2D()
                 obj.header = data.header
                 obj_hypothesis = ObjectHypothesisWithPose()
