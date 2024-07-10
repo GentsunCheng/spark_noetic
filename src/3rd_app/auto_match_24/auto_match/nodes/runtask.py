@@ -203,6 +203,7 @@ class ArmAction:
         self.bottom_y = self.height  # 图像底边的y坐标
 
         self.time = {46: 0, 88: 0, 85: 0}
+        self.block_height = 100
  
     
     def grasp(self):
@@ -261,11 +262,7 @@ class ArmAction:
         rospy.sleep(0.2)
 
         self.grasp_status_pub.publish(String("0"))
-
         self.time[id] = self.time[id] + 1
-
-        self.block_height = 100
-
         return id
 
     def drop(self, item):
@@ -274,9 +271,9 @@ class ArmAction:
         @param check: 是否判断有无方块, 默认判断
         @return item_id: 执行结果
         '''
-        x = 300
+        x = 250
         y = 0
-        z = 120
+        z = 150
         self.interface.set_pose(x, y, z)
         rospy.sleep(0.1)
         z = -125 + self.time[item] * self.block_height
@@ -326,7 +323,7 @@ class ArmAction:
         '''
         移动机械臂到摄像头看不到的地方，以方便识别与抓取
         '''
-        self.interface.set_pose(160, 0, 20)
+        self.interface.set_pose(10, -180, 150)
         if block:
             rospy.sleep(1.0)
 
@@ -613,7 +610,7 @@ class AutoAction:
                 self.robot.step_back()  # 后退
 
                 rospy.sleep(1)
-                #self.arm.arm_grasp_laser()
+                self.arm.arm_grasp_laser()
                 #rospy.sleep(1)
 
                 grasp_ctrl_state = True  # ==========================================
