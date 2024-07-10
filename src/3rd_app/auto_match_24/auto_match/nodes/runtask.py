@@ -5,6 +5,8 @@ import os
 import yaml
 import threading
 
+import numpy as np
+
 import rospy
 import rospkg
 import actionlib
@@ -195,6 +197,12 @@ class ArmAction:
         self.interface = SwiftProInterface()
 
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
+
+        self.height, self.width = 480, 640
+        self.center_x = self.width // 2  # 图像底边中心的x坐标
+        self.bottom_y = self.height  # 图像底边的y坐标
+
+        self.time = {46: 0, 88: 0, 85: 0}
  
     
     def grasp(self):
@@ -214,11 +222,24 @@ class ArmAction:
             self.grasp_status_pub.publish(String("1"))
             return 0
 
-        cube_list = sorted(cube_list, key=lambda x: x[1][1], reverse=False)
+        min_distance = float('inf')
+        closest_x = None
+        closest_y = None
+        id = None
+
+        for pice in cube_list:
+            x = pice[1][1]
+            y = pice[1][0]
+            distance = np.sqrt((x - self.center_x) ** 2 + (y - self.bottom_y) ** 2)
+            if distance < min_distance:
+                min_distance = distance
+                closest_x = x
+                closest_y = y
+                id = pice[0]
 
         # 获取机械臂目标位置
-        x = self.x_kb[0] * cube_list[0][1][1] + self.x_kb[1]
-        y = self.y_kb[0] * cube_list[0][1][0] + self.y_kb[1]
+        x = self.x_kb[0] * closest_x + self.x_kb[1]
+        y = self.y_kb[0] * closest_y + self.y_kb[1]
         z = -50.0
 
         print(f"找到物品了！它在: {x}, {y}, {z}")
@@ -241,9 +262,13 @@ class ArmAction:
 
         self.grasp_status_pub.publish(String("0"))
 
-        return cube_list[0][0]
+        self.time[id] = self.time[id] + 1
 
-    def drop(self, check=False):
+        self.block_height = 100
+
+        return id
+
+    def drop(self, item):
         '''
         放置方块, 可以先判断是否有方块, 从而调整放置高度
         @param check: 是否判断有无方块, 默认判断
@@ -252,28 +277,20 @@ class ArmAction:
         x = 300
         y = 0
         z = 120
-
-        if (check):
-            # 控制机械臂移动到其他地方，以免挡住摄像头
-            self.interface.set_pose(0, 225, 160)
-            # r1.sleep()
-            rospy.sleep(2)
-            cube_list = self.detector()
-            if len(cube_list) > 0:
-                x = self.x_kb[0] * cube_list[0][1][1] + self.x_kb[1]
-                y = self.y_kb[0] * cube_list[0][1][0] + self.y_kb[1]
-                z = 120
-
-        # 默认放置位置
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.15)
+        rospy.sleep(0.1)
+        z = -125 + self.time[item] * self.block_height
+        self.interface.set_pose(x, y, z)
+        rospy.sleep(0.1)
+        z = z - 25
+        self.interface.set_pose(x, y, z)
+        rospy.sleep(0.1)
 
         # 关闭气泵
         self.interface.set_pump(0)
-        rospy.sleep(0.35)
+        rospy.sleep(0.25)
 
         self.arm_grasp_ready()  # 移动机械臂到其他地方
-        rospy.sleep(0.1)
 
         self.grasp_status_pub.publish(String("0"))
 
@@ -627,12 +644,12 @@ class AutoAction:
                 if self.stop_flag: return
 
                 if ret: 
-                    self.arm.drop()  # 放下物品
+                    self.arm.drop(item_type)  # 放下物品
                     self.robot.step_back()  # 后退
                     if self.stop_flag: return
                 else:
                     rospy.logerr("task error: navigation to the drop_place fails")
-                    self.arm.drop()
+                    self.arm.drop(item_type)
                 if self.stop_flag: return
 
                 # 下一步
@@ -665,7 +682,7 @@ class AutoAction:
             if msg.data == "1":
                 self.arm.grasp()
             elif msg.data == "0":
-                self.arm.drop()
+                self.arm.drop(0)
                 self.arm.arm_grasp_ready()
             else:
                 rospy.logwarn("grasp msg error")
