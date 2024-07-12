@@ -208,23 +208,21 @@ class ArmAction:
             self.grasp_status_pub.publish(String("1"))
             return 0
 
-        closest_x = None
-        closest_y = None
+        closest_x = cube_list[0][1][1]
+        closest_y = cube_list[0][1][0]
         id = None
 
         for pice in cube_list:
             x = pice[1][1]
             y = pice[1][0]
-            max_y = y
-            if y > max_y:
-                max_y = y
+            if y > closest_y:
                 closest_x = x
                 closest_y = y
                 id = pice[0]
 
         # 获取机械臂目标位置
-        x = self.x_kb[0] * int(closest_x) + self.x_kb[1]
-        y = self.y_kb[0] * int(closest_y) + self.y_kb[1]
+        x = self.x_kb[0] * closest_x + self.x_kb[1]
+        y = self.y_kb[0] * closest_y + self.y_kb[1]
         z = -50.0
 
         print(f"找到物品了！它在: {x}, {y}, {z}")
