@@ -101,6 +101,7 @@ class Detector:
         self.object_pub = rospy.Publisher("/objects", Detection2DArray, queue_size=1)
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**26)
+        self.items = ["wine", "bear", "clock"]
         self.obj_id = {'wine': 46, 'bear': 88, 'clock': 85}
         self.detector = SparkDetect("/home/spark/auto.pt")
 
@@ -120,6 +121,8 @@ class Detector:
             results = self.detector.detect(image)
             img_bgr = results.image
             for i in range(len(results.name)):
+                if results.name[i] not in self.items:
+                    continue
                 obj = Detection2D()
                 obj.header = data.header
                 obj_hypothesis = ObjectHypothesisWithPose()
