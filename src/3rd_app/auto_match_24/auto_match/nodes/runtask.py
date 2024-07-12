@@ -5,8 +5,6 @@ import os
 import yaml
 import threading
 
-import numpy as np
-
 import rospy
 import rospkg
 import actionlib
@@ -72,6 +70,24 @@ class CamAction:
     def __init__(self):
         # 获取标定文件相关信息
         rospack = rospkg.RosPack()
+        package_path = os.path.join(rospack.get_path('auto_match'))          # 获取功能包路径
+        items_path = os.path.join(package_path, 'config', 'items_config.yaml')  # 获取物体标签路径
+        try:
+            with open(items_path, "r", encoding="utf8") as f:
+                items_content = yaml.load(f.read(), Loader=yaml.FullLoader)
+        except Exception:
+            rospy.logerr("can't not open file")
+            sys.exit(1)
+        if isinstance(items_content, type(None)):
+            rospy.logerr("items file empty")
+            sys.exit(1)
+
+        # 根据yaml文件，确定抓取物品的id号
+        self.search_id = [
+            items_content["items"][items_content["objects"]["objects_a"]],
+            items_content["items"][items_content["objects"]["objects_b"]],
+            items_content["items"][items_content["objects"]["objects_c"]]
+        ]
 
     def detector(self):
         '''
@@ -99,7 +115,8 @@ class CamAction:
 
         # 筛选出需要的物品 cube_list中的key代表识别物体的ID，value代表位置信息
         for key, value in obj_dist.items():
-            cube_list.append([key, value])
+            if key in self.search_id:
+                cube_list.append([key, value])
 
         # 按识别次数排列并选择次数最高的物品
         # cube_list.sort(key=lambda x: x[1][2], reverse=True)
@@ -210,7 +227,7 @@ class ArmAction:
 
         closest_x = cube_list[0][1][1]
         closest_y = cube_list[0][1][0]
-        id = None
+        id = cube_list[0][0]
 
         for pice in cube_list:
             x = pice[1][1]

@@ -88,6 +88,7 @@
 	
 	</group>
 
+	<node pkg="move2grasp" type="resetarm.py" name="resetarm" output="screen"/>
 	<include file="$(find move2grasp)/launch/web_video_server.launch" />
 
 </launch>
