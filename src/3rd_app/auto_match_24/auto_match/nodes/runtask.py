@@ -97,7 +97,7 @@ class CamAction:
 
         cube_list[i]:代表第几个物体
         cube_list[i][0]:代表第i个物体的ID信息;               cube_list[i][1]:代表第i个物体的位置信息
-        cube_list[i][1][0]:代表第i个物体的x方向上的位置;     cube_list[i][1][1]:代表第i个物体的y方向上的位置
+        cube_list[i][1][1]:代表第i个物体的x方向上的位置;     cube_list[i][1][0]:代表第i个物体的y方向上的位置
         '''
         obj_dist = {}
         cube_list = []
@@ -112,7 +112,7 @@ class CamAction:
         
         # 提取
         for obj in obj_array.detections:
-            obj_dist[obj.results[0].id] = [obj.bbox.center.x, obj.bbox.center.y]
+            obj_dist[obj.results[0].id] = [obj.bbox.center.x, obj.bbox.center.y, 0]
 
         # 筛选出需要的物品 cube_list中的key代表识别物体的ID，value代表位置信息
         for key, value in obj_dist.items():
@@ -230,8 +230,8 @@ class ArmAction:
         id = None
 
         for pice in cube_list:
-            x = pice[1][0]
-            y = pice[1][1]
+            x = pice[1][1]
+            y = pice[1][0]
             distance = np.sqrt((x - self.center_x) ** 2 + (y - self.bottom_y) ** 2)
             if distance < min_distance:
                 min_distance = distance
@@ -261,7 +261,7 @@ class ArmAction:
         print(f"我把物品抬起来了")
         self.interface.set_pose(x, y, z + 120)
         rospy.sleep(0.2)
-        self.interface.set_pose(10, 180, 175)
+        self.interface.set_pose(10, 160, 175)
 
         self.grasp_status_pub.publish(String("0"))
         self.time[id] = self.time[id] + 1
@@ -326,7 +326,7 @@ class ArmAction:
         '''
         移动机械臂到摄像头看不到的地方，以方便识别与抓取
         '''
-        self.interface.set_pose(50, 180, 160)   # 50  180  160
+        self.interface.set_pose(10, 160, 160)
         if block:
             rospy.sleep(1.0)
 
