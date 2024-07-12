@@ -10,8 +10,8 @@ class Rester():
     def __init__(self, port="/dev/ttyACM0"):
         self.swift = SwiftAPI(port)
         
-    def resetarm(self):
-        self.swift.reset(110.0, 0.0, 35.0)
+    def resetarm(self, _):
+        self.swift.reset(x=110.0, y=0.0, z=35.0)
 
 
 if __name__ == "__main__":
