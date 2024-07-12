@@ -13,9 +13,9 @@ def resetarm(data):
             'position_write_topic', position, queue_size=1)
     if data.data == "reset":
         pub1.publish(status(0))
-        rospy.sleep(0.5)
+        rospy.sleep(0.15)
         pub1.publish(status(1))
-        rospy.sleep(0.5)
+        rospy.sleep(0.15)
         pub2.publish(position(110.0, 0.0, 35.0))
 
 
