@@ -430,7 +430,7 @@ class RobotMoveAction:
         )
         return True
     
-    def step_back(self):
+    def step_back(self, distance=0.2):
         '''
         后退, 用于抓取或放置后使用
         @return: True 为调整成功, False 为调整失败
@@ -438,8 +438,8 @@ class RobotMoveAction:
         self.move_action_cli.send_goal_and_wait(
             common.msg.MoveStraightDistanceGoal(
                 type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
-                const_rot_vel=-0.1,
-                move_distance=0.2,
+                const_rot_vel=0.0,
+                move_distance=distance,
             ),
             rospy.Duration.from_sec(5)  # 超过5s为超时
         )
@@ -453,7 +453,7 @@ class RobotMoveAction:
         self.move_action_cli.send_goal_and_wait(
             common.msg.MoveStraightDistanceGoal(
                 type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
-                const_rot_vel=0.1,
+                const_rot_vel=0.0,
                 move_distance=dis,
             ),
             rospy.Duration.from_sec(5)  # 超过5s为超时
@@ -650,7 +650,7 @@ class AutoAction:
 
                 if ret: 
                     self.arm.drop(item_type)  # 放下物品
-                    self.robot.step_back()  # 后退
+                    self.robot.step_back(distance=0.4)  # 后退
                     if self.stop_flag: return
                 else:
                     rospy.logerr("task error: navigation to the drop_place fails")
