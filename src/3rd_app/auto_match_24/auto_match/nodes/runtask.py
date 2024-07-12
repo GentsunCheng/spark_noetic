@@ -438,7 +438,7 @@ class RobotMoveAction:
         self.move_action_cli.send_goal_and_wait(
             common.msg.MoveStraightDistanceGoal(
                 type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
-                const_rot_vel=0.0,
+                const_rot_vel=-0.1,
                 move_distance=distance,
             ),
             rospy.Duration.from_sec(5)  # 超过5s为超时
@@ -453,7 +453,7 @@ class RobotMoveAction:
         self.move_action_cli.send_goal_and_wait(
             common.msg.MoveStraightDistanceGoal(
                 type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
-                const_rot_vel=0.0,
+                const_rot_vel=0.1,
                 move_distance=dis,
             ),
             rospy.Duration.from_sec(5)  # 超过5s为超时
