@@ -16,7 +16,9 @@ def resetarm(data):
         rospy.sleep(0.15)
         pub1.publish(status(1))
         rospy.sleep(0.15)
-        pub2.publish(position(110.0, 0.0, 35.0))
+        pos = position()
+        pos.x, pos.y, pos.z = 110.0, 0.0, 35.0
+        pub2.publish(pos)
 
 
 if __name__ == "__main__":
