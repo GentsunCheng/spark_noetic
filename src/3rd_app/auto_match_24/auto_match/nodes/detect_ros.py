@@ -37,7 +37,7 @@ class SparkDetect:
         try:
             self.model = yolov5.load(model_path)
         except Exception as e:
-            print("加载模型失败:", e)
+            rospy.logerr(f"加载模型失败:{e}")
 
     def detect(self, image):
         '''
