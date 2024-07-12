@@ -7,7 +7,7 @@ from swiftpro.msg import *
 from uarm import SwiftAPI
 
 
-def resetarm(data):
+def resetarm(_):
     swift = SwiftAPI("/dev/ttyACM0")
     swift.reset(110.0, 0.0, 35.0)
 
