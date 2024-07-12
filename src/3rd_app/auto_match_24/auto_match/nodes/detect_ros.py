@@ -107,7 +107,6 @@ class Detector:
         except CvBridgeError as e:
             print(e)
         image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-        image[0:240, :, :] = 0
 
         objArray.header = data.header
         try:

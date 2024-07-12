@@ -12,12 +12,12 @@ import rospkg
 import actionlib
 from std_msgs.msg import *
 from actionlib_msgs.msg import *
-from move_base_msgs.msg import MoveBaseActionResult, MoveBaseResult
+from sensor_msgs.msg import *
+from move_base_msgs.msg import *
 import common.msg
 import common.srv
 from common.msg import MoveStraightDistanceAction, TurnBodyDegreeAction
 import swiftpro.msg
-from std_msgs.msg import String
 from swiftpro.msg import position
 from vision_msgs.msg import Detection2DArray
 from geometry_msgs.msg import Twist
@@ -71,24 +71,6 @@ class CamAction:
     def __init__(self):
         # 获取标定文件相关信息
         rospack = rospkg.RosPack()
-        package_path = os.path.join(rospack.get_path('auto_match'))          # 获取功能包路径
-        items_path = os.path.join(package_path, 'config', 'items_config.yaml')  # 获取物体标签路径
-        try:
-            with open(items_path, "r", encoding="utf8") as f:
-                items_content = yaml.load(f.read(), Loader=yaml.FullLoader)
-        except Exception:
-            rospy.logerr("can't not open file")
-            sys.exit(1)
-        if isinstance(items_content, type(None)):
-            rospy.logerr("items file empty")
-            sys.exit(1)
-
-        # 根据yaml文件，确定抓取物品的id号
-        self.search_id = [
-            items_content["items"][items_content["objects"]["objects_a"]],
-            items_content["items"][items_content["objects"]["objects_b"]],
-            items_content["items"][items_content["objects"]["objects_c"]]
-        ]
 
     def detector(self):
         '''
@@ -116,8 +98,7 @@ class CamAction:
 
         # 筛选出需要的物品 cube_list中的key代表识别物体的ID，value代表位置信息
         for key, value in obj_dist.items():
-            if key in self.search_id:
-                cube_list.append([key, value])
+            cube_list.append([key, value])
 
         # 按识别次数排列并选择次数最高的物品
         # cube_list.sort(key=lambda x: x[1][2], reverse=True)
@@ -205,6 +186,8 @@ class ArmAction:
 
         self.time = {46: 0, 88: 0, 85: 0}
         self.block_height = 100
+        self.is_catched = False
+        self.testing = False
  
     
     def grasp(self):
@@ -248,24 +231,36 @@ class ArmAction:
 
         # 机械臂移动到目标位置上方
         self.interface.set_pose(x, y, z + 20)
-        # rospy.sleep(0.3)
+        rospy.sleep(0.1)
 
+        self.interface.set_pose(x, y, z)
         # 打开气泵，进行吸取
         self.interface.set_pump(True)
-        # rospy.sleep(0.2)
-
-        # 机械臂移动到目标位置
-        self.interface.set_pose(x, y, z)
-
-        # 抬起目标方块
-        print(f"我把物品抬起来了")
-        self.interface.set_pose(x, y, z + 120)
         rospy.sleep(0.2)
-        self.interface.set_pose(10, 160, 175)
 
-        self.grasp_status_pub.publish(String("0"))
-        self.time[id] = self.time[id] + 1
-        return id
+        # 抬起检测
+        self.interface.set_pose(x, y, 60)
+        rospy.sleep(0.3)
+        self.sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
+        self.testing = True
+
+        while self.testing:
+            pass
+
+        if self.is_catched:
+            # 抬起目标方块
+            print(f"我把物品抬起来了")
+            self.interface.set_pose(x, y, z + 120)
+            rospy.sleep(0.2)
+            self.interface.set_pose(10, 150, 175)
+
+            self.grasp_status_pub.publish(String("0"))
+            self.time[id] = self.time[id] + 1
+            return id
+        else:
+            self.interface.set_pump(False)
+            self.arm_grasp_ready()
+            return "nothing"
 
     def drop(self, item):
         '''
@@ -295,7 +290,7 @@ class ArmAction:
         rospy.sleep(0.1)
 
         # 移动到其他地方
-        x, y = 50, 180
+        x, y = 50, 150
         self.interface.set_pose(x, y, z)
         rospy.sleep(0.1)
         self.arm_grasp_ready()
@@ -303,6 +298,17 @@ class ArmAction:
         self.grasp_status_pub.publish(String("0"))
 
         return True
+    
+    # 检查是否成功抓取，成功返回True，反之返回False
+    def check_grasp_state(self, data):
+        self.sub_tmp.unregister()
+        rospy.sleep(0.1)
+        for distance in data.ranges:
+            if distance < 0.3:
+                self.is_catched = True
+        self.testing = False
+
+        
 
     def arm_position_reset(self):
         '''
@@ -326,7 +332,7 @@ class ArmAction:
         '''
         移动机械臂到摄像头看不到的地方，以方便识别与抓取
         '''
-        self.interface.set_pose(10, 160, 160)
+        self.interface.set_pose(10, 150, 160)
         if block:
             rospy.sleep(1.0)
 
@@ -397,19 +403,6 @@ class RobotMoveAction:
         利用定位码, 调整 spark 在台前位置, 让其对准台面
         @return: True 为调整成功, False 为调整失败
         '''
-        # 调整spark位置，让其正对准台面
-        '''
-        self.tag_adjustment_client.send_goal_and_wait(
-            TagAdjustmentGoal(
-                adjustment_type=TagAdjustmentGoal.TYPE_JUST_FACE
-            )
-        )
-        
-        # 正对台面的操作是否成功
-        if self.tag_adjustment_client.get_result().result != TagAdjustmentResult.SUCCESS:
-            rospy.logwarn("spark_adjust aciton failed!")
-            return False
-        '''
         # 调整spark与台面的距离，设定预期距离为 0.25m
         walk_distance = self.distance_srv(None).front_distance - 0.25
         self.move_action_cli.send_goal_and_wait(
@@ -461,14 +454,6 @@ class RobotMoveAction:
         twist_go = Twist()
         twist_go.linear.x = value
         self.cmd_pub.publish(twist_go)
-
-    # 检查是否成功抓取，成功返回True，反之返回False
-    def check_grasp_state(self, value):
-        print("laser check start!!!!")
-        self.success_grasp_num = 0
-        scan_num = value
-        print(scan_num)
-        return True
 
 
 class AutoAction:
@@ -585,7 +570,7 @@ class AutoAction:
                 cube_list = self.cam.detector() # 获取识别到的物体信息
                 # print("cube_list:",cube_list)
                 if len(cube_list) < 1:
-                    self.robot.step_go_pro(0.1)
+                    self.robot.step_go_pro(0.2)
                     go_num += 1
                     print("go_num:", go_num)
                     if go_num > 100:
@@ -609,6 +594,13 @@ class AutoAction:
                 rospy.sleep(1.5) # 停稳
                 print("========扫描中，准备抓取===== ")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
+                for _ in range(3):
+                    if item_type == "nothing":
+                        print("========没抓到，向前进一点===== ")
+                        self.robot.step_go_pro(0.1)
+                        item_type = self.arm.grasp()
+                    else:
+                        break
                 print("========向后退一点===== ")
                 self.robot.step_back()  # 后退
 
