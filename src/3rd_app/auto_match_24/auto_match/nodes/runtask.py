@@ -10,6 +10,7 @@ import numpy as np
 import rospy
 import rospkg
 import actionlib
+from std_msgs.msg import *
 from actionlib_msgs.msg import *
 from move_base_msgs.msg import MoveBaseActionResult, MoveBaseResult
 import common.msg
@@ -277,7 +278,7 @@ class ArmAction:
         z = 175
         self.interface.set_pose(x, y, z)
         rospy.sleep(0.1)
-        z = -125 + self.time[item] * self.block_height
+        z = -125 + self.time[item] * self.block_height if self.time[item] < 3 else -125 + 3 * self.block_height
         self.interface.set_pose(x, y, z)
         rospy.sleep(0.1)
         z = z - 25
@@ -288,7 +289,16 @@ class ArmAction:
         self.interface.set_pump(0)
         rospy.sleep(0.25)
 
-        self.arm_grasp_ready()  # 移动机械臂到其他地方
+        # 向上移动一点
+        z = z + 25
+        self.interface.set_pose(x, y, z)
+        rospy.sleep(0.1)
+
+        # 移动到其他地方
+        x, y = 50, 180
+        self.interface.set_pose(x, y, z)
+        rospy.sleep(0.1)
+        self.arm_grasp_ready()
 
         self.grasp_status_pub.publish(String("0"))
 

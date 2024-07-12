@@ -8,6 +8,7 @@ import cv2
 import yolov5
 import numpy as np
 import rospy
+from std_msgs.msg import *
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
@@ -96,25 +97,17 @@ class Detector:
         self.obj_id = {'wine': 46, 'bear': 88, 'clock': 85}
         self.detector = SparkDetect("/home/spark/auto.pt")
 
+    def decect_cmp(self, _):
+        self.cmp = True
+
     def image_cb(self, data):
         objArray = Detection2DArray()
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
             print(e)
-
         image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-        height, width, _ = image.shape
-        # 计算圆心坐标和半径
-        center_x = width // 2
-        center_y = height - 1
-        radius = int(np.sqrt((center_x - center_y) ** 2 + (width // 2) ** 2))
-        # 创建一个与图像大小相同的黑色图像
-        result = np.zeros_like(image)
-        # 在结果图像上绘制白色的圆形区域（进一步排除不感兴趣的区域）
-        cv2.circle(result, (center_x, center_y), radius, (255, 255, 255), -1)
-        # 将结果图像与原始图像进行按位与运算，将圆外的区域设置为黑色
-        image = cv2.bitwise_and(image, result)
+        image[0:120, :, :] = 0
 
         objArray.header = data.header
         try:

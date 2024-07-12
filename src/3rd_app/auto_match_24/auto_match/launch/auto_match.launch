@@ -54,10 +54,6 @@
 
 		<!-- 地点记录引导脚本 -->
 		<node pkg="auto_match" type="cmd_location_learn_guide.sh" name="cmd_location_learn_guide" />
-
-		<!--创建新的终端，spark键盘控制 “wsad”分别代表“前后左右”-->
-		<node pkg="spark_teleop" type="keyboard_control.sh" name="kc" if="$(arg open_guide)"/>
-
 	</group>
 	
 	<!-- =====记录地点完成后====== -->
