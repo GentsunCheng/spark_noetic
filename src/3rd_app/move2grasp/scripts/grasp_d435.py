@@ -513,6 +513,7 @@ class GraspObject():
         pos.x, pos.y, pos.z = 110.0, 0.0, 35.0
         rotate.angle4th = 90
         self.pub1.publish(pos)
+        self.pub2.publish(0)
         self.angle4th_pub.publish(rotate)
         r2.sleep()
         return 'return completed'
