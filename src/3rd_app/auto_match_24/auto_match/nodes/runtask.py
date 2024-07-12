@@ -97,7 +97,7 @@ class CamAction:
 
         cube_list[i]:代表第几个物体
         cube_list[i][0]:代表第i个物体的ID信息;               cube_list[i][1]:代表第i个物体的位置信息
-        cube_list[i][1][1]:代表第i个物体的x方向上的位置;     cube_list[i][1][0]:代表第i个物体的y方向上的位置
+        cube_list[i][1][0]:代表第i个物体的x方向上的位置;     cube_list[i][1][1]:代表第i个物体的y方向上的位置
         '''
         obj_dist = {}
         cube_list = []
@@ -112,7 +112,7 @@ class CamAction:
         
         # 提取
         for obj in obj_array.detections:
-            obj_dist[obj.results[0].id] = [obj.bbox.center.x, obj.bbox.center.y, 0]
+            obj_dist[obj.results[0].id] = [obj.bbox.center.x, obj.bbox.center.y]
 
         # 筛选出需要的物品 cube_list中的key代表识别物体的ID，value代表位置信息
         for key, value in obj_dist.items():
@@ -230,8 +230,8 @@ class ArmAction:
         id = None
 
         for pice in cube_list:
-            x = pice[1][1]
-            y = pice[1][0]
+            x = pice[1][0]
+            y = pice[1][1]
             distance = np.sqrt((x - self.center_x) ** 2 + (y - self.bottom_y) ** 2)
             if distance < min_distance:
                 min_distance = distance
