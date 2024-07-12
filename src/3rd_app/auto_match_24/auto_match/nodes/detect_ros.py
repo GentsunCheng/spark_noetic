@@ -37,7 +37,15 @@ class SparkDetect:
         try:
             self.model = yolov5.load(model_path)
         except Exception as e:
-            rospy.logerr(f"加载模型失败:{e}")
+            rospy.logerr(f"加载模型失败:{e}, 开始下载")
+            # 下载模型
+            url = "https://github.com/GentsunCheng/spark_noetic/releases/latest/download/auto.pt"
+            os.system("wget " + url + " -O " + model_path)
+            if not os.path.exists(model_path):
+                rospy.logerr("下载模型失败")
+                return
+            rospy.loginfo("下载模型成功")
+            self.model = yolov5.load(model_path)
 
     def detect(self, image):
         '''
@@ -51,7 +59,6 @@ class SparkDetect:
                   result.image: 检测后的图像
         '''
         results = self.model(image, augment=True)
-        self.is_detecting = True
 
         # 存储检测结果的列表
         result = self.__results__()

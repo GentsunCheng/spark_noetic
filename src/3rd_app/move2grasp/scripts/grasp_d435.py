@@ -40,7 +40,15 @@ class spark_detect:
         try:
             self.model = yolov5.load(model_path)
         except Exception as e:
-            rospy.logerr(f"加载模型失败:{e}")
+            rospy.logerr(f"加载模型失败:{e}, 开始下载")
+            # 下载模型
+            url = "https://github.com/GentsunCheng/spark_noetic/releases/latest/download/vegetable.pt"
+            os.system("wget " + url + " -O " + model_path)
+            if not os.path.exists(model_path):
+                rospy.logerr("下载模型失败")
+                return
+            rospy.loginfo("下载模型成功")
+            self.model = yolov5.load(model_path)
         self.is_detecting = False
 
     def detect(self, image):
@@ -84,7 +92,7 @@ class spark_detect:
 
             result.image = image
         except Exception as e:
-            rospy.logwarn("未检测到物体:", e)
+            rospy.logwarn(f"未检测到物体:{e}")
 
         self.is_detecting = False
 
@@ -105,7 +113,7 @@ class GraspObject():
         self.auto_mod = 0
         self.step = 1
         self.pump_up_down_mod = False
-        self.detector = spark_detect("/home/spark/spark_noetic/vegetable.pt")
+        self.detector = spark_detect("/home/spark/vegetable.pt")
         self.xc_prev = 0
         self.yc_prev = 0
         self.is_have_object = False
