@@ -14,7 +14,6 @@ from std_msgs.msg import String
 from swiftpro.msg import *
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-from spark_carry_object.msg import *
 
 
 import platform
@@ -123,15 +122,6 @@ class GraspObject():
         # 发布机械臂吸盘
         self.pub2 = rospy.Publisher(
             'pump_topic', status, queue_size=1)
-        # 发布第一关节状态
-        self.angle1st_pub = rospy.Publisher(
-            'angle1st_topic', angle1st, queue_size=1)
-        # 发布第二关节状态
-        self.angle2nd_pub = rospy.Publisher(
-            'angle2nd_topic', angle2nd, queue_size=1)
-        # 发布第三关节状态
-        self.angle3rd_pub = rospy.Publisher(
-            'angle3rd_topic', angle3rd, queue_size=1)
         # 发布第四关节状态
         self.angle4th_pub = rospy.Publisher(
             'angle4th_topic', angle4th, queue_size=1)

@@ -33,7 +33,7 @@ class SwiftProInterface:
             "swiftpro_status_topic", swiftpro.msg.status, queue_size=1)    # 机械臂开关状态发布者
 
 
-    def set_pose(self, x, y, z):
+    def set_pose(self, x, y, z, speed = 1000):
         '''
         发布机械臂运动位置
         '''
@@ -41,6 +41,7 @@ class SwiftProInterface:
         pos.x = x
         pos.y = y
         pos.z = z
+        pos.speed = speed
         # rospy.loginfo(f"set pose {x},{y},{z}")
         self.arm_position_pub.publish(pos)
         rospy.sleep(1.5)
@@ -251,7 +252,7 @@ class ArmAction:
             print(f"我把物品抬起来了")
             self.interface.set_pose(x, y, z + 120)
             rospy.sleep(0.2)
-            self.interface.set_pose(10, 150, 175)
+            self.interface.set_pose(10, 150, 175, 50)
 
             self.grasp_status_pub.publish(String("0"))
             self.time[id] = self.time[id] + 1

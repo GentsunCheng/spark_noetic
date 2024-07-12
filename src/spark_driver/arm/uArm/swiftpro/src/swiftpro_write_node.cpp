@@ -27,24 +27,24 @@ swiftpro::SwiftproState pos;
  */
 void position_write_callback(const swiftpro::position& msg)
 {
-	std::string Gcode = "";
-	std_msgs::String result;
-	char x[10];
-	char y[10];
-	char z[10];
+    std::string Gcode;
+    std_msgs::String result;
+    std::string x = std::to_string(msg.x);
+    std::string y = std::to_string(msg.y);
+    std::string z = std::to_string(msg.z);
+    std::string speed;
+    
+    if (msg.speed == 0) {
+        speed = "1000";
+    } else {
+        speed = std::to_string(static_cast<int>(msg.speed));
+    }
 
-	pos.x = msg.x;
-	pos.y = msg.y;
-	pos.z = msg.z;
-	sprintf(x, "%.2f", msg.x);
-	sprintf(y, "%.2f", msg.y);
-	sprintf(z, "%.2f", msg.z);
-	Gcode = (std::string)"G0 X" + x + " Y" + y + " Z" + z + " F1000" + "\r\n";
-	ROS_INFO("%s", Gcode.c_str());
-	_serial.write(Gcode.c_str());
-	result.data = _serial.read(_serial.available());
+    Gcode = "G0 X" + x + " Y" + y + " Z" + z + " F" + speed + "\r\n";
+    ROS_INFO("%s", Gcode.c_str());
+    _serial.write(Gcode.c_str());
+    result.data = _serial.read(_serial.available());
 }
-
 
 /*
  * Description: callback when receive data from angle1st_topic
@@ -227,14 +227,14 @@ int main(int argc, char** argv)
 	ros::NodeHandle nh;
 	swiftpro::SwiftproState swiftpro_state;
 
-	ros::Subscriber sub1 = nh.subscribe("position_write_topic", 10, position_write_callback);
-	ros::Subscriber sub2 = nh.subscribe("swiftpro_status_topic", 10, swiftpro_status_callback);
-	ros::Subscriber sub3 = nh.subscribe("gripper_topic", 10, gripper_callback);
-	ros::Subscriber sub4 = nh.subscribe("pump_topic", 10, pump_callback);
-    ros::Subscriber sub6 = nh.subscribe("angle1st_topic", 10, angle1st_callback);
-    ros::Subscriber sub7 = nh.subscribe("angle2nd_topic", 10, angle2nd_callback);
-    ros::Subscriber sub8 = nh.subscribe("angle3rd_topic", 10, angle3rd_callback);
-    ros::Subscriber sub9 = nh.subscribe("angle4th_topic", 10, angle4th_callback);
+	ros::Subscriber sub_position = nh.subscribe("position_write_topic", 10, position_write_callback);
+	ros::Subscriber sub_status = nh.subscribe("swiftpro_status_topic", 10, swiftpro_status_callback);
+	ros::Subscriber sub_gripper = nh.subscribe("gripper_topic", 10, gripper_callback);
+	ros::Subscriber sub_pump = nh.subscribe("pump_topic", 10, pump_callback);
+    ros::Subscriber sub_angle1st = nh.subscribe("angle1st_topic", 10, angle1st_callback);
+    ros::Subscriber sub_angle2nd = nh.subscribe("angle2nd_topic", 10, angle2nd_callback);
+    ros::Subscriber sub_angle3rd = nh.subscribe("angle3rd_topic", 10, angle3rd_callback);
+    ros::Subscriber sub_angle4th = nh.subscribe("angle4th_topic", 10, angle4th_callback);
 	ros::Publisher 	 pub = nh.advertise<swiftpro::SwiftproState>("SwiftproState_topic", 10);
 	ros::Rate loop_rate(200);
 
