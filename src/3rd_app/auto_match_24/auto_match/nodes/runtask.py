@@ -42,7 +42,6 @@ class SwiftProInterface:
         pos.speed = speed
         # rospy.loginfo(f"set pose {x},{y},{z}")
         self.arm_position_pub.publish(pos)
-        rospy.sleep(1.5)
 
     def set_pump(self, enable:bool):
         '''
@@ -246,12 +245,12 @@ class ArmAction:
 
         # 机械臂移动到目标位置上方
         self.interface.set_pose(x, y, z + 20)
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
 
         self.interface.set_pose(x, y, z)
         # 打开气泵，进行吸取
         self.interface.set_pump(True)
-        rospy.sleep(0.2)
+        rospy.sleep(0.5)
 
         # 抬起检测
         self.interface.set_pose(x, y, 60)
@@ -266,7 +265,7 @@ class ArmAction:
             # 抬起目标方块
             print(f"我把物品抬起来了")
             self.interface.set_pose(x, y, z + 120)
-            rospy.sleep(0.2)
+            rospy.sleep(0.5)
             self.interface.set_pose(10, 150, 175, 50)
 
             self.grasp_status_pub.publish(String("0"))
@@ -287,13 +286,13 @@ class ArmAction:
         y = 0
         z = 175
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.1)
+        rospy.sleep(0.5)
         z = -125 + self.time[item] * self.block_height if self.time[item] < 3 else -125 + 3 * self.block_height
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.1)
+        rospy.sleep(0.3)
         z = z - 25
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
 
         # 关闭气泵
         self.interface.set_pump(0)

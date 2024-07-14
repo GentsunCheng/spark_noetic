@@ -34,10 +34,10 @@ void position_write_callback(const swiftpro::position& msg)
     std::string z = std::to_string(msg.z);
     std::string speed;
     
-    if (msg.speed == 0) {
-        speed = "1000";
+    if (msg.speed) {
+		speed = std::to_string(msg.speed);
     } else {
-        speed = std::to_string(static_cast<int>(msg.speed));
+        speed = "1000";
     }
 
     Gcode = "G0 X" + x + " Y" + y + " Z" + z + " F" + speed + "\r\n";
