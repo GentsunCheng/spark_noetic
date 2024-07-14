@@ -612,7 +612,7 @@ class AutoAction:
                 for _ in range(3):
                     if item_type == "nothing":
                         print("========没抓到，向前进一点===== ")
-                        self.robot.step_go_pro(0.1)
+                        self.robot.step_go(0.1)
                         item_type = self.arm.grasp()
                     else:
                         break

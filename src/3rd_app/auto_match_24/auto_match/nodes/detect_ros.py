@@ -67,14 +67,13 @@ class SparkDetect:
         # 遍历检测结果
         try:
             for *xyxy, conf, cls in results.xyxy[0]:
-                label = f'{self.model.model.names[int(cls)]} {conf:.2f}'
-                # 画出矩形框
-                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 2)
-                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
-
                 # 计算中心点坐标
                 center_x = int((xyxy[0] + xyxy[2]) / 2)
                 center_y = int((xyxy[1] + xyxy[3]) / 2)
+                # 画出矩形框
+                label = f'{self.model.model.names[int(cls)]} ({center_x},{center_y})'
+                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 2)
+                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
                 # 计算大小
                 size_x = int(xyxy[2] - xyxy[0])
                 size_y = int(xyxy[3] - xyxy[1])
@@ -101,7 +100,7 @@ class Detector:
         self.image_pub = rospy.Publisher("result_image",Image, queue_size=1)
         self.object_pub = rospy.Publisher("/objects", Detection2DArray, queue_size=1)
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**26)
+        self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**24)
         self.items = ["wine", "bear", "clock"]
         self.obj_id = {'wine': 46, 'bear': 88, 'clock': 85}
         self.detector = SparkDetect("/home/spark/auto.pt")
@@ -122,7 +121,7 @@ class Detector:
             results = self.detector.detect(image)
             img_bgr = results.image
             for i in range(len(results.name)):
-                if results.name[i] not in self.items:
+                if (results.name[i] not in self.items) or results.y[i] < 160 or results.confidence[i] < 0.5:
                     continue
                 obj = Detection2D()
                 obj.header = data.header
