@@ -26,7 +26,7 @@ class MarkNav():
         # 订阅标记事件
         rospy.Subscriber('mark_nav', String, self.mark_nav)
         # 定义标记地点字典
-        self.dict_mark = {}
+        self.mark_map = {}
         # 监听TF坐标
         self.listener = tf.TransformListener()
         rospy.sleep(1) # need to delay
