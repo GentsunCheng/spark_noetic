@@ -39,28 +39,28 @@ rostopic pub /mark_nav std_msgs/String "data: 'learn Collection_D'" -1 >/dev/nul
 echo -e "${Info} 地点名为 ${Yellow_background_prefix}Collection_D${Font_color_suffix}"
 
 echo -e ""
-echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区东${Font_color_suffix}\c"
+echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣AB${Font_color_suffix}\c"
 echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
-rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_E'" -1 >/dev/null
-echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_E${Font_color_suffix}"
+rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_AB'" -1 >/dev/null
+echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_AB${Font_color_suffix}"
 
 echo -e ""
-echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区北${Font_color_suffix}\c"
+echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区BC${Font_color_suffix}\c"
 echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
-rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_N'" -1 >/dev/null
-echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_N${Font_color_suffix}"
+rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_BC'" -1 >/dev/null
+echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_BC${Font_color_suffix}"
 
 echo -e ""
-echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区西${Font_color_suffix}\c"
+echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区CD${Font_color_suffix}\c"
 echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
-rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_W'" -1 >/dev/null
-echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_W${Font_color_suffix}"
+rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_CD'" -1 >/dev/null
+echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_CD${Font_color_suffix}"
 
 echo -e ""
-echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区南${Font_color_suffix}\c"
+echo -e "${Info} 控制 spark 移动到 ${Yellow_background_prefix}分拣区DA${Font_color_suffix}\c"
 echo && stty erase '^H' && read -p "       然后在这个界面内按回车..." 
-rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_S'" -1 >/dev/null
-echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_S${Font_color_suffix}"
+rostopic pub /mark_nav std_msgs/String "data: 'learn Sorting_DA'" -1 >/dev/null
+echo -e "${Info} 地点名为 ${Yellow_background_prefix}Sorting_DA${Font_color_suffix}"
 
 
 echo -e ""

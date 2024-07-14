@@ -70,14 +70,13 @@ class SparkDetect:
                 # 计算中心点坐标
                 center_x = int((xyxy[0] + xyxy[2]) / 2)
                 center_y = int((xyxy[1] + xyxy[3]) / 2)
-                # 画出矩形框
-                label = f'{self.model.model.names[int(cls)]} ({center_x},{center_y})'
-                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 2)
-                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
                 # 计算大小
                 size_x = int(xyxy[2] - xyxy[0])
                 size_y = int(xyxy[3] - xyxy[1])
-                # 画出中心点
+                # 绘制图像
+                label = f'{self.model.model.names[int(cls)]} ({center_x},{center_y})'
+                cv2.rectangle(image, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 0, 255), 1)
+                cv2.putText(image, label, (int(xyxy[0]), int(xyxy[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 1)
                 cv2.circle(image, (center_x, center_y), 5, (255, 0, 0), -1)
 
                 # 存储中心点坐标,物体名称,置信度和图像
@@ -104,9 +103,6 @@ class Detector:
         self.items = ["wine", "bear", "clock"]
         self.obj_id = {'wine': 46, 'bear': 88, 'clock': 85}
         self.detector = SparkDetect("/home/spark/auto.pt")
-
-    def decect_cmp(self, _):
-        self.cmp = True
 
     def image_cb(self, data):
         objArray = Detection2DArray()

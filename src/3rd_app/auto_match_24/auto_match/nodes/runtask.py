@@ -530,60 +530,22 @@ class AutoAction:
         else :
             rospy.logerr("Navigation to Classification_area failed,please run task again ")
             self.stop_flag = True
-        # print("========向后退一点===== ")
-        # self.robot.step_back()  # 后退
 
-
-        # 创建任务安排字典，设定前往的抓取地点与次数
-        sorting_status_times = {
-            "Sorting_N":3,
-            "Sorting_W":3,
-            "Sorting_S":3,
-            "Sorting_E":3,
-        }
-        sorting_name = "Sorting_N"
+        sorting_name = "Sorting_DA"
 
         # =======开始循环运行前往中心区域抓取与放置任务======
         while True:
             # 根据任务安排逐步执行
             print("readying to sort_areas")
-            if sorting_status_times[sorting_name] == 0:
-                sorting_status_times.pop(sorting_name)
-                if len(sorting_status_times) == 0:
-                    break
-                else:
-                    sorting_name = list(sorting_status_times.keys())[0]
 
             # =====导航到目标地点====
 
             ret = self.robot.goto_local(sorting_name) # 导航到目标点
-            rospy.sleep(1.0) # 停稳
-
-
-            if sorting_name == "Sorting_N":
-                value = 0.21
-                # self.robot.step_rotate(-0.05)
-                rospy.sleep(0.5)
-                
-            elif sorting_name == "Sorting_W":
-                value = 0.21
-                # self.robot.step_rotate(0.05)
-                rospy.sleep(0.5)
-
-            elif sorting_name == "Sorting_S":
-                value = 0.18
-                # self.robot.step_rotate(0.05)
-                rospy.sleep(0.5)
-
-            elif sorting_name == "Sorting_E":
-                value = 0.17
-                # self.robot.step_rotate(0.05)
-                rospy.sleep(0.5)
+            rospy.sleep(0.5) # 停稳
 
             go_num = 0
             while True:     # 新增##############################################################
                 cube_list = self.cam.detector() # 获取识别到的物体信息
-                # print("cube_list:",cube_list)
                 if len(cube_list) < 1:
                     self.robot.step_go_pro(0.2)
                     go_num += 1
@@ -606,10 +568,10 @@ class AutoAction:
                 print("========往前走看清一点===== ")
                 # self.robot.step_go(0.02)  # 前进
                 # self.robot.step_go(value)   ############################################
-                rospy.sleep(1.5) # 停稳
+                rospy.sleep(0.5) # 停稳
                 print("========扫描中，准备抓取===== ")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
-                for _ in range(3):
+                for i in range(3):
                     if item_type == "nothing":
                         print("========没抓到，向前进一点===== ")
                         self.robot.step_go(0.1)
@@ -617,7 +579,8 @@ class AutoAction:
                     else:
                         break
                 print("========向后退一点===== ")
-                self.robot.step_back()  # 后退
+                for _ in range(i + 3):
+                    self.robot.step_back(0.1)  # 后退
 
                 rospy.sleep(0.5)
 
@@ -636,8 +599,7 @@ class AutoAction:
 
                 if self.stop_flag: return
 
-            if item_type == 0: # 如果没有识别到物体，将该地点的抓取次数归0
-                sorting_status_times[sorting_name] = 0
+            if item_type == 0:
                 continue
 
             if grasp_ctrl_state != False:
@@ -645,7 +607,7 @@ class AutoAction:
                 self.arm.arm_grasp_ready()
                 print("========前往放置区===== ")
                 ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
-                rospy.sleep(1.5) # 停稳
+                rospy.sleep(0.5) # 停稳
                 if self.stop_flag: return
 
                 if ret: 
@@ -658,16 +620,13 @@ class AutoAction:
                 if self.stop_flag: return
 
                 # 下一步
-            sorting_status_times[sorting_name] = sorting_status_times[sorting_name] - 1
+            if items_place_dict[item_type] == "Collection_B":
+                sorting_name = "Sorting_AB"
+            elif items_place_dict[item_type] == "Collection_C":
+                sorting_name = "Sorting_BC"
+            elif items_place_dict[item_type] == "Collection_D":
+                sorting_name = "Sorting_CD"
 
-
-        self.arm.arm_home()
-        # act.goto_local("sp")
-
-        rospy.logwarn("***** task finished *****")
-        rospy.logwarn("if you want to run task again. ")
-        rospy.logwarn("Re-send a message to hm_task_cmd topic. ")
-        rospy.logwarn("Or press Ctrl+C to exit the program")
 
     def task_cmd_cb(self,flag):
         if flag :
