@@ -43,6 +43,7 @@ class SparkDetect:
             os.system("wget " + url + " -O " + model_path)
             if not os.path.exists(model_path):
                 rospy.logerr("下载模型失败")
+                os.remove(model_path)
                 return
             rospy.loginfo("下载模型成功")
             self.model = yolov5.load(model_path)
