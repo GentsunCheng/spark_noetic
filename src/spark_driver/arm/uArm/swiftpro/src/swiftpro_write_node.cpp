@@ -243,7 +243,7 @@ int main(int argc, char** argv)
 	swiftpro::SwiftproState swiftpro_state;
 
 	ros::Subscriber sub_position = nh.subscribe("position_write_topic", 10, position_write_callback);
-	ros::Subscriber sub_position = nh.subscribe("position_slow_topic", 10, position_slow_callback);
+	ros::Subscriber sub_position_slow = nh.subscribe("position_slow_topic", 10, position_slow_callback);
 	ros::Subscriber sub_status = nh.subscribe("swiftpro_status_topic", 10, swiftpro_status_callback);
 	ros::Subscriber sub_gripper = nh.subscribe("gripper_topic", 10, gripper_callback);
 	ros::Subscriber sub_pump = nh.subscribe("pump_topic", 10, pump_callback);
