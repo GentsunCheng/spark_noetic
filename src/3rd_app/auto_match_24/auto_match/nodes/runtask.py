@@ -284,9 +284,6 @@ class ArmAction:
             return id
         else:
             self.interface.set_pump(False)
-            sub = rospy.Publisher("armreset", String, queue_size=1)
-            sub.publish("reset")
-            sub.unregister()
             self.arm_grasp_ready()
             return 0
 
@@ -330,10 +327,14 @@ class ArmAction:
     # 检查是否成功抓取，成功返回True，反之返回False
     def check_grasp_state(self, data):
         self.sub_tmp.unregister()
-        rospy.sleep(0.1)
+        rospy.sleep(0.3)
         for distance in data.ranges:
             if distance < 0.3:
                 self.is_catched = True
+        if not self.is_catched:
+            sub = rospy.Publisher("armreset", String, queue_size=1)
+            sub.publish("reset")
+            sub.unregister()
         self.testing = False
 
         
