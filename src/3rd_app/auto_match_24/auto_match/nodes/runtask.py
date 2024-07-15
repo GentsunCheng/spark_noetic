@@ -265,7 +265,7 @@ class ArmAction:
 
         # 抬起检测
         self.interface.set_pose(x, y, 60)
-        rospy.sleep(0.8)
+        rospy.sleep(1.0)
         self.sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
         self.testing = True
 
