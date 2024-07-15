@@ -297,17 +297,17 @@ class ArmAction:
         y = 0
         z = 175
         self.interface.set_pose(x, y, z)
-        rospy.sleep(1.0)
+        rospy.sleep(1.5)
         z = -125 + self.time[item] * self.block_height if self.time[item] < 3 else -125 + 3 * self.block_height
         self.interface.set_pose(x, y, z)
-        rospy.sleep(1.0)
+        rospy.sleep(1.5)
         z = z - 25
         self.interface.set_pose(x, y, z)
         rospy.sleep(0.5)
 
         # 关闭气泵
         self.interface.set_pump(0)
-        rospy.sleep(0.5)
+        rospy.sleep(1.0)
 
         # 向上移动一点
         z = z + 25
@@ -622,7 +622,7 @@ class AutoAction:
                 self.arm.arm_grasp_ready()
                 print("========前往放置区===== ")
                 ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
-                rospy.sleep(0.5) # 停稳
+                rospy.sleep(2.0) # 停稳
                 if self.stop_flag: return
 
                 if ret: 
