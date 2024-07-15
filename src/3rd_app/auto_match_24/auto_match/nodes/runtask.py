@@ -25,6 +25,8 @@ class SwiftProInterface:
         # 创建控制机械臂的topic发布者
         self.arm_position_pub = rospy.Publisher(
             "position_write_topic", swiftpro.msg.position, queue_size=1)   # 机械臂运动位置发布者
+        self.arm_position_slow_pub = rospy.Publisher(
+            "position_slow_topic", swiftpro.msg.position, queue_size=1)
         self.arm_pump_pub = rospy.Publisher(
             "pump_topic", swiftpro.msg.status, queue_size=1)               # 机械臂气泵状态发布者
         self.arm_status_pub = rospy.Publisher(
@@ -42,6 +44,15 @@ class SwiftProInterface:
         pos.speed = speed
         # rospy.loginfo(f"set pose {x},{y},{z}")
         self.arm_position_pub.publish(pos)
+
+    def set_pose_slow(self, x, y, z):
+        pos = position()
+        pos.x = x
+        pos.y = y
+        pos.z = z
+        pos.speed = 50
+        self.arm_position_slow_pub.publish(pos)
+        
 
     def set_pump(self, enable:bool):
         '''
@@ -266,15 +277,18 @@ class ArmAction:
             print(f"我把物品抬起来了")
             self.interface.set_pose(x, y, z + 120)
             rospy.sleep(0.5)
-            self.interface.set_pose(10, 150, 175, 50)
+            self.interface.set_pose_slow(10, 150, 175)
 
             self.grasp_status_pub.publish(String("0"))
             self.time[id] = self.time[id] + 1
             return id
         else:
             self.interface.set_pump(False)
+            sub = rospy.Publisher("armreset", String, queue_size=1)
+            sub.publish("reset")
+            sub.unregister()
             self.arm_grasp_ready()
-            return "nothing"
+            return 0
 
     def drop(self, item):
         '''
@@ -571,15 +585,16 @@ class AutoAction:
                 print("========扫描中，准备抓取===== ")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
-                    if item_type == "nothing":
-                        print("========没抓到，向前进一点===== ")
-                        self.robot.step_go(0.1)
-                        item_type = self.arm.grasp()
-                    else:
+                    if item_type:
                         break
+                    else:
+                        print("========没抓到，向前进一点===== ")
+                        self.robot.step_go(0.05)
+                        rospy.sleep(1.0)
+                        item_type = self.arm.grasp()
                 print("========向后退一点===== ")
                 for _ in range(i + 3):
-                    self.robot.step_back(0.1)  # 后退
+                    self.robot.step_back(0.05)  # 后退
 
                 rospy.sleep(0.5)
 

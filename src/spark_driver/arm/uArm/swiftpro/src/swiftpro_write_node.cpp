@@ -46,6 +46,21 @@ void position_write_callback(const swiftpro::position& msg)
     result.data = _serial.read(_serial.available());
 }
 
+void position_slow_callback(const swiftpro::position& msg)
+{
+    std::string Gcode;
+    std_msgs::String result;
+    std::string x = std::to_string(msg.x);
+    std::string y = std::to_string(msg.y);
+    std::string z = std::to_string(msg.z);
+    std::string speed;
+
+    Gcode = "G0 X" + x + " Y" + y + " Z" + z + " F50" + "\r\n";
+    ROS_INFO("%s", Gcode.c_str());
+    _serial.write(Gcode.c_str());
+    result.data = _serial.read(_serial.available());
+}
+
 /*
  * Description: callback when receive data from angle1st_topic
  * Inputs: 		msg(float)			angle of 1st motor(degree)
@@ -228,6 +243,7 @@ int main(int argc, char** argv)
 	swiftpro::SwiftproState swiftpro_state;
 
 	ros::Subscriber sub_position = nh.subscribe("position_write_topic", 10, position_write_callback);
+	ros::Subscriber sub_position = nh.subscribe("position_slow_topic", 10, position_slow_callback);
 	ros::Subscriber sub_status = nh.subscribe("swiftpro_status_topic", 10, swiftpro_status_callback);
 	ros::Subscriber sub_gripper = nh.subscribe("gripper_topic", 10, gripper_callback);
 	ros::Subscriber sub_pump = nh.subscribe("pump_topic", 10, pump_callback);
