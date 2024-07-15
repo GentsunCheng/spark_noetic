@@ -254,7 +254,7 @@ class ArmAction:
 
         # 抬起检测
         self.interface.set_pose(x, y, 60)
-        rospy.sleep(0.3)
+        rospy.sleep(0.8)
         self.sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
         self.testing = True
 
@@ -286,27 +286,27 @@ class ArmAction:
         y = 0
         z = 175
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.5)
+        rospy.sleep(1.0)
         z = -125 + self.time[item] * self.block_height if self.time[item] < 3 else -125 + 3 * self.block_height
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.3)
+        rospy.sleep(1.0)
         z = z - 25
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.2)
+        rospy.sleep(0.5)
 
         # 关闭气泵
         self.interface.set_pump(0)
-        rospy.sleep(0.25)
+        rospy.sleep(0.5)
 
         # 向上移动一点
         z = z + 25
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.1)
+        rospy.sleep(0.3)
 
         # 移动到其他地方
         x, y = 50, 150
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
         self.arm_grasp_ready()
 
         self.grasp_status_pub.publish(String("0"))
