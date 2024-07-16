@@ -243,12 +243,27 @@ class ArmAction:
             rospy.logwarn("没有找到物品啊。。。去下一个地方")
             self.grasp_status_pub.publish(String("1"))
             return 0
-
-        closest_x = cube_list[0][1][1]
-        closest_y = cube_list[0][1][0]
-        id = cube_list[0][0]
+        
+        can_grasp = False
+        index_no1 = -1
 
         for pice in cube_list:
+            if 240 < pice[1][0] or not (360 < pice[1][0] and 213 < pice[1][1] < 427):
+                can_grasp = True
+                index_no1 += 1
+                break
+        
+        if not can_grasp:
+            return 0
+            
+
+        closest_x = cube_list[index_no1][1][1]
+        closest_y = cube_list[index_no1][1][0]
+        id = cube_list[index_no1][0]
+
+        for pice in cube_list[index_no1:]:
+            if pice[1][0] < 240 or (360 < pice[1][0] and 213 < pice[1][1] < 427):
+                continue
             xp = pice[1][1]
             yp = pice[1][0]
             if yp > closest_y:
@@ -344,7 +359,9 @@ class ArmAction:
     
     def drop_step_two(self, item):
         cube_list = self.cam.detector()
-        while len(cube_list) == 0:
+        time = 0
+        while len(cube_list) == 0 and time < 10:
+            time += 1
             rospy.logwarn("list is empty")
             rospy.sleep(0.5)
             cube_list = self.cam.detector()
@@ -360,7 +377,7 @@ class ArmAction:
                 closest_y = yp
                 id = pice[0]
 
-        if id == item and 160 <= closest_x <= 480 and 60 <= closest_y <= 300:
+        if id == item and 160 <= closest_x <= 480 and 60 <= closest_y:
             x = self.x_kb[0] * closest_x + self.x_kb[1]
             y = self.y_kb[0] * closest_y + self.y_kb[1]
             z = 175
@@ -396,12 +413,15 @@ class ArmAction:
         sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
         self.testing = True
         while self.testing:
+            rospy.logwarn("list is empty")
             rospy.sleep(0.3)
         sub_tmp.unregister()
 
         if self.is_in_30cm:
             cube_list = self.cam.detector()
-            while len(cube_list) == 0:
+            time = 0
+            while len(cube_list) == 0 and time < 10:
+                time += 1
                 rospy.sleep(0.5)
                 cube_list = self.cam.detector()
             closest_x = cube_list[0][1][1]
@@ -416,7 +436,7 @@ class ArmAction:
                     closest_y = yp
                     id = pice[0]
 
-            if id == item and 160 <= closest_x <= 480 and 0 <= closest_y <= 260:
+            if id == item and 160 <= closest_x <= 480 and closest_y <= 360:
                 x = self.x2_kb[0] * closest_x + self.x2_kb[1]
                 y = self.y2_kb[0] * closest_y + self.y2_kb[1]
                 z = -125 + self.block_height * 3

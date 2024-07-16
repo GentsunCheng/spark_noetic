@@ -117,7 +117,7 @@ class Detector:
             results = self.detector.detect(image)
             img_bgr = results.image
             for i in range(len(results.name)):
-                if (results.name[i] not in self.items) or results.y[i] < 160 or results.confidence[i] < 0.5:
+                if (results.name[i] not in self.items) or results.confidence[i] < 0.5:
                     continue
                 obj = Detection2D()
                 obj.header = data.header
