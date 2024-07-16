@@ -116,6 +116,7 @@ class CamAction:
             obj_array = rospy.wait_for_message(
                 "/objects", Detection2DArray, timeout=5)
         except Exception:
+            rospy.logerr("can't get object message")
             cube_list.clear()
             return cube_list
         
@@ -129,7 +130,7 @@ class CamAction:
                 cube_list.append([key, value])
 
         # 按识别次数排列并选择次数最高的物品
-        # cube_list.sort(key=lambda x: x[1][2], reverse=True)
+        # cube_list.sort(key=lambda x: x[1][0], reverse=True)
         return cube_list
 
     # ======获取物品对应的收取区位置=======
@@ -163,7 +164,7 @@ class CamAction:
                 )
                 rospy.sleep(2)
             elif len(cube_list) >= 3 :
-                print("finded 3 objects")
+                rospy.loginfo("finded 3 objects")
                 # 根据 cube_list[i][1][0] 的值对 cube_list 进行排序
                 sorted_cube_list = sorted(cube_list, key=lambda x: x[1][0], reverse=False)
 
@@ -172,7 +173,7 @@ class CamAction:
                 items_place_dict[sorted_cube_list[1][0]] = "Collection_C" # 中间的物体对应收取区C
                 items_place_dict[sorted_cube_list[2][0]] = "Collection_D" # 最右边的物体对应收取区B
                 
-                print("readying to turn back")
+                rospy.loginfo("readying to turn back")
                 self.robot.move_action_cli.send_goal_and_wait(
                     common.msg.MoveStraightDistanceGoal(
                     type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
@@ -195,13 +196,21 @@ class ArmAction:
 
         self.cam = CamAction()
 
-        # 获取标定文件数据
+        # 获取第一层标定文件数据
         filename = os.environ['HOME'] + "/thefile.txt"
         with open(filename, 'r') as f:
             s = f.read()
         arr = s.split()
         self.x_kb = [float(arr[0]), float(arr[1])]
-        self.y_kb = [float(arr[2]), float(arr[3])]        
+        self.y_kb = [float(arr[2]), float(arr[3])]
+
+        # 获取第二层标定文件数据
+        filename = os.environ['HOME'] + "/thefile2.txt"
+        with open(filename, 'r') as f:
+            s = f.read()
+        arr = s.split()
+        self.x2_kb = [float(arr[0]), float(arr[1])]
+        self.y2_kb = [float(arr[2]), float(arr[3])]
 
         # 创建机械臂控制接口的对象
         self.interface = SwiftProInterface()
@@ -214,7 +223,7 @@ class ArmAction:
 
         self.time = {46: 0, 88: 0, 85: 0}
         self.block_height = 100
-        self.is_catched = False
+        self.is_in_30cm = False
         self.testing = False
  
     
@@ -240,11 +249,11 @@ class ArmAction:
         id = cube_list[0][0]
 
         for pice in cube_list:
-            x = pice[1][1]
-            y = pice[1][0]
-            if y > closest_y:
-                closest_x = x
-                closest_y = y
+            xp = pice[1][1]
+            yp = pice[1][0]
+            if yp > closest_y:
+                closest_x = xp
+                closest_y = yp
                 id = pice[0]
 
         # 获取机械臂目标位置
@@ -252,7 +261,7 @@ class ArmAction:
         y = self.y_kb[0] * closest_y + self.y_kb[1]
         z = -50.0
 
-        print(f"找到物品了！它在: {x}, {y}, {z}")
+        rospy.loginfo(f"找到物品了！它在: {x}, {y}, {z}")
 
         # 机械臂移动到目标位置上方
         self.interface.set_pose(x, y, z + 20)
@@ -266,15 +275,15 @@ class ArmAction:
         # 抬起检测
         self.interface.set_pose(x, y, 60)
         rospy.sleep(1.0)
-        self.sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
+        sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
         self.testing = True
-
         while self.testing:
-            pass
+            rospy.sleep(0.3)
+        sub_tmp.unregister()
 
-        if self.is_catched:
+        if self.is_in_30cm:
             # 抬起目标方块
-            print(f"我把物品抬起来了")
+            rospy.loginfo(f"我把物品抬起来了")
             self.interface.set_pose(x, y, z + 120)
             rospy.sleep(0.5)
             self.interface.set_pose_slow(10, 150, 175)
@@ -288,6 +297,15 @@ class ArmAction:
             return 0
 
     def drop(self, item):
+        if self.time[item] == 1:
+            self.drop_step_one(item)
+        elif self.time[item] == 2:
+            self.drop_step_two(item)
+        elif self.time[item] == 3:
+            self.drop_step_three(item)
+
+
+    def drop_step_one(self, item):
         '''
         放置方块, 可以先判断是否有方块, 从而调整放置高度
         @param check: 是否判断有无方块, 默认判断
@@ -298,7 +316,7 @@ class ArmAction:
         z = 175
         self.interface.set_pose(x, y, z)
         rospy.sleep(1.5)
-        z = -125 + self.time[item] * self.block_height if self.time[item] < 3 else -125 + 3 * self.block_height
+        z = -125 + self.block_height
         self.interface.set_pose(x, y, z)
         rospy.sleep(1.5)
         z = z - 25
@@ -324,14 +342,118 @@ class ArmAction:
 
         return True
     
+    def drop_step_two(self, item):
+        cube_list = self.cam.detector()
+        while len(cube_list) == 0:
+            rospy.logwarn("list is empty")
+            rospy.sleep(0.5)
+            cube_list = self.cam.detector()
+        closest_x = cube_list[0][1][1]
+        closest_y = cube_list[0][1][0]
+        id = cube_list[0][0]
+
+        for pice in cube_list:
+            xp = pice[1][1]
+            yp = pice[1][0]
+            if yp < closest_y:
+                closest_x = xp
+                closest_y = yp
+                id = pice[0]
+
+        if id == item and 160 <= closest_x <= 480 and 60 <= closest_y <= 300:
+            x = self.x_kb[0] * closest_x + self.x_kb[1]
+            y = self.y_kb[0] * closest_y + self.y_kb[1]
+            z = 175
+            self.interface.set_pose(x, y, z)
+            rospy.sleep(1.5)
+            z = -125 + self.block_height * 2
+            self.interface.set_pose(x, y, z)
+            rospy.sleep(1.5)
+            z = z - 25
+            self.interface.set_pose(x, y, z)
+            rospy.sleep(0.5)
+            # 关闭气泵
+            self.interface.set_pump(0)
+            rospy.sleep(1.0)
+            # 向上移动一点
+            z = z + 25
+            self.interface.set_pose(x, y, z)
+            rospy.sleep(0.3)
+            # 移动到其他地方
+            x, y = 50, 150
+            self.interface.set_pose(x, y, z)
+            rospy.sleep(0.2)
+            self.arm_grasp_ready()
+            self.grasp_status_pub.publish(String("0"))
+            return True
+        else:
+            self.time[item] = 1
+            self.drop_step_one(item)
+            return False
+        
+
+    def drop_step_three(self, item):
+        sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
+        self.testing = True
+        while self.testing:
+            rospy.sleep(0.3)
+        sub_tmp.unregister()
+
+        if self.is_in_30cm:
+            cube_list = self.cam.detector()
+            while len(cube_list) == 0:
+                rospy.sleep(0.5)
+                cube_list = self.cam.detector()
+            closest_x = cube_list[0][1][1]
+            closest_y = cube_list[0][1][0]
+            id = cube_list[0][0]
+
+            for pice in cube_list:
+                xp = pice[1][1]
+                yp = pice[1][0]
+                if yp < closest_y:
+                    closest_x = xp
+                    closest_y = yp
+                    id = pice[0]
+
+            if id == item and 160 <= closest_x <= 480 and 0 <= closest_y <= 260:
+                x = self.x_kb[0] * closest_x + self.x_kb[1] - (closest_x - 320) * (480 - y) / (480 - y + self.block_height / 2)
+                y = self.y_kb[0] * closest_y + self.y_kb[1] - self.block_height / 2
+                z = -125 + self.block_height * 3
+                self.interface.set_pose(x, y, z)
+                rospy.sleep(1.5)
+                z = z - 25
+                self.interface.set_pose(x, y, z)
+                rospy.sleep(0.5)
+                # 关闭气泵
+                self.interface.set_pump(0)
+                rospy.sleep(1.0)
+                # 向上移动一点
+                z = z + 25
+                self.interface.set_pose(x, y, z)
+                rospy.sleep(0.3)
+                # 移动到其他地方
+                x, y = 50, 150
+                self.interface.set_pose(x, y, z)
+                rospy.sleep(0.2)
+                self.arm_grasp_ready()
+                self.grasp_status_pub.publish(String("0"))
+                return True
+            else:
+                self.drop_step_two(item)
+                return False
+        else:
+            self.time[item] = 2
+            self.drop_step_two(item)
+
+  
     # 检查是否成功抓取，成功返回True，反之返回False
     def check_grasp_state(self, data):
-        self.sub_tmp.unregister()
         rospy.sleep(0.3)
         for distance in data.ranges:
             if distance < 0.3:
-                self.is_catched = True
-        if not self.is_catched:
+                self.is_in_30cm = True
+        if not self.is_in_30cm:
             sub = rospy.Publisher("armreset", String, queue_size=1)
             sub.publish("reset")
             sub.unregister()
@@ -590,12 +712,14 @@ class AutoAction:
                         break
                     else:
                         print("========没抓到，向前进一点===== ")
-                        self.robot.step_go(0.05)
-                        rospy.sleep(1.0)
+                        self.robot.step_go_pro(0.1)
+                        rospy.sleep(0.5)
+                        self.robot.step_go_pro(0)
                         item_type = self.arm.grasp()
+                        rospy.sleep(0.5)
                 print("========向后退一点===== ")
                 for _ in range(i + 3):
-                    self.robot.step_back(0.05)  # 后退
+                    self.robot.step_back(0.1)  # 后退
 
                 rospy.sleep(0.5)
 
