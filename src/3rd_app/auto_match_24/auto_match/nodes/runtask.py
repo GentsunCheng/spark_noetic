@@ -417,8 +417,8 @@ class ArmAction:
                     id = pice[0]
 
             if id == item and 160 <= closest_x <= 480 and 0 <= closest_y <= 260:
-                x = self.x_kb[0] * closest_x + self.x_kb[1] - (closest_x - 320) * (480 - y) / (480 - y + self.block_height / 2)
-                y = self.y_kb[0] * closest_y + self.y_kb[1] - self.block_height / 2
+                x = self.x2_kb[0] * closest_x + self.x2_kb[1]
+                y = self.y2_kb[0] * closest_y + self.y2_kb[1]
                 z = -125 + self.block_height * 3
                 self.interface.set_pose(x, y, z)
                 rospy.sleep(1.5)

@@ -494,23 +494,30 @@ cal_camera_arm_uarm() {
     echo -e "${Info}退出请输入：Ctrl + c "
     echo -e "${Info}"
     echo && stty erase ^? && read -p "按回车键（Enter）开始："
-    if [ $ROSVER = "kinetic" ]; then
-        echo -e "${Info}It is kinetic."
-        print_command "roslaunch spark_carry_object spark_carry_cal_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}"
-        roslaunch spark_carry_object spark_carry_cal_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}
-    elif [ $ROSVER = "indigo" ]; then
-        echo -e "${Info}It is indigo."
-        print_command "roslaunch spark_carry_object spark_carry_cal_cv2.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}"
-        roslaunch spark_carry_object spark_carry_cal_cv2.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}
-    elif [ $ROSVER = "melodic" ]; then
-        echo -e "${Info}It is melodic."
-        print_command "roslaunch spark_carry_object spark_carry_cal_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}"
-        roslaunch spark_carry_object spark_carry_cal_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}
-    elif [ $ROSVER = "noetic" ]; then
-        echo -e "${Info}It is melodic."
-        print_command "roslaunch spark_carry_object spark_carry_cal_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}"
-        roslaunch spark_carry_object spark_carry_cal_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}
-    fi
+    echo -e "${Info}It is noetic."
+    print_command "roslaunch spark_carry_object spark_carry_cal_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}"
+    roslaunch spark_carry_object spark_carry_cal_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}
+}
+
+#机械臂与摄像头匹对标定uArm第二层
+cal_camera_arm_uarm_step_two() {
+    ROSVER=$(/usr/bin/rosversion -d)
+    PROJECTPATH=$(
+        cd $(dirname $0)
+        pwd
+    )
+    source ${PROJECTPATH}/devel/setup.bash
+    echo -e "${Info}"
+    echo -e "${Info}请确定："
+    echo -e "${Info}       A.摄像头已反向向下安装好。机械臂正常上电。"
+    echo -e "${Info}       B.${Red_font_prefix}红色${Font_color_suffix}标定物已贴好在吸盘固定头正上方。"
+    echo -e "${Info}       C.机械臂正常上电。"
+    echo -e "${Info}退出请输入：Ctrl + c "
+    echo -e "${Info}"
+    echo && stty erase ^? && read -p "按回车键（Enter）开始："
+    echo -e "${Info}It is noetic."
+    print_command "roslaunch spark_carry_object spark_carry_cal_step_two_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}"
+    roslaunch spark_carry_object spark_carry_cal_step_two_cv3.launch camera_type_tel:=${CAMERATYPE} lidar_type_tel:=${LIDARTYPE}
 }
 
 #机械臂与摄像头匹对标定 sagittarius
@@ -572,8 +579,9 @@ cal_camera_arm() {
     echo -e "${Info} "
     echo -e "${Info} 请选择机械臂："
     echo -e "${Info} 1.Sagittarius"
-    echo -e "${Info} 2.uArm"
-    echo && stty erase ^? && read -p "请输入数字 [1-2]：" armnum
+    echo -e "${Info} 2.uArm 第一层"
+    echo -e "${Info} 3.uArm 第二层"
+    echo && stty erase ^? && read -p "请输入数字 [1-3]：" armnum
 
     case "$armnum" in
     1)
@@ -581,6 +589,9 @@ cal_camera_arm() {
         ;;
     2)
         cal_camera_arm_uarm
+        ;;
+    3)
+        cal_camera_arm_uarm_step_two
         ;;
     *)
         echo -e "${Error} 错误，请选择正确的机械臂"
