@@ -1,0 +1,2 @@
+yolov5>=7.0.13
+opencv-python>=4.7.0

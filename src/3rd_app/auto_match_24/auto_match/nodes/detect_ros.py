@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-## Author: Rohit
-## Date: July, 25, 2017
-# Purpose: Ros node to detect objects using tensorflow
+# -*- coding: utf-8 -*-
+
+## Author: GentsunCheng
+## Date: July, 16, 2024
+# Purpose: Ros node to detect objects using yolov5
 import os
-import sys
 import cv2
 import yolov5
-import numpy as np
 import rospy
 from std_msgs.msg import *
 from sensor_msgs.msg import Image

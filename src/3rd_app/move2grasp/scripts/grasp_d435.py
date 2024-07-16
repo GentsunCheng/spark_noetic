@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+## Author: GentsunCheng
+## Date: July, 16, 2024
+# Purpose: Ros node to detect objects using yolov5 and control the robot to grasp the object
+
 import os
 import json
 import rospy

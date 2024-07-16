@@ -63,7 +63,7 @@
 		<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" unless="$(arg open_guide)"/>
 		
 		<!-- 流程程序 -->
-	<node pkg="auto_match" name="runtask" type="runtask.py" output="screen" launch-prefix="xterm -e" unless="$(arg open_guide)"/>
+	<node pkg="auto_match" name="runtask" type="runtask.py" output="screen" launch-prefix="gnome-terminal --window --geometry=30x10+500+50 -t 'runtask' -x zsh -c" unless="$(arg open_guide)"/>
 
 		
 		<!-- AMCL-->
