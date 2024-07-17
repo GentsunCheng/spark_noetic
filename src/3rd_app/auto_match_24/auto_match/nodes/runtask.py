@@ -234,7 +234,7 @@ class ArmAction:
         for pice in cube_list_tmp:
             xp = pice[1][0]
             yp = pice[1][1]
-            if self.exclude[int(yp), int(xp)] == 255:
+            if self.exclude[int(yp), int(xp)] > 128:
                 cube_list.append(pice)
 
         if len(cube_list) == 0:
