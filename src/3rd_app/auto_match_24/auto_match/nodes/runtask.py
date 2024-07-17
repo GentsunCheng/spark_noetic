@@ -212,6 +212,7 @@ class ArmAction:
         self.block_height = 100
         self.is_in_30cm = False
         self.testing = False
+        self.complete = {46: False, 88: False, 85: False}
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
         self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
  
@@ -288,6 +289,7 @@ class ArmAction:
 
 
     def drop(self, item):
+        self.complete[item] = False
         if self.time[item] == 1:
             self.drop_step_one(item)
         elif self.time[item] == 2:
@@ -438,6 +440,7 @@ class ArmAction:
                 rospy.sleep(0.2)
                 self.arm_grasp_ready()
                 self.grasp_status_pub.publish(String("0"))
+                self.complete[item] = True
                 return True
             else:
                 self.drop_step_two(item)
@@ -725,6 +728,12 @@ class AutoAction:
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
+                if item_type == 0:
+                    if self.arm.complete[46] and self.arm.complete[88] and self.arm.complete[85]:
+                        self.stop_flag = True
+                        return
+                    else:
+                        sorting_name = "Sorting_DA"
                 print("========向后退一点===== ")
                 for _ in range(i + 3):
                     self.robot.step_go_pro(-0.25)  # 后退
@@ -741,9 +750,9 @@ class AutoAction:
                     if item_type != 0:         # 新增##############################################################################
                         grasp_ctrl_state = True
                     self.robot.step_back()  # 后退
-                
 
                 if self.stop_flag: return
+
 
             if item_type == 0:
                 continue
@@ -754,17 +763,17 @@ class AutoAction:
                 print("========前往放置区===== ")
                 ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
                 rospy.sleep(2.0) # 停稳
-                if self.stop_flag: return
 
                 if ret: 
                     self.arm.drop(item_type)  # 放下物品
                     self.robot.step_back(distance=0.4)  # 后退
-                    if self.stop_flag: return
                 else:
                     rospy.logwarn("task error: navigation to the drop_place fails!!!")
                     rospy.loginfo("continue to next task")
                     self.arm.drop(item_type)
-                if self.stop_flag: pass
+                if self.stop_flag:
+                    self.robot.step_back(distance=0.4)
+                    self.stop_flag = False
 
                 # 下一步
             if items_place_dict[item_type] == "Collection_B":
