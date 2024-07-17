@@ -40,8 +40,8 @@ class SparkDetect:
             rospy.logerr(f"加载模型失败:{e}, 开始下载")
             # 下载模型
             url = "https://github.com/GentsunCheng/spark_noetic/releases/latest/download/auto.pt"
-            os.system("wget " + url + " -O " + model_path)
-            if not os.path.exists(model_path):
+            stat = os.system("wget " + url + " -O " + model_path)
+            if not (os.path.exists(model_path) or stat):
                 rospy.logerr("下载模型失败")
                 os.remove(model_path)
                 return
@@ -100,12 +100,13 @@ class Detector:
         self.object_pub = rospy.Publisher("/objects", Detection2DArray, queue_size=1)
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**24)
-        self.items = ["wine", "bear", "clock"]
         self.obj_id = {'wine': 46, 'bear': 88, 'clock': 85}
-        self.detector = SparkDetect("/home/spark/auto.pt")
+        self.items = ['wine', 'bear', 'clock']
+        self.detector = SparkDetect(os.environ['HOME'] + "/auto.pt")
 
     def image_cb(self, data):
         objArray = Detection2DArray()
+        objArrayGrasp = Detection2DArray()
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -113,6 +114,7 @@ class Detector:
         image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
 
         objArray.header = data.header
+        objArrayGrasp.header = data.header
         try:
             results = self.detector.detect(image)
             img_bgr = results.image
@@ -133,6 +135,7 @@ class Detector:
         except:
             img_bgr = image
         self.object_pub.publish(objArray)
+        self.object_grasp_pub.publish(objArrayGrasp)
         img = cv2.cvtColor(img_bgr, cv2.COLOR_RGB2BGR)
         try:
             image_out = self.bridge.cv2_to_imgmsg(img, "bgr8")
@@ -140,6 +143,7 @@ class Detector:
             print(e)
         image_out.header = data.header
         self.image_pub.publish(image_out)
+        
 
 if __name__=='__main__':
     rospy.init_node('detector_node')

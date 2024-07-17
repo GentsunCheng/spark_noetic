@@ -47,8 +47,8 @@ class spark_detect:
             rospy.logerr(f"加载模型失败:{e}, 开始下载")
             # 下载模型
             url = "https://github.com/GentsunCheng/spark_noetic/releases/latest/download/vegetable.pt"
-            os.system("wget " + url + " -O " + model_path)
-            if not os.path.exists(model_path):
+            stat = os.system("wget " + url + " -O " + model_path)
+            if not (os.path.exists(model_path) or stat):
                 rospy.logerr("下载模型失败")
                 os.remove(model_path)
                 return
@@ -118,7 +118,7 @@ class GraspObject():
         self.auto_mod = 0
         self.step = 1
         self.pump_up_down_mod = False
-        self.detector = spark_detect("/home/spark/vegetable.pt")
+        self.detector = spark_detect(os.environ['HOME'] + "/vegetable.pt")
         self.xc_prev = 0
         self.yc_prev = 0
         self.is_have_object = False
