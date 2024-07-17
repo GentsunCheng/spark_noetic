@@ -106,7 +106,6 @@ class Detector:
 
     def image_cb(self, data):
         objArray = Detection2DArray()
-        objArrayGrasp = Detection2DArray()
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
@@ -114,7 +113,6 @@ class Detector:
         image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
 
         objArray.header = data.header
-        objArrayGrasp.header = data.header
         try:
             results = self.detector.detect(image)
             img_bgr = results.image
@@ -135,7 +133,6 @@ class Detector:
         except:
             img_bgr = image
         self.object_pub.publish(objArray)
-        self.object_grasp_pub.publish(objArrayGrasp)
         img = cv2.cvtColor(img_bgr, cv2.COLOR_RGB2BGR)
         try:
             image_out = self.bridge.cv2_to_imgmsg(img, "bgr8")

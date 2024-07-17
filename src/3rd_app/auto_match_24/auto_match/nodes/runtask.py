@@ -231,9 +231,8 @@ class ArmAction:
         for pice in cube_list_tmp:
             xp = pice[1][1]
             yp = pice[1][0]
-            id = pice[0]
             if self.exclude(yp, xp) == 255:
-                cube_list.append([id, [yp, xp, 0]])
+                cube_list.append(pice)
 
         if len(cube_list) == 0:
             rospy.logwarn("没有找到物品啊。。。去下一个地方")
