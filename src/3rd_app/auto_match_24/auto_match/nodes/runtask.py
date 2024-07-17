@@ -301,7 +301,7 @@ class ArmAction:
         @param check: 是否判断有无方块, 默认判断
         @return item_id: 执行结果
         '''
-        x = 280
+        x = 230
         y = 0
         z = 175
         self.interface.set_pose(x, y, z)
@@ -335,6 +335,12 @@ class ArmAction:
             rospy.logwarn("list is empty")
             rospy.sleep(0.5)
             cube_list = self.cam.detector()
+
+        if len(cube_list) == 0:
+            self.time[item] = 1
+            self.drop_step_one(item)
+            return False
+
         closest_x = cube_list[0][1][0]
         closest_y = cube_list[0][1][1]
         id = cube_list[0][0]
@@ -394,6 +400,10 @@ class ArmAction:
                 time += 1
                 rospy.sleep(0.5)
                 cube_list = self.cam.detector()
+            if len(cube_list) == 0:
+                self.time[item] = 2
+                self.drop_step_one(item)
+                return False
             closest_x = cube_list[0][1][0]
             closest_y = cube_list[0][1][1]
             id = cube_list[0][0]
@@ -440,10 +450,14 @@ class ArmAction:
     # 检查是否成功抓取，成功返回True，反之返回False
     def check_grasp_state(self, data):
         rospy.sleep(0.3)
+        is_in_30cm = False
+        lens = len(data.ranges)
+        i = 0
         for distance in data.ranges:
             if distance < 0.3:
-                is_in_30cm = True
-                break
+                i += 1
+        if i / lens > 1 / 32:
+            is_in_30cm = True
         if not is_in_30cm:
             sub = rospy.Publisher("armreset", String, queue_size=1)
             sub.publish("reset")
@@ -699,7 +713,7 @@ class AutoAction:
                 print("========往前走看清一点===== ")
                 # self.robot.step_go(0.02)  # 前进
                 # self.robot.step_go(value)   ############################################
-                rospy.sleep(0.5) # 停稳
+                rospy.sleep(1.5) # 停稳
                 print("========扫描中，准备抓取===== ")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
@@ -719,7 +733,6 @@ class AutoAction:
 
                 grasp_ctrl_state = True  # ==========================================
                 print("grasp_:", grasp_ctrl_state)
-                #rospy.sleep(4)
                 if grasp_ctrl_state != True:
                     self.arm.arm_grasp_ready()
                     self.robot.step_go(0.23)
@@ -750,7 +763,7 @@ class AutoAction:
                 else:
                     rospy.logerr("task error: navigation to the drop_place fails")
                     self.arm.drop(item_type)
-                if self.stop_flag: return
+                if self.stop_flag: pass
 
                 # 下一步
             if items_place_dict[item_type] == "Collection_B":
