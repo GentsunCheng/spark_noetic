@@ -126,6 +126,19 @@ class GraspObject():
         self.object_union = []
         self.last_object_union = []
 
+        # 获取第一层标定文件数据
+        filename = os.environ['HOME'] + "/thefile.txt"
+        with open(filename, 'r') as f:
+            s = f.read()
+            f.close()
+        del filename
+        arr = s.split()
+        del s
+        self.x_kb = [float(arr[0]), float(arr[1])]
+        self.y_kb = [float(arr[2]), float(arr[3])]
+        arr.clear()
+        del arr
+
         # 订阅机械臂抓取指令
         self.sub = rospy.Subscriber(
             '/grasp', String, self.grasp_cp, queue_size=10)
@@ -235,21 +248,11 @@ class GraspObject():
     def grasp(self):
         rospy.loginfo("start to grasp")
         # stop function
-
-        filename = os.environ['HOME'] + "/thefile.txt"
-        file_pix = open(filename, 'r')
-        s = file_pix.read()
-        file_pix.close()
-        arr = s.split()
-        a1, a2, a3, a4 = arr[0], arr[1], arr[2], arr[3]
-        a, b = [0] * 2, [0] * 2
-        a[0], a[1], b[0], b[1] = float(a1), float(a2), float(a3), float(a4)
-        rospy.loginfo(f"k and b value: {a[0]} {a[1]} {b[0]} {b[1]}")
         r2 = rospy.Rate(10)
         pos = position()
         # 物体所在坐标+标定误差
-        pos.x = a[0] * self.yc_prev + a[1]
-        pos.y = b[0] * self.xc_prev + b[1]
+        pos.x = self.x_kb[0] * self.yc_prev + self.x_kb[1]
+        pos.y = self.y_kb[0] * self.xc_prev + self.y_kb[1]
         pos.z = -25.0
         rospy.loginfo("z = -25")
         self.pub1.publish(pos)

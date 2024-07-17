@@ -86,7 +86,7 @@ class CamAction:
 
         cube_list[i]:代表第几个物体
         cube_list[i][0]:代表第i个物体的ID信息;               cube_list[i][1]:代表第i个物体的位置信息
-        cube_list[i][1][1]:代表第i个物体的x方向上的位置;     cube_list[i][1][0]:代表第i个物体的y方向上的位置
+        cube_list[i][1][0]:代表第i个物体的x方向上的位置;     cube_list[i][1][1]:代表第i个物体的y方向上的位置
         '''
         obj_dist = {}
         cube_list = []
@@ -102,7 +102,7 @@ class CamAction:
         
         # 提取
         for obj in obj_array.detections:
-            obj_dist[obj.results[0].id] = [obj.bbox.center.x, obj.bbox.center.y, 0]
+            obj_dist[obj.results[0].id] = [obj.bbox.center.x, obj.bbox.center.y]
 
         # 筛选出需要的物品 cube_list中的key代表识别物体的ID，value代表位置信息
         for key, value in obj_dist.items():
@@ -212,6 +212,7 @@ class ArmAction:
         self.block_height = 100
         self.is_in_30cm = False
         self.testing = False
+        self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
         self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
  
     
@@ -230,21 +231,21 @@ class ArmAction:
             return 0
         
         for pice in cube_list_tmp:
-            xp = pice[1][1]
-            yp = pice[1][0]
-            if self.exclude[yp, xp] == 255:
+            xp = pice[1][0]
+            yp = pice[1][1]
+            if self.exclude[int(yp), int(xp)] == 255:
                 cube_list.append(pice)
 
         if len(cube_list) == 0:
             return 0
             
 
-        closest_x = cube_list[0][1][1]
-        closest_y = cube_list[0][1][0]
+        closest_x = cube_list[0][1][0]
+        closest_y = cube_list[0][1][1]
         id = cube_list[0][0]
         for pice in cube_list:
-            xp = pice[1][1]
-            yp = pice[1][0]
+            xp = pice[1][0]
+            yp = pice[1][1]
             if yp > closest_y:
                 closest_x = xp
                 closest_y = yp
@@ -252,8 +253,8 @@ class ArmAction:
                 
         rospy.loginfo(f"物品位置在: {closest_x}, {closest_y}")
         # 获取机械臂目标位置
-        x = self.x_kb[0] * closest_x + self.x_kb[1]
-        y = self.y_kb[0] * closest_y + self.y_kb[1]
+        x = self.x_kb[0] * closest_y + self.x_kb[1]
+        y = self.y_kb[0] * closest_x + self.y_kb[1]
         z = -50.0
         rospy.loginfo(f"arm: {x}, {y}, {z}")
         # 机械臂移动到目标位置上方
@@ -334,21 +335,21 @@ class ArmAction:
             rospy.logwarn("list is empty")
             rospy.sleep(0.5)
             cube_list = self.cam.detector()
-        closest_x = cube_list[0][1][1]
-        closest_y = cube_list[0][1][0]
+        closest_x = cube_list[0][1][0]
+        closest_y = cube_list[0][1][1]
         id = cube_list[0][0]
 
         for pice in cube_list:
-            xp = pice[1][1]
-            yp = pice[1][0]
+            xp = pice[1][0]
+            yp = pice[1][1]
             if yp < closest_y:
                 closest_x = xp
                 closest_y = yp
                 id = pice[0]
 
-        if id == item and 160 <= closest_x <= 480 and 60 <= closest_y:
-            x = self.x_kb[0] * closest_x + self.x_kb[1]
-            y = self.y_kb[0] * closest_y + self.y_kb[1]
+        if id == item and 100 <= closest_x <= 500 and 30 <= closest_y:
+            x = self.x_kb[0] * closest_y + self.x_kb[1]
+            y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
             self.interface.set_pose(x, y, z)
             rospy.sleep(1.5)
@@ -393,21 +394,21 @@ class ArmAction:
                 time += 1
                 rospy.sleep(0.5)
                 cube_list = self.cam.detector()
-            closest_x = cube_list[0][1][1]
-            closest_y = cube_list[0][1][0]
+            closest_x = cube_list[0][1][0]
+            closest_y = cube_list[0][1][1]
             id = cube_list[0][0]
 
             for pice in cube_list:
-                xp = pice[1][1]
-                yp = pice[1][0]
+                xp = pice[1][0]
+                yp = pice[1][1]
                 if yp < closest_y:
                     closest_x = xp
                     closest_y = yp
                     id = pice[0]
 
-            if id == item and 160 <= closest_x <= 480 and closest_y <= 360:
-                x = self.x2_kb[0] * closest_x + self.x2_kb[1]
-                y = self.y2_kb[0] * closest_y + self.y2_kb[1]
+            if id == item and 100 <= closest_x <= 500 and closest_y <= 360:
+                x = self.x2_kb[0] * closest_y + self.x2_kb[1]
+                y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
                 self.interface.set_pose(x, y, z)
                 rospy.sleep(1.5)
@@ -706,13 +707,13 @@ class AutoAction:
                         break
                     else:
                         print("========没抓到，向前进一点===== ")
-                        self.robot.step_go_pro(0.1)
-                        rospy.sleep(0.5)
+                        self.robot.step_go_pro(0.25)
+                        rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
                 print("========向后退一点===== ")
                 for _ in range(i + 3):
-                    self.robot.step_back(0.1)  # 后退
+                    self.robot.step_go_pro(-0.25)  # 后退
 
                 rospy.sleep(0.5)
 

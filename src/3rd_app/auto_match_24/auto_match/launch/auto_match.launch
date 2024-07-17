@@ -1,8 +1,6 @@
 <!--move2grab-->
 <!--SPARK技术讨论与反馈群：8346256-->
 <launch>
-	<!-- 启动 rosbridge_server 节点 -->
-    <node name="rosbridge_server" pkg="rosbridge_server" type="rosbridge_websocket" output="screen" />
 	<!-- Arguments -->
 	<arg name="slam_methods" default="gmapping" doc="slam type [gmapping, cartographer, hector, karto, frontier_exploration]"/>
 	<arg name="configuration_basename" default="spark_lds_2d.lua"/>
