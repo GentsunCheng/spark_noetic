@@ -761,7 +761,8 @@ class AutoAction:
                     self.robot.step_back(distance=0.4)  # 后退
                     if self.stop_flag: return
                 else:
-                    rospy.logerr("task error: navigation to the drop_place fails")
+                    rospy.logwarn("task error: navigation to the drop_place fails!!!")
+                    rospy.loginfo("continue to next task")
                     self.arm.drop(item_type)
                 if self.stop_flag: pass
 
