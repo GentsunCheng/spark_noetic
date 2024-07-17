@@ -204,8 +204,6 @@ class ArmAction:
         # 创建机械臂控制接口的对象
         self.interface = SwiftProInterface()
 
-        self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
-
         self.height, self.width = 480, 640
         self.center_x = self.width // 2  # 图像底边中心的x坐标
         self.bottom_y = self.height  # 图像底边的y坐标
@@ -227,16 +225,17 @@ class ArmAction:
         z = 0
         cube_list = []
         # 寻找物品
-        cube_list_tmp = self.cam.detector(grasp=True)
+        cube_list_tmp = self.cam.detector()
+        if len(cube_list_tmp) == 0:
+            return 0
+        
         for pice in cube_list_tmp:
             xp = pice[1][1]
             yp = pice[1][0]
-            if self.exclude(yp, xp) == 255:
+            if self.exclude[yp, xp] == 255:
                 cube_list.append(pice)
 
         if len(cube_list) == 0:
-            rospy.logwarn("没有找到物品啊。。。去下一个地方")
-            self.grasp_status_pub.publish(String("1"))
             return 0
             
 
@@ -593,9 +592,12 @@ class RobotMoveAction:
         twist.angular.z = rad
         self.cmd_pub.publish(twist)
 
-    def step_go_pro(self, value):
+    def step_go_pro(self, value, time=0.3):
         twist_go = Twist()
         twist_go.linear.x = value
+        self.cmd_pub.publish(twist_go)
+        rospy.sleep(time)
+        twist_go.linear.x = 0
         self.cmd_pub.publish(twist_go)
 
 
@@ -675,7 +677,7 @@ class AutoAction:
             while True:     # 新增##############################################################
                 cube_list = self.cam.detector() # 获取识别到的物体信息
                 if len(cube_list) < 1:
-                    self.robot.step_go_pro(0.2)
+                    self.robot.step_go_pro(0.2, time=0.5)
                     go_num += 1
                     print("go_num:", go_num)
                     if go_num > 100:
