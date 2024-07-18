@@ -4,7 +4,6 @@ import os
 import threading
 
 import cv2
-import json
 import rospy
 import actionlib
 import numpy as np
@@ -286,6 +285,7 @@ class ArmAction:
             self.time[id] = self.time[id] + 1
             return id
         else:
+            self.reset_pub.publish("{'x': 10, 'y': 150, 'z': 160}")
             self.interface.set_pump(False)
             self.arm_grasp_ready()
             return 0
@@ -453,7 +453,6 @@ class ArmAction:
   
     # 检查是否成功抓取，成功返回True，反之返回False
     def check_grasp_state(self, data):
-        is_in_30cm = False
         i = 0
         times = 0
         for _ in range(6):
@@ -468,20 +467,12 @@ class ArmAction:
                 times += 1
 
         if times > 3:
-            is_in_30cm = True
+            self.is_in_30cm = True
         else:
-            is_in_30cm = False
+            self.is_in_30cm = False
 
-            
-        if not is_in_30cm:
-            data = {
-                "x": 10,
-                "y": 150,
-                "z": 160
-            }
-            self.reset_pub.publish(json.dumps(data))
-        self.is_in_30cm = is_in_30cm
         self.testing = False
+
 
     def arm_home(self, block=False):
         '''
@@ -665,7 +656,6 @@ class AutoAction:
         if self.stop_flag: return
 
         # ==== 移动机械臂 =====
-        self.arm.arm_position_reset()  # 重置机械臂坐标系
         self.arm.arm_grasp_ready()  # 移动机械臂到其他地方
 
         

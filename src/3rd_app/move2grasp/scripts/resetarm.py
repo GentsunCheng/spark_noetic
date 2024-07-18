@@ -13,8 +13,8 @@ class Rester():
         
     def resetarm(self, data):
         try:
-            json.loads(data)
-            self.swift.reset(x=data["x"], y=data["y"], z=data["z"])
+            cmd = json.loads(data)
+            self.swift.reset(x=cmd["x"], y=cmd["y"], z=cmd["z"])
         except:
             self.swift.reset(x=110.0, y=0.0, z=35.0)
 
