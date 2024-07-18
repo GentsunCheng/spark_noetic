@@ -741,14 +741,13 @@ class AutoAction:
                 ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
                 rospy.sleep(2.0) # 停稳
 
-                if ret: 
-                    self.arm.drop(item_type)  # 放下物品
-                    self.robot.step_back(distance=0.4)  # 后退
+                if ret:
+                    pass
                 else:
                     rospy.logwarn("task error: navigation to the drop_place fails!!!")
                     rospy.loginfo("continue to next task")
-                    self.arm.drop(item_type)
-                    self.robot.step_back(distance=0.4)
+                self.arm.drop(item_type)
+                self.robot.step_back(distance=0.4)
                 if self.stop_flag:
                     self.stop_flag = False
 
