@@ -210,7 +210,7 @@ class ArmAction:
 
         self.time = {46: 0, 88: 0, 85: 0}
         self.block_height = 100
-        self.is_in_30cm = False
+        self.is_in = False
         self.testing = False
         self.complete = {46: False, 88: False, 85: False}
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
@@ -264,31 +264,19 @@ class ArmAction:
         rospy.loginfo(f"arm: {x}, {y}, {z}")
         # 机械臂移动到目标位置上方
         self.interface.set_pose(x, y, z + 20)
-        rospy.sleep(0.2)
+        rospy.sleep(1.0)
         self.interface.set_pose(x, y, z)
         # 打开气泵，进行吸取
         self.interface.set_pump(True)
         rospy.sleep(0.5)
-        # 抬起检测
-        self.interface.set_pose(x, y, 60)
-        rospy.sleep(1.0)
-        self.testing = True
-        while self.testing:
-            rospy.sleep(0.3)
-        if self.is_in_30cm:
-            # 抬起目标方块
-            rospy.loginfo(f"我把物品抬起来了")
-            self.interface.set_pose(x, y, z + 120)
-            rospy.sleep(0.5)
-            self.interface.set_pose_slow(10, 150, 175)
-            self.grasp_status_pub.publish(String("0"))
-            self.time[id] = self.time[id] + 1
-            return id
-        else:
-            self.reset_pub.publish("{'x': 10, 'y': 150, 'z': 160}")
-            self.interface.set_pump(False)
-            self.arm_grasp_ready()
-            return 0
+        # 抬起目标方块
+        rospy.loginfo(f"我把物品抬起来了")
+        self.interface.set_pose(x, y, z + 120)
+        rospy.sleep(0.5)
+        self.interface.set_pose_slow(10, 150, 175)
+        self.grasp_status_pub.publish(String("0"))
+        self.time[id] = self.time[id] + 1
+        return id
 
 
     def drop(self, item):
@@ -358,7 +346,7 @@ class ArmAction:
                 closest_y = yp
                 id = pice[0]
 
-        if id == item and 100 <= closest_x <= 500 and 30 <= closest_y:
+        if id == item and 80 <= closest_x <= 520 and 30 <= closest_y <= 360:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
@@ -396,7 +384,7 @@ class ArmAction:
             rospy.logwarn("list is empty")
             rospy.sleep(0.3)
 
-        if self.is_in_30cm:
+        if self.is_in:
             cube_list = self.cam.detector()
             time = 0
             while len(cube_list) == 0 and time < 10:
@@ -453,23 +441,22 @@ class ArmAction:
   
     # 检查是否成功抓取，成功返回True，反之返回False
     def check_grasp_state(self, data):
-        i = 0
-        times = 0
-        for _ in range(6):
+        tested = False
+        rospy.sleep(3.0)
+        for _ in range(10):
             for distance in data.ranges:
+                tested_once = False
                 if distance == 0.0:
                     continue
-                if distance < 0.3:
-                    i += 1
+                if distance < 0.5:
+                    tested_once = True
                     break
-            rospy.sleep(0.5)
-            if i:
-                times += 1
+            if tested_once:
+                tested = True
+            rospy.sleep(0.3)
+            break
 
-        if times > 3:
-            self.is_in_30cm = True
-        else:
-            self.is_in_30cm = False
+        self.is_in = tested
 
         self.testing = False
 
@@ -701,6 +688,7 @@ class AutoAction:
             item_type = 0
 
 
+            self.arm.reset_pub.publish("{'x': 10, 'y': 150, 'z': 160}")
             if ret: # 判断是否成功到达目标点
                 print("========往前走看清一点===== ")
                 # self.robot.step_go(0.02)  # 前进
