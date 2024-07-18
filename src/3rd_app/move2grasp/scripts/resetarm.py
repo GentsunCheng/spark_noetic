@@ -5,13 +5,18 @@ import rospy
 from std_msgs.msg import String
 from swiftpro.msg import *
 from uarm import SwiftAPI
+import json
 
 class Rester():
     def __init__(self, port="/dev/ttyACM0"):
         self.swift = SwiftAPI(port)
         
-    def resetarm(self, _):
-        self.swift.reset(x=110.0, y=0.0, z=35.0)
+    def resetarm(self, data):
+        try:
+            json.loads(data)
+            self.swift.reset(x=data["x"], y=data["y"], z=data["z"])
+        except:
+            self.swift.reset(x=110.0, y=0.0, z=35.0)
 
 
 if __name__ == "__main__":

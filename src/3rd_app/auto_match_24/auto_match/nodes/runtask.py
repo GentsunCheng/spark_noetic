@@ -4,6 +4,7 @@ import os
 import threading
 
 import cv2
+import json
 import rospy
 import actionlib
 import numpy as np
@@ -334,7 +335,7 @@ class ArmAction:
     def drop_step_two(self, item):
         cube_list = self.cam.detector()
         time = 0
-        while len(cube_list) == 0 and time < 10:
+        while len(cube_list) == 0 and time < 15:
             time += 1
             rospy.logwarn("list is empty")
             rospy.sleep(0.5)
@@ -452,30 +453,35 @@ class ArmAction:
   
     # 检查是否成功抓取，成功返回True，反之返回False
     def check_grasp_state(self, data):
-        rospy.sleep(0.3)
         is_in_30cm = False
-        lens = len(data.ranges)
         i = 0
-        for distance in data.ranges:
-            if distance < 0.3:
-                i += 1
-        if i / lens > 1 / 32:
+        times = 0
+        for _ in range(6):
+            for distance in data.ranges:
+                if distance == 0.0:
+                    continue
+                if distance < 0.3:
+                    i += 1
+                    break
+            rospy.sleep(0.5)
+            if i:
+                times += 1
+
+        if times > 3:
             is_in_30cm = True
+        else:
+            is_in_30cm = False
+
+            
         if not is_in_30cm:
-            self.reset_pub.publish("reset")
+            data = {
+                "x": 10,
+                "y": 150,
+                "z": 160
+            }
+            self.reset_pub.publish(json.dumps(data))
         self.is_in_30cm = is_in_30cm
         self.testing = False
-
-
-    def arm_position_reset(self):
-        '''
-        校准机械臂的坐标系, 机械臂因碰撞导致坐标计算出问题时使用
-        '''
-        r1 = rospy.Rate(10)
-        self.interface.set_status(False)
-        r1.sleep()
-        self.interface.set_status(True)
-        r1.sleep()
 
     def arm_home(self, block=False):
         '''
@@ -514,11 +520,6 @@ class RobotMoveAction:
         rospy.wait_for_service('/get_distance')
         self.distance_srv = rospy.ServiceProxy(
             'get_distance', common.srv.GetFrontBackDistance)
-
-        # 创建根据定位码调整spark移动到台前的action客户端
-        # self.tag_adjustment_client = actionlib.SimpleActionClient(
-        #     'spark_alignment_mark', TagAdjustmentAction)
-        # self.tag_adjustment_client.wait_for_server()
 
         # 创建导航地点的话题发布者
         self.goto_local_pub = rospy.Publisher(
@@ -588,7 +589,7 @@ class RobotMoveAction:
         )
         return True
     
-    def step_go(self,dis):
+    def step_go(self, dis):
         '''
         前进, 用于抓取或放置前使用
         @return: True 为调整成功, False 为调整失败
@@ -608,9 +609,9 @@ class RobotMoveAction:
         twist.angular.z = rad
         self.cmd_pub.publish(twist)
 
-    def step_go_pro(self, value, time=0.3):
+    def step_go_pro(self, linear, time=0.3):
         twist_go = Twist()
-        twist_go.linear.x = value
+        twist_go.linear.x = linear
         self.cmd_pub.publish(twist_go)
         rospy.sleep(time)
         twist_go.linear.x = 0

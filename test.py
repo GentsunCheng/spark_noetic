@@ -1,13 +1,20 @@
 import rospy
-from swiftpro.msg import *
+from sensor_msgs.msg import *
 
 
-pos = position()
-pos.x = 100
-pos.y = 0
-pos.z = 100
-pos.speed = 100
-rospy.init_node('test', anonymous=True)
-pub = rospy.Publisher("/position_write_topic", position, queue_size=10)
-pub.publish(pos)
-rospy.sleep(1.5)
+def check_grasp_state(data):
+    i = 0
+    for distance in data.ranges:
+        if distance == 0:
+            continue
+        if distance <= 0.3:
+            i += 1
+        print("times", i)
+        
+
+
+rospy.init_node("check_grasp_state")
+lidar_sub = rospy.Subscriber(
+    "/scan", LaserScan, check_grasp_state, queue_size=1, buff_size=2**24
+)
+rospy.spin()
