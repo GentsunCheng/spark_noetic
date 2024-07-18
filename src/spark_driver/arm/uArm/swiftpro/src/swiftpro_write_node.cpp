@@ -70,10 +70,8 @@ void angle1st_callback(const swiftpro::angle1st& msg)
 {
 	std::string Gcode = "";
 	std_msgs::String result;
-	char m1[10];
+	std::string m1 = std::to_string(msg.angle1st);
 
-	pos.motor_angle1 = msg.angle1st;
-	sprintf(m1, "%.2f", msg.angle1st);
 	Gcode = (std::string)"G2202 N0 V" + m1 + "F100\r\n";
 	ROS_INFO("%s", Gcode.c_str());
 	_serial.write(Gcode.c_str());
@@ -90,10 +88,8 @@ void angle2nd_callback(const swiftpro::angle2nd& msg)
 {
 	std::string Gcode = "";
 	std_msgs::String result;
-	char m2[10];
+	std::string m2 = std::to_string(msg.angle2nd);
 
-	pos.motor_angle2 = msg.angle2nd;
-	sprintf(m2, "%.2f", msg.angle2nd);
 	Gcode = (std::string)"G2202 N1 V" + m2 + "F100\r\n";
 	ROS_INFO("%s", Gcode.c_str());
 	_serial.write(Gcode.c_str());
@@ -110,10 +106,8 @@ void angle3rd_callback(const swiftpro::angle3rd& msg)
 {
 	std::string Gcode = "";
 	std_msgs::String result;
-	char m3[10];
+	std::string m3 = std::to_string(msg.angle3rd);
 
-	pos.motor_angle3 = msg.angle3rd;
-	sprintf(m3, "%.2f", msg.angle3rd);
 	Gcode = (std::string)"G2202 N2 V" + m3 + "F100\r\n";
 	ROS_INFO("%s", Gcode.c_str());
 	_serial.write(Gcode.c_str());
@@ -130,10 +124,8 @@ void angle4th_callback(const swiftpro::angle4th& msg)
 {
 	std::string Gcode = "";
 	std_msgs::String result;
-	char m4[10];
+	std::string m4 = std::to_string(msg.angle4th);
 
-	pos.motor_angle4 = msg.angle4th;
-	sprintf(m4, "%.2f", msg.angle4th);
 	Gcode = (std::string)"G2202 N3 V" + m4 + "F500\r\n";
 	ROS_INFO("%s", Gcode.c_str());
 	_serial.write(Gcode.c_str());
@@ -161,7 +153,6 @@ void swiftpro_status_callback(const swiftpro::status& msg)
 		return;
 	}
 
-	pos.swiftpro_status = msg.status;
 	ROS_INFO("%s", Gcode.c_str());
 	_serial.write(Gcode.c_str());
 	result.data = _serial.read(_serial.available());
@@ -188,7 +179,6 @@ void gripper_callback(const swiftpro::status& msg)
 		return;
 	}
 
-	pos.gripper = msg.status;
 	ROS_INFO("%s", Gcode.c_str());
 	_serial.write(Gcode.c_str());
 	result.data = _serial.read(_serial.available());
@@ -204,18 +194,10 @@ void pump_callback(const swiftpro::status& msg)
 {
 	std::string Gcode = "";
 	std_msgs::String result;
+	std::string status = std::to_string(msg.status);
 
-	if (msg.status == 1)
-		Gcode = (std::string)"M2231 V1" + "\r\n";
-	else if (msg.status == 0)
-		Gcode = (std::string)"M2231 V0" + "\r\n";
-    else
-	{
-		ROS_INFO("Error:Wrong pump status input");
-		return;
-	}
+	Gcode = (std::string)"M2231 V" + status + "\r\n";
 
-	pos.pump = msg.status;
 	ROS_INFO("%s", Gcode.c_str());
 	_serial.write(Gcode.c_str());
 	result.data = _serial.read(_serial.available());
