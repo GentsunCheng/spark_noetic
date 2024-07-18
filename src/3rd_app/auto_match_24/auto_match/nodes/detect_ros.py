@@ -99,7 +99,9 @@ class Detector:
         self.image_pub = rospy.Publisher("result_image",Image, queue_size=1)
         self.object_pub = rospy.Publisher("/objects", Detection2DArray, queue_size=1)
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**24)
+        self.image_sub = rospy.Subscriber(
+            "/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**24
+            )
         self.obj_id = {'wine': 46, 'bear': 88, 'clock': 85}
         self.items = ['wine', 'bear', 'clock']
         self.detector = SparkDetect(os.environ['HOME'] + "/auto.pt")

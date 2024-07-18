@@ -214,6 +214,10 @@ class ArmAction:
         self.testing = False
         self.complete = {46: False, 88: False, 85: False}
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
+        self.reset_pub = rospy.Publisher("armreset", String, queue_size=1)
+        self.lidar_sub = rospy.Subscriber(
+            "/scan", LaserScan, self.check_grasp_state, queue_size=1, buff_size=2**24
+            )
         self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
  
     
@@ -268,11 +272,9 @@ class ArmAction:
         # 抬起检测
         self.interface.set_pose(x, y, 60)
         rospy.sleep(1.0)
-        sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
         self.testing = True
         while self.testing:
             rospy.sleep(0.3)
-        sub_tmp.unregister()
         if self.is_in_30cm:
             # 抬起目标方块
             rospy.loginfo(f"我把物品抬起来了")
@@ -388,12 +390,10 @@ class ArmAction:
         
 
     def drop_step_three(self, item):
-        sub_tmp = rospy.Subscriber('/scan', LaserScan, self.check_grasp_state)
         self.testing = True
         while self.testing:
             rospy.logwarn("list is empty")
             rospy.sleep(0.3)
-        sub_tmp.unregister()
 
         if self.is_in_30cm:
             cube_list = self.cam.detector()
@@ -462,9 +462,7 @@ class ArmAction:
         if i / lens > 1 / 32:
             is_in_30cm = True
         if not is_in_30cm:
-            sub = rospy.Publisher("armreset", String, queue_size=1)
-            sub.publish("reset")
-            sub.unregister()
+            self.reset_pub.publish("reset")
         self.is_in_30cm = is_in_30cm
         self.testing = False
 
@@ -771,8 +769,8 @@ class AutoAction:
                     rospy.logwarn("task error: navigation to the drop_place fails!!!")
                     rospy.loginfo("continue to next task")
                     self.arm.drop(item_type)
-                if self.stop_flag:
                     self.robot.step_back(distance=0.4)
+                if self.stop_flag:
                     self.stop_flag = False
 
                 # 下一步
