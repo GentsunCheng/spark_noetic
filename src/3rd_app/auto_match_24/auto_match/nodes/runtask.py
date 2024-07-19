@@ -364,7 +364,7 @@ class ArmAction:
                 closest_y = yp
                 id = pice[0]
 
-        if id == item and 30 <= closest_y <= 420:
+        if id == item and 40 < closest_x < 600 and 30 <= closest_y <= 420:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
@@ -429,7 +429,7 @@ class ArmAction:
                     closest_y = yp
                     id = pice[0]
 
-            if id == item and closest_y <= 400:
+            if id == item and 20 < closest_x < 620 and closest_y <= 400:
                 x = self.x2_kb[0] * closest_y + self.x2_kb[1]
                 y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
