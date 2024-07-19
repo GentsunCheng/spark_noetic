@@ -125,7 +125,6 @@ class CamAction:
         while(finding):              
             items_place_dict = {} # 创建一个字典放置对饮关系
             cube_list = self.detector() # 获取识别到的物体信息
-            # print("cube_list:",cube_list)
 
             if len(cube_list) < 3:
                 if len(cube_list) == 0:

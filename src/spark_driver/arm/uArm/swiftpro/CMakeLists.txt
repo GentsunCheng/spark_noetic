@@ -60,6 +60,7 @@ add_message_files(
   angle3rd.msg
   angle4th.msg
   status.msg
+  buzzer.msg
 )
 
 ## Generate services in the 'srv' folder

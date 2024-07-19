@@ -16,6 +16,7 @@
 #include <swiftpro/angle3rd.h>
 #include <swiftpro/angle2nd.h>
 #include <swiftpro/angle1st.h>
+#include <swiftpro/buzzer.h>
 
 serial::Serial _serial;				// serial object
 swiftpro::SwiftproState pos;
@@ -53,7 +54,6 @@ void position_slow_callback(const swiftpro::position& msg)
     std::string x = std::to_string(msg.x);
     std::string y = std::to_string(msg.y);
     std::string z = std::to_string(msg.z);
-    std::string speed;
 
     Gcode = "G0 X" + x + " Y" + y + " Z" + z + " F50" + "\r\n";
     ROS_INFO("%s", Gcode.c_str());
@@ -203,6 +203,25 @@ void pump_callback(const swiftpro::status& msg)
 	result.data = _serial.read(_serial.available());
 }
 
+/*
+ * Description: callback when receive data from buzzer_topic
+ * Inputs: 		msg(buzzer)			buzzer time and frequency
+ * Outputs:		Gcode				send gcode to control swift pro
+*/
+void buzzer_callback(const swiftpro::buzzer& buzzer)
+{
+	std::string Gcode = "";
+	std_msgs::String result;
+	std::string time = std::to_string((int(buzzer.time)) * 1000);
+	std::string frequent = std::to_string(buzzer.frequent);
+
+	Gcode = (std::string)"M2210 F" + frequent + " T" + time + "\r\n";
+
+	ROS_INFO("%s", Gcode.c_str());
+	_serial.write(Gcode.c_str());
+	result.data = _serial.read(_serial.available());
+}
+
 
 /*
  * Node name:
@@ -229,6 +248,7 @@ int main(int argc, char** argv)
 	ros::Subscriber sub_status = nh.subscribe("swiftpro_status_topic", 10, swiftpro_status_callback);
 	ros::Subscriber sub_gripper = nh.subscribe("gripper_topic", 10, gripper_callback);
 	ros::Subscriber sub_pump = nh.subscribe("pump_topic", 10, pump_callback);
+	ros::Subscriber sub_buzzer = nh.subscribe("buzzer_topic", 10, buzzer_callback);
     ros::Subscriber sub_angle1st = nh.subscribe("angle1st_topic", 10, angle1st_callback);
     ros::Subscriber sub_angle2nd = nh.subscribe("angle2nd_topic", 10, angle2nd_callback);
     ros::Subscriber sub_angle3rd = nh.subscribe("angle3rd_topic", 10, angle3rd_callback);
