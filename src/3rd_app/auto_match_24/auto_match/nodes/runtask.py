@@ -286,7 +286,7 @@ class ArmAction:
         self.interface.set_pose(x, y, z + 120)
         rospy.sleep(1.0)
         rospy.loginfo(f"摆到旁边")
-        self.arm_grasp_ready()
+        self.arm_default_pose()
         if not self.cam.check_if_grasp(closest_x, closest_y):
             self.reset_pub.publish(position(10, 150, 160, 0))
             return 1
@@ -297,6 +297,8 @@ class ArmAction:
 
 
     def drop(self, item):
+        self.interface.set_pose(200, 100, 175)
+        rospy.sleep(1.0)
         self.complete[item] = False
         if self.time[item] == 1:
             self.drop_step_one(item)
@@ -333,7 +335,7 @@ class ArmAction:
         x, y = 50, 150
         self.interface.set_pose(x, y, z)
         rospy.sleep(0.2)
-        self.arm_grasp_ready()
+        self.arm_default_pose()
         self.grasp_status_pub.publish(String("0"))
         return True
     
@@ -386,7 +388,7 @@ class ArmAction:
             x, y = 50, 150
             self.interface.set_pose(x, y, z)
             rospy.sleep(0.2)
-            self.arm_grasp_ready()
+            self.arm_default_pose()
             self.grasp_status_pub.publish(String("0"))
             return True
         else:
@@ -444,7 +446,7 @@ class ArmAction:
                 x, y = 50, 150
                 self.interface.set_pose(x, y, z)
                 rospy.sleep(0.2)
-                self.arm_grasp_ready()
+                self.arm_default_pose()
                 self.grasp_status_pub.publish(String("0"))
                 self.complete[item] = True
                 return True
@@ -484,13 +486,12 @@ class ArmAction:
         if block:
             rospy.sleep(1.0)
 
-    def arm_grasp_ready(self, block=False):
+    def arm_default_pose(self):
         '''
         移动机械臂到摄像头看不到的地方，以方便识别与抓取
         '''
-        self.interface.set_pose(10, 150, 160)
-        if block:
-            rospy.sleep(1.0)
+        self.interface.set_pose(10, 150, 160, 100)
+        rospy.sleep(1.0)
 
 
 class RobotMoveAction:
@@ -658,7 +659,7 @@ class AutoAction:
         if self.stop_flag: return
 
         # ==== 移动机械臂 =====
-        self.arm.arm_grasp_ready()  # 移动机械臂到其他地方
+        self.arm.arm_default_pose()  # 移动机械臂到其他地方
 
         
 
@@ -737,7 +738,7 @@ class AutoAction:
                 continue
 
             # ====放置物品====
-            self.arm.arm_grasp_ready()
+            self.arm.arm_default_pose()
             rospy.loginfo("========前往放置区=====")
             ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
             rospy.sleep(2.0) # 停稳
@@ -780,7 +781,7 @@ class AutoAction:
                 self.arm.grasp()
             elif msg.data == "0":
                 self.arm.drop(0)
-                self.arm.arm_grasp_ready()
+                self.arm.arm_default_pose()
             else:
                 rospy.logwarn("grasp msg error")
 
