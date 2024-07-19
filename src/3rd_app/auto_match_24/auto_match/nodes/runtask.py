@@ -396,8 +396,7 @@ class ArmAction:
             return False
         
 
-    def drop_step_three(self, item):
-        fantastic = False
+    def drop_step_three(self, item, fantastic=False):
         if fantastic:
             rospy.logwarn("fantastic mode start")
             rospy.sleep(3)
