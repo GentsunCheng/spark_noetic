@@ -104,9 +104,8 @@ class CamAction:
     
     
     def check_if_grasp(self, x, y, timeout=3, confidence=0.5, scope=30):
-        rospy.sleep(1.5)
         stat = False
-        total = timeout * 2
+        total = int(timeout * 4)
         count = 0
         for _ in range(total):
             cube_list = self.detector()
@@ -114,7 +113,7 @@ class CamAction:
                 if x - scope < pice[1][0] < x + scope and y - scope < pice[1][1] < y + scope:
                     count += 1
                     break
-            rospy.sleep(0.5)
+            rospy.sleep(0.25)
         if count / total > confidence:
             stat = False
             rospy.loginfo("grasp failed")
@@ -122,7 +121,6 @@ class CamAction:
             stat = True
             rospy.loginfo("grasp success")
         return stat
-
 
 
     # ======获取物品对应的收取区位置=======
@@ -287,7 +285,8 @@ class ArmAction:
         rospy.sleep(1.0)
         rospy.loginfo(f"摆到旁边")
         self.arm_default_pose()
-        if not self.cam.check_if_grasp(closest_x, closest_y):
+        rospy.sleep(0.75)
+        if not self.cam.check_if_grasp(closest_x, closest_y, timeout=1.5, confidence=0.3):
             self.reset_pub.publish(position(10, 150, 160, 0))
             return 1
         self.grasp_status_pub.publish(String("0"))
@@ -297,7 +296,7 @@ class ArmAction:
 
 
     def drop(self, item):
-        self.interface.set_pose(200, 100, 175)
+        self.interface.set_pose(200, 110, 175)
         rospy.sleep(1.0)
         self.complete[item] = False
         if self.time[item] == 1:
@@ -342,7 +341,7 @@ class ArmAction:
     def drop_step_two(self, item):
         cube_list = self.cam.detector()
         time = 0
-        while len(cube_list) == 0 and time < 20:
+        while len(cube_list) == 0 and time < 10:
             time += 1
             rospy.logwarn("list is empty")
             rospy.sleep(0.5)
@@ -365,7 +364,7 @@ class ArmAction:
                 closest_y = yp
                 id = pice[0]
 
-        if id == item and 20 <= closest_x and 30 <= closest_y <= 420:
+        if id == item and 30 <= closest_y <= 420:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
@@ -406,8 +405,9 @@ class ArmAction:
         if self.is_in:
             cube_list = self.cam.detector()
             time = 0
-            while len(cube_list) == 0 and time < 20:
+            while len(cube_list) == 0 and time < 10:
                 time += 1
+                rospy.logwarn("list is empty")
                 rospy.sleep(0.5)
                 cube_list = self.cam.detector()
             if len(cube_list) == 0:
@@ -426,7 +426,7 @@ class ArmAction:
                     closest_y = yp
                     id = pice[0]
 
-            if id == item and 20 <= closest_x <= 620 and closest_y <= 400:
+            if id == item and closest_y <= 400:
                 x = self.x2_kb[0] * closest_y + self.x2_kb[1]
                 y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
@@ -465,7 +465,7 @@ class ArmAction:
                 tested_once = False
                 if distance == 0.0:
                     continue
-                if distance < 0.5:
+                if distance < 0.3:
                     tested_once = True
                     break
             if tested_once:
