@@ -285,7 +285,8 @@ class ArmAction:
             self.drop_step_one(item)
         elif self.time[item] == 2:
             self.drop_step_two(item)
-        elif self.time[item] == 3:
+        else:
+            self.time[item] == 3
             self.drop_step_three(item)
 
     def drop_step_one(self, _):
@@ -323,7 +324,7 @@ class ArmAction:
     def drop_step_two(self, item):
         cube_list = self.cam.detector()
         time = 0
-        while len(cube_list) == 0 and time < 15:
+        while len(cube_list) == 0 and time < 20:
             time += 1
             rospy.logwarn("list is empty")
             rospy.sleep(0.5)
@@ -346,7 +347,7 @@ class ArmAction:
                 closest_y = yp
                 id = pice[0]
 
-        if id == item and 80 <= closest_x <= 520 and 30 <= closest_y <= 360:
+        if id == item and 80 <= closest_x and 30 <= closest_y <= 360:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
@@ -381,19 +382,19 @@ class ArmAction:
     def drop_step_three(self, item):
         self.testing = True
         while self.testing:
-            rospy.logwarn("list is empty")
+            rospy.logwarn("check is in")
             rospy.sleep(0.3)
 
         if self.is_in:
             cube_list = self.cam.detector()
             time = 0
-            while len(cube_list) == 0 and time < 10:
+            while len(cube_list) == 0 and time < 20:
                 time += 1
                 rospy.sleep(0.5)
                 cube_list = self.cam.detector()
             if len(cube_list) == 0:
                 self.time[item] = 2
-                self.drop_step_one(item)
+                self.drop_step_two(item)
                 return False
             closest_x = cube_list[0][1][0]
             closest_y = cube_list[0][1][1]
@@ -688,7 +689,7 @@ class AutoAction:
             item_type = 0
 
 
-            self.arm.reset_pub.publish("{'x': 10, 'y': 150, 'z': 160}")
+            self.arm.reset_pub.publish('{"x": 10, "y": 150, "z": 160}')
             if ret: # 判断是否成功到达目标点
                 print("========往前走看清一点===== ")
                 # self.robot.step_go(0.02)  # 前进
@@ -701,7 +702,7 @@ class AutoAction:
                         break
                     else:
                         print("========没抓到，向前进一点===== ")
-                        self.robot.step_go_pro(0.25)
+                        self.robot.step_go_pro(0.15)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
@@ -713,7 +714,7 @@ class AutoAction:
                         sorting_name = "Sorting_DA"
                 print("========向后退一点===== ")
                 for _ in range(i + 3):
-                    self.robot.step_go_pro(-0.25)  # 后退
+                    self.robot.step_go_pro(-0.15)  # 后退
 
                 rospy.sleep(0.5)
 
