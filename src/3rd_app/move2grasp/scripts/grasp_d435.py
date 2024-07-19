@@ -506,6 +506,7 @@ class GraspObject():
     # 扫方块左
     def sweep_square_left(self):
         pos = position()
+        pos.speed = 200
         pos.x, pos.y, pos.z = 250.0, 0.0, 120.0
         self.pub1.publish(pos)
         pos.x, pos.y, pos.z = 90.0, 220.0, -25.0
@@ -515,6 +516,7 @@ class GraspObject():
     # 扫方块右
     def sweep_square_right(self):
         pos = position()
+        pos.speed = 200
         pos.x, pos.y, pos.z = 250.0, 0.0, 120.0
         self.pub1.publish(pos)
         pos.x, pos.y, pos.z = 90.0, -220.0, -25.0
