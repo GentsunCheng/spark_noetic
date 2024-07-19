@@ -24,8 +24,6 @@ class SwiftProInterface:
         # 创建控制机械臂的topic发布者
         self.arm_position_pub = rospy.Publisher(
             "position_write_topic", swiftpro.msg.position, queue_size=1)   # 机械臂运动位置发布者
-        self.arm_position_slow_pub = rospy.Publisher(
-            "position_slow_topic", swiftpro.msg.position, queue_size=1)
         self.arm_pump_pub = rospy.Publisher(
             "pump_topic", swiftpro.msg.status, queue_size=1)               # 机械臂气泵状态发布者
         self.arm_status_pub = rospy.Publisher(
@@ -43,14 +41,6 @@ class SwiftProInterface:
         pos.speed = speed
         # rospy.loginfo(f"set pose {x},{y},{z}")
         self.arm_position_pub.publish(pos)
-
-    def set_pose_slow(self, x, y, z):
-        pos = position()
-        pos.x = x
-        pos.y = y
-        pos.z = z
-        pos.speed = 50
-        self.arm_position_slow_pub.publish(pos)
         
 
     def set_pump(self, enable:bool):
@@ -111,7 +101,29 @@ class CamAction:
         # 按识别次数排列并选择次数最高的物品
         # cube_list.sort(key=lambda x: x[1][0], reverse=True)
         return cube_list
-        
+    
+    
+    def check_if_grasp(self, x, y, timeout=3, confidence=0.5, scope=30):
+        rospy.sleep(1.5)
+        stat = False
+        total = timeout * 2
+        count = 0
+        for _ in range(total):
+            cube_list = self.detector()
+            for pice in cube_list:
+                if x - scope < pice[1][0] < x + scope and y - scope < pice[1][1] < y + scope:
+                    count += 1
+                    break
+            rospy.sleep(0.5)
+        if count / total > confidence:
+            stat = False
+            rospy.loginfo("grasp failed")
+        else:
+            stat = True
+            rospy.loginfo("grasp success")
+        return stat
+
+
 
     # ======获取物品对应的收取区位置=======
     def get_recriving_area_location(self):
@@ -214,7 +226,7 @@ class ArmAction:
         self.testing = False
         self.complete = {46: False, 88: False, 85: False}
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
-        self.reset_pub = rospy.Publisher("armreset", String, queue_size=1)
+        self.reset_pub = rospy.Publisher("armreset_pro", position, queue_size=1)
         self.lidar_sub = rospy.Subscriber(
             "/scan", LaserScan, self.check_scan_stat, queue_size=1, buff_size=2**24
             )
@@ -270,10 +282,14 @@ class ArmAction:
         self.interface.set_pump(True)
         rospy.sleep(1.0)
         # 抬起目标方块
-        rospy.loginfo(f"我把物品抬起来了")
+        rospy.loginfo(f"把物品抬起来")
         self.interface.set_pose(x, y, z + 120)
         rospy.sleep(1.0)
-        self.interface.set_pose_slow(10, 150, 175)
+        rospy.loginfo(f"摆到旁边")
+        self.arm_grasp_ready()
+        if not self.cam.check_if_grasp(closest_x, closest_y):
+            self.reset_pub.publish(position(10, 150, 160, 0))
+            return 1
         self.grasp_status_pub.publish(String("0"))
         if self.time[id] < 3:
             self.time[id] += 1
@@ -347,7 +363,7 @@ class ArmAction:
                 closest_y = yp
                 id = pice[0]
 
-        if id == item and 80 <= closest_x and 30 <= closest_y <= 360:
+        if id == item and 20 <= closest_x and 30 <= closest_y <= 420:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
@@ -408,7 +424,7 @@ class ArmAction:
                     closest_y = yp
                     id = pice[0]
 
-            if id == item and 100 <= closest_x <= 500 and closest_y <= 360:
+            if id == item and 20 <= closest_x <= 620 and closest_y <= 400:
                 x = self.x2_kb[0] * closest_y + self.x2_kb[1]
                 y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
@@ -686,8 +702,7 @@ class AutoAction:
             # =====识别并抓取物体====
             item_type = 0
 
-
-            self.arm.reset_pub.publish('{"x": 10, "y": 150, "z": 160}')
+            self.arm.reset_pub.publish(position(10, 150, 160, 0))
             if ret: # 判断是否成功到达目标点
                 rospy.loginfo("========往前走看清一点=====")
                 # self.robot.step_go(0.02)  # 前进
@@ -696,6 +711,8 @@ class AutoAction:
                 rospy.loginfo("========扫描中，准备抓取=====")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
+                    if item_type == 1:
+                        continue
                     if item_type:
                         break
                     else:
