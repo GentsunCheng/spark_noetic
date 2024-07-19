@@ -111,21 +111,7 @@ class CamAction:
         # 按识别次数排列并选择次数最高的物品
         # cube_list.sort(key=lambda x: x[1][0], reverse=True)
         return cube_list
-    
-    def check_grasp_state(self, timeout=3):
-        rospy.sleep(1.0)
-        for _ in range(int(timeout * 2)):
-            cube_list = self.detector()
-            if len(cube_list):
-                for pice in cube_list:
-                    xp = pice[1][0]
-                    yp = pice[1][1]
-                    if xp < 160 and 240 < yp < 360:
-                        return True
-            rospy.sleep(0.5)
-        return False
-
-            
+        
 
     # ======获取物品对应的收取区位置=======
     def get_recriving_area_location(self):
@@ -729,10 +715,6 @@ class AutoAction:
                 for _ in range(i + 3):
                     self.robot.step_go_pro(-0.15)  # 后退
 
-            if not self.cam.check_grasp_state():
-                rospy.logwarn("========没抓到，复位机械臂=====")
-                self.arm.reset_pub.publish('{"x": 10, "y": 150, "z": 160}')
-                continue
             rospy.sleep(0.5)
             if self.stop_flag: return
             if item_type == 0:
