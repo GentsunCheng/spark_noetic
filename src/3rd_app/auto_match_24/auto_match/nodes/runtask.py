@@ -111,6 +111,21 @@ class CamAction:
         # 按识别次数排列并选择次数最高的物品
         # cube_list.sort(key=lambda x: x[1][0], reverse=True)
         return cube_list
+    
+    def check_grasp_state(self, timeout=3):
+        rospy.sleep(1.0)
+        for _ in range(int(timeout * 2)):
+            cube_list = self.detector()
+            if len(cube_list):
+                for pice in cube_list:
+                    xp = pice[1][0]
+                    yp = pice[1][1]
+                    if xp < 160 and 240 < yp < 360:
+                        return True
+            rospy.sleep(0.5)
+        return False
+
+            
 
     # ======获取物品对应的收取区位置=======
     def get_recriving_area_location(self):
@@ -216,7 +231,7 @@ class ArmAction:
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
         self.reset_pub = rospy.Publisher("armreset", String, queue_size=1)
         self.lidar_sub = rospy.Subscriber(
-            "/scan", LaserScan, self.check_grasp_state, queue_size=1, buff_size=2**24
+            "/scan", LaserScan, self.check_scan_stat, queue_size=1, buff_size=2**24
             )
         self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
  
@@ -264,18 +279,19 @@ class ArmAction:
         rospy.loginfo(f"arm: {x}, {y}, {z}")
         # 机械臂移动到目标位置上方
         self.interface.set_pose(x, y, z + 20)
-        rospy.sleep(1.0)
+        rospy.sleep(0.5)
         self.interface.set_pose(x, y, z)
         # 打开气泵，进行吸取
         self.interface.set_pump(True)
-        rospy.sleep(0.5)
+        rospy.sleep(1.0)
         # 抬起目标方块
         rospy.loginfo(f"我把物品抬起来了")
         self.interface.set_pose(x, y, z + 120)
-        rospy.sleep(0.5)
+        rospy.sleep(1.0)
         self.interface.set_pose_slow(10, 150, 175)
         self.grasp_status_pub.publish(String("0"))
-        self.time[id] = self.time[id] + 1
+        if self.time[id] < 3:
+            self.time[id] += 1
         return id
 
 
@@ -285,8 +301,7 @@ class ArmAction:
             self.drop_step_one(item)
         elif self.time[item] == 2:
             self.drop_step_two(item)
-        else:
-            self.time[item] == 3
+        elif self.time[item] == 3:
             self.drop_step_three(item)
 
     def drop_step_one(self, _):
@@ -438,10 +453,8 @@ class ArmAction:
         else:
             self.time[item] = 2
             self.drop_step_two(item)
-
-  
-    # 检查是否成功抓取，成功返回True，反之返回False
-    def check_grasp_state(self, data):
+        
+    def check_scan_stat(self, data):
         tested = False
         rospy.sleep(3.0)
         for _ in range(10):
@@ -603,20 +616,20 @@ class AutoAction:
         # if init_node:
         rospy.init_node('spark_auto_match_node', anonymous=True)
 
-        print("========ready to task===== ")
+        rospy.loginfo("========ready to task=====")
 
         # 实例化Cam
         try: self.cam = CamAction()
         except Exception as e:  print("except cam:",e)
-        print("========实例化Cam===== ")
+        rospy.loginfo("========实例化Cam=====")
         # 实例化Arm
         try: self.arm = ArmAction()
         except Exception as e:  print("except arm:",e)
-        print("========实例化Arm===== ")
+        rospy.loginfo("========实例化Arm=====")
         # 实例化Robot
         try: self.robot = RobotMoveAction()
         except Exception as e:  print("except robot:",e)
-        print("========实例化Robot===== ")
+        rospy.loginfo("========实例化Robot=====")
 
         # 订阅任务控制指令的话题
         self.task_cmd_sub = rospy.Subscriber("/task_start_flag", String, self.task_cmd_cb) # 订阅任务开始与否信号
@@ -691,17 +704,17 @@ class AutoAction:
 
             self.arm.reset_pub.publish('{"x": 10, "y": 150, "z": 160}')
             if ret: # 判断是否成功到达目标点
-                print("========往前走看清一点===== ")
+                rospy.loginfo("========往前走看清一点=====")
                 # self.robot.step_go(0.02)  # 前进
                 # self.robot.step_go(value)   ############################################
                 rospy.sleep(1.5) # 停稳
-                print("========扫描中，准备抓取===== ")
+                rospy.loginfo("========扫描中，准备抓取=====")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
                     if item_type:
                         break
                     else:
-                        print("========没抓到，向前进一点===== ")
+                        rospy.loginfo("========没扫描到，向前进一点=====")
                         self.robot.step_go_pro(0.15)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
@@ -712,47 +725,36 @@ class AutoAction:
                         return
                     else:
                         sorting_name = "Sorting_DA"
-                print("========向后退一点===== ")
+                rospy.loginfo("========向后退一点=====")
                 for _ in range(i + 3):
                     self.robot.step_go_pro(-0.15)  # 后退
 
-                rospy.sleep(0.5)
-
-                grasp_ctrl_state = True  # ==========================================
-                print("grasp_:", grasp_ctrl_state)
-                if grasp_ctrl_state != True:
-                    self.arm.arm_grasp_ready()
-                    self.robot.step_go(0.23)
-                    rospy.sleep(1.5) # 停稳
-                    item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
-                    if item_type != 0:         # 新增##############################################################################
-                        grasp_ctrl_state = True
-                    self.robot.step_back()  # 后退
-
-                if self.stop_flag: return
-
-
+            if not self.cam.check_grasp_state():
+                rospy.logwarn("========没抓到，复位机械臂=====")
+                self.arm.reset_pub.publish('{"x": 10, "y": 150, "z": 160}')
+                continue
+            rospy.sleep(0.5)
+            if self.stop_flag: return
             if item_type == 0:
                 continue
 
-            if grasp_ctrl_state != False:
-                # ====放置物品====
-                self.arm.arm_grasp_ready()
-                print("========前往放置区===== ")
-                ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
-                rospy.sleep(2.0) # 停稳
+            # ====放置物品====
+            self.arm.arm_grasp_ready()
+            rospy.loginfo("========前往放置区=====")
+            ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
+            rospy.sleep(2.0) # 停稳
 
-                if ret:
-                    pass
-                else:
-                    rospy.logwarn("task error: navigation to the drop_place fails!!!")
-                    rospy.loginfo("continue to next task")
-                self.arm.drop(item_type)
-                self.robot.step_back(distance=0.4)
-                if self.stop_flag:
-                    self.stop_flag = False
+            if ret:
+                pass
+            else:
+                rospy.logwarn("task error: navigation to the drop_place fails!!!")
+                rospy.loginfo("continue to next task")
+            self.arm.drop(item_type)
+            self.robot.step_back(distance=0.4)
+            if self.stop_flag:
+                self.stop_flag = False
 
-                # 下一步
+            # 下一步
             if items_place_dict[item_type] == "Collection_B":
                 sorting_name = "Sorting_AB"
             elif items_place_dict[item_type] == "Collection_C":
@@ -762,10 +764,10 @@ class AutoAction:
 
 
     def task_cmd_cb(self,flag):
-        if flag :
+        if flag:
             if not self.task_run_th.is_alive():
                 self.stop_flag = False
-                self.task_run_th = threading.Thread(target=self.run_task, args=())
+                self.task_run_th = threading.Thread(target=self.run_task)
                 self.task_run_th.start()
                 rospy.loginfo("start task!!!")
             else:
@@ -790,4 +792,4 @@ if __name__ == '__main__':
         AutoAction()
         rospy.spin()
     except rospy.ROSInterruptException:
-        print("Mark_move finished.")
+        rospy.logdebug("Mark_move finished.")
