@@ -228,9 +228,9 @@ class ArmAction:
         self.reset_pub = rospy.Publisher("armreset_pro", position, queue_size=1)
         self.lidar_sub = rospy.Subscriber(
             "/scan", LaserScan, self.check_scan_stat, queue_size=1, buff_size=2**24)
-        self.exclude = np.array(cv2.imread(os.path.join(
-            rospkg.RosPack().get_path('auto_match'),'config', 'tamp.png'), 0))
-        # self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
+        # self.exclude = np.array(cv2.imread(os.path.join(
+        #     rospkg.RosPack().get_path('auto_match'),'config', 'tamp.png'), 0))
+        self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
  
     
     def grasp(self):
@@ -740,7 +740,7 @@ class AutoAction:
                 for i in range(3):
                     if item_type == 1:
                         self.arm.reset_pub.publish(position(10, 150, 160, 0))
-                        self.robot.step_go_pro(0.1, time=0.5)
+                        self.robot.step_go_pro(0.15)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
@@ -748,11 +748,11 @@ class AutoAction:
                         break
                     else:
                         rospy.loginfo("========没扫描到，向前进一点=====")
-                        self.robot.step_go_pro(0.15)
+                        self.robot.step_go_pro(0.175)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
-                if item_type == 0:
+                if item_type == 0 or item_type == 1:
                     if self.arm.complete[46] and self.arm.complete[88] and self.arm.complete[85]:
                         self.stop_flag = True
                         return
