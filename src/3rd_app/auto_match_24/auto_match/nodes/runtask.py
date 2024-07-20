@@ -473,15 +473,15 @@ class ArmAction:
                         closest_y = yp
                         id = pice[0]
 
-                if closest_x < 100:
+                if closest_x < 40:
                     count += 1
-                    self.fix_rotate.step_rotate_pro(-0.8)
+                    self.fix_rotate.step_rotate_pro(-0.35)
                     cube_list_tmp.clear()
                     cube_list.clear()
                     rospy.sleep(0.75)
-                elif closest_x > 540:
+                elif closest_x > 600:
                     count += 1
-                    self.fix_rotate.step_rotate_pro(0.8)
+                    self.fix_rotate.step_rotate_pro(0.35)
                     cube_list_tmp.clear()
                     cube_list.clear()
                     rospy.sleep(0.75)
@@ -790,8 +790,7 @@ class AutoAction:
             self.arm.reset_pub.publish(position(10, 150, 160, 0))
             if ret: # 判断是否成功到达目标点
                 rospy.loginfo("========往前走看清一点=====")
-                # self.robot.step_go(0.02)  # 前进
-                # self.robot.step_go(value)   ############################################
+                self.robot.step_go_pro(0.02)  # 前进
                 rospy.sleep(1.5) # 停稳
                 rospy.loginfo("========扫描中，准备抓取=====")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
@@ -806,7 +805,8 @@ class AutoAction:
                         break
                     else:
                         rospy.loginfo("========没扫描到，向前进一点=====")
-                        self.robot.step_go_pro(0.175)
+                        rospy.sleep(0.5)
+                        self.robot.step_go_pro(0.2)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
