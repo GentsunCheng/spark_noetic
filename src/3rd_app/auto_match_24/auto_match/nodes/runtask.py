@@ -395,7 +395,7 @@ class ArmAction:
             else:
                 found = True
 
-        if id == item and 40 < closest_x and 30 <= closest_y:
+        if id == item and 40 <= closest_y:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
@@ -488,7 +488,7 @@ class ArmAction:
                 else:
                     found = True
 
-            if id == item and 40 < closest_x < 600:
+            if id == item:
                 x = self.x2_kb[0] * closest_y + self.x2_kb[1]
                 y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
@@ -806,7 +806,7 @@ class AutoAction:
                     else:
                         rospy.loginfo("========没扫描到，向前进一点=====")
                         rospy.sleep(0.5)
-                        self.robot.step_go_pro(0.2)
+                        self.robot.step_go_pro(0.15)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
