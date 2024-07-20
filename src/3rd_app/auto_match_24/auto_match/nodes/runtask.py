@@ -224,6 +224,7 @@ class ArmAction:
         self.is_in = False
         self.testing = False
         self.complete = {46: False, 88: False, 85: False}
+        self.fix_rotate = FixRotate()
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
         self.reset_pub = rospy.Publisher("armreset_pro", position, queue_size=1)
         self.lidar_sub = rospy.Subscriber(
@@ -341,38 +342,56 @@ class ArmAction:
         return True
     
     def drop_step_two(self, item):
-        cube_list_tmp = self.cam.detector()
-        time = 0
-        while len(cube_list_tmp) == 0 and time < 10:
-            time += 1
-            rospy.logwarn("list is empty")
-            rospy.sleep(0.5)
+        found = False
+        count = 0
+        while not found:
             cube_list_tmp = self.cam.detector()
+            time = 0
+            while len(cube_list_tmp) == 0 and time < 10:
+                time += 1
+                rospy.logwarn("list is empty")
+                rospy.sleep(0.5)
+                cube_list_tmp = self.cam.detector()
 
-        cube_list = []
-        for pice in cube_list_tmp:
-            xp = pice[1][0]
-            yp = pice[1][1]
-            if xp < 75 and 430 < yp < 460:
-                continue
-            cube_list.append(pice)
+            cube_list = []
+            for pice in cube_list_tmp:
+                xp = pice[1][0]
+                yp = pice[1][1]
+                if xp < 75 and 430 < yp < 460:
+                    continue
+                cube_list.append(pice)
 
-        if len(cube_list) == 0:
-            self.time[item] = 1
-            self.drop_step_one(item)
-            return False
+            if len(cube_list) == 0 and count > 10:
+                self.time[item] = 1
+                self.drop_step_one(item)
+                return False
 
-        closest_x = cube_list[0][1][0]
-        closest_y = cube_list[0][1][1]
-        id = cube_list[0][0]
+            closest_x = cube_list[0][1][0]
+            closest_y = cube_list[0][1][1]
+            id = cube_list[0][0]
 
-        for pice in cube_list:
-            xp = pice[1][0]
-            yp = pice[1][1]
-            if yp < closest_y:
-                closest_x = xp
-                closest_y = yp
-                id = pice[0]
+            for pice in cube_list:
+                xp = pice[1][0]
+                yp = pice[1][1]
+                if yp < closest_y:
+                    closest_x = xp
+                    closest_y = yp
+                    id = pice[0]
+            
+            if 100 < closest_x:
+                count += 1
+                self.fix_rotate.step_rotate_pro(-0.8)
+                cube_list_tmp.clear()
+                cube_list.clear()
+                rospy.sleep(0.75)
+            elif closest_x < 540:
+                count += 1
+                self.fix_rotate.step_rotate_pro(0.8)
+                cube_list_tmp.clear()
+                cube_list.clear()
+                rospy.sleep(0.75)
+            else:
+                found = True
 
         if id == item and 40 < closest_x and 30 <= closest_y:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
@@ -418,37 +437,55 @@ class ArmAction:
             rospy.sleep(0.3)
 
         if self.is_in:
-            cube_list_tmp = self.cam.detector()
-            time = 0
-            while len(cube_list_tmp) == 0 and time < 10:
-                time += 1
-                rospy.logwarn("list is empty")
-                rospy.sleep(0.5)
+            found = False
+            count = 0
+            while not found:
                 cube_list_tmp = self.cam.detector()
+                time = 0
+                while len(cube_list_tmp) == 0 and time < 10:
+                    time += 1
+                    rospy.logwarn("list is empty")
+                    rospy.sleep(0.5)
+                    cube_list_tmp = self.cam.detector()
 
-            cube_list = []
-            for pice in cube_list_tmp:
-                xp = pice[1][0]
-                yp = pice[1][1]
-                if xp < 75 and 430 < yp < 460:
-                    continue
-                cube_list.append(pice)
+                cube_list = []
+                for pice in cube_list_tmp:
+                    xp = pice[1][0]
+                    yp = pice[1][1]
+                    if xp < 75 and 430 < yp < 460:
+                        continue
+                    cube_list.append(pice)
 
-            if len(cube_list) == 0:
-                self.time[item] = 2
-                self.drop_step_two(item)
-                return False
-            closest_x = cube_list[0][1][0]
-            closest_y = cube_list[0][1][1]
-            id = cube_list[0][0]
+                if len(cube_list) == 0 and count > 10:
+                    self.time[item] = 2
+                    self.drop_step_two(item)
+                    return False
+                closest_x = cube_list[0][1][0]
+                closest_y = cube_list[0][1][1]
+                id = cube_list[0][0]
 
-            for pice in cube_list:
-                xp = pice[1][0]
-                yp = pice[1][1]
-                if yp < closest_y:
-                    closest_x = xp
-                    closest_y = yp
-                    id = pice[0]
+                for pice in cube_list:
+                    xp = pice[1][0]
+                    yp = pice[1][1]
+                    if yp < closest_y:
+                        closest_x = xp
+                        closest_y = yp
+                        id = pice[0]
+
+                if 100 < closest_x:
+                    count += 1
+                    self.fix_rotate.step_rotate_pro(-0.8)
+                    cube_list_tmp.clear()
+                    cube_list.clear()
+                    rospy.sleep(0.75)
+                elif closest_x < 540:
+                    count += 1
+                    self.fix_rotate.step_rotate_pro(0.8)
+                    cube_list_tmp.clear()
+                    cube_list.clear()
+                    rospy.sleep(0.75)
+                else:
+                    found = True
 
             if id == item and 40 < closest_x < 600:
                 x = self.x2_kb[0] * closest_y + self.x2_kb[1]
@@ -518,6 +555,20 @@ class ArmAction:
         '''
         self.interface.set_pose(10, 150, 160, 100)
         rospy.sleep(1.0)
+
+
+class FixRotate:
+    def __init__(self):
+        self.cmd_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+
+    def step_rotate_pro(self, rad, time=0.5):
+        twist = Twist()
+        twist.angular.z = rad
+        self.cmd_pub.publish(twist)
+        rospy.sleep(time)
+        twist.angular.z = 0
+        self.cmd_pub.publish(twist)
+    
 
 
 class RobotMoveAction:
@@ -627,6 +678,14 @@ class RobotMoveAction:
     def step_rotate(self, rad):
         twist = Twist()
         twist.angular.z = rad
+        self.cmd_pub.publish(twist)
+
+    def step_rotate_pro(self, rad, time=0.5):
+        twist = Twist()
+        twist.angular.z = rad
+        self.cmd_pub.publish(twist)
+        rospy.sleep(time)
+        twist.angular.z = 0
         self.cmd_pub.publish(twist)
 
     def step_go_pro(self, linear, time=0.3):
