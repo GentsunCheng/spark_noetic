@@ -5,6 +5,7 @@ import threading
 
 import cv2
 import rospy
+import rospkg
 import actionlib
 import numpy as np
 from std_msgs.msg import *
@@ -226,9 +227,10 @@ class ArmAction:
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
         self.reset_pub = rospy.Publisher("armreset_pro", position, queue_size=1)
         self.lidar_sub = rospy.Subscriber(
-            "/scan", LaserScan, self.check_scan_stat, queue_size=1, buff_size=2**24
-            )
-        self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
+            "/scan", LaserScan, self.check_scan_stat, queue_size=1, buff_size=2**24)
+        self.exclude = np.array(cv2.imread(os.path.join(
+            rospkg.RosPack().get_path('auto_match'),'config', 'tamp.png'), 0))
+        # self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
  
     
     def grasp(self):
