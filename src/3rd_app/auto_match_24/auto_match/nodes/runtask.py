@@ -316,9 +316,9 @@ class ArmAction:
         y = 0
         z = 175
         self.interface.set_pose(200, 110, 175)
-        rospy.sleep(0.5)
+        rospy.sleep(0.75)
         self.interface.set_pose(x, y, z)
-        rospy.sleep(1.5)
+        rospy.sleep(1.25)
         z = -125 + self.block_height
         self.interface.set_pose(x, y, z)
         rospy.sleep(1.5)
@@ -379,9 +379,9 @@ class ArmAction:
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
             self.interface.set_pose(200, 110, 175)
-            rospy.sleep(0.5)
+            rospy.sleep(0.75)
             self.interface.set_pose(x, y, z)
-            rospy.sleep(1.5)
+            rospy.sleep(1.25)
             z = -125 + self.block_height * 2
             self.interface.set_pose(x, y, z)
             rospy.sleep(1.5)
@@ -455,9 +455,9 @@ class ArmAction:
                 y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
                 self.interface.set_pose(200, 110, 175)
-                rospy.sleep(0.5)
+                rospy.sleep(0.75)
                 self.interface.set_pose(x, y, z)
-                rospy.sleep(1.5)
+                rospy.sleep(1.25)
                 z = z - 25
                 self.interface.set_pose(x, y, z)
                 rospy.sleep(0.5)
