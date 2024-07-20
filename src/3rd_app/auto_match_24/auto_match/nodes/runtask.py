@@ -719,19 +719,20 @@ class AutoAction:
                 rospy.loginfo("========扫描中，准备抓取=====")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
-                    if item_type == 1 or item_type == 0:
-                        if item_type:
-                            self.arm.reset_pub.publish(position(10, 150, 160, 0))
-                            rospy.loginfo("========没抓到，复位前进=====")
-                            rospy.sleep(0.5)
-                        else:
-                            rospy.loginfo("========没扫描到，向前进一点=====")
-                        self.robot.step_go_pro(0.15 - float(item_type) * 0.5)
+                    if item_type == 1:
+                        self.arm.reset_pub.publish(position(10, 150, 160, 0))
+                        self.robot.step_go_pro(0.1, time=0.5)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
-                    else:
+                    if item_type:
                         break
+                    else:
+                        rospy.loginfo("========没扫描到，向前进一点=====")
+                        self.robot.step_go_pro(0.15)
+                        rospy.sleep(1.5)
+                        item_type = self.arm.grasp()
+                        rospy.sleep(0.5)
                 if item_type == 0:
                     if self.arm.complete[46] and self.arm.complete[88] and self.arm.complete[85]:
                         self.stop_flag = True
