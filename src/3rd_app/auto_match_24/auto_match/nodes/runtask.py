@@ -339,13 +339,21 @@ class ArmAction:
         return True
     
     def drop_step_two(self, item):
-        cube_list = self.cam.detector()
+        cube_list_tmp = self.cam.detector()
         time = 0
-        while len(cube_list) == 0 and time < 10:
+        while len(cube_list_tmp) == 0 and time < 10:
             time += 1
             rospy.logwarn("list is empty")
             rospy.sleep(0.5)
-            cube_list = self.cam.detector()
+            cube_list_tmp = self.cam.detector()
+
+        cube_list = []
+        for pice in cube_list_tmp:
+            xp = pice[1][0]
+            yp = pice[1][1]
+            if xp < 75 and 430 < yp < 460:
+                continue
+            cube_list.append(pice)
 
         if len(cube_list) == 0:
             self.time[item] = 1
@@ -364,7 +372,7 @@ class ArmAction:
                 closest_y = yp
                 id = pice[0]
 
-        if id == item and 40 < closest_x < 600 and 30 <= closest_y <= 420:
+        if id == item and 40 < closest_x and 30 <= closest_y:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
@@ -408,13 +416,22 @@ class ArmAction:
             rospy.sleep(0.3)
 
         if self.is_in:
-            cube_list = self.cam.detector()
+            cube_list_tmp = self.cam.detector()
             time = 0
-            while len(cube_list) == 0 and time < 10:
+            while len(cube_list_tmp) == 0 and time < 10:
                 time += 1
                 rospy.logwarn("list is empty")
                 rospy.sleep(0.5)
-                cube_list = self.cam.detector()
+                cube_list_tmp = self.cam.detector()
+
+            cube_list = []
+            for pice in cube_list_tmp:
+                xp = pice[1][0]
+                yp = pice[1][1]
+                if xp < 75 and 430 < yp < 460:
+                    continue
+                cube_list.append(pice)
+
             if len(cube_list) == 0:
                 self.time[item] = 2
                 self.drop_step_two(item)
@@ -431,7 +448,7 @@ class ArmAction:
                     closest_y = yp
                     id = pice[0]
 
-            if id == item and 20 < closest_x < 620 and closest_y <= 400:
+            if id == item and 40 < closest_x < 600:
                 x = self.x2_kb[0] * closest_y + self.x2_kb[1]
                 y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
