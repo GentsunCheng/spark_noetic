@@ -296,8 +296,6 @@ class ArmAction:
 
 
     def drop(self, item):
-        self.interface.set_pose(200, 110, 175)
-        rospy.sleep(1.0)
         self.complete[item] = False
         if self.time[item] == 1:
             self.drop_step_one(item)
@@ -315,6 +313,8 @@ class ArmAction:
         x = 230
         y = 0
         z = 175
+        self.interface.set_pose(200, 110, 175)
+        rospy.sleep(0.5)
         self.interface.set_pose(x, y, z)
         rospy.sleep(1.5)
         z = -125 + self.block_height
@@ -368,6 +368,8 @@ class ArmAction:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
+            self.interface.set_pose(200, 110, 175)
+            rospy.sleep(0.5)
             self.interface.set_pose(x, y, z)
             rospy.sleep(1.5)
             z = -125 + self.block_height * 2
@@ -433,6 +435,8 @@ class ArmAction:
                 x = self.x2_kb[0] * closest_y + self.x2_kb[1]
                 y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
+                self.interface.set_pose(200, 110, 175)
+                rospy.sleep(0.5)
                 self.interface.set_pose(x, y, z)
                 rospy.sleep(1.5)
                 z = z - 25
@@ -715,16 +719,14 @@ class AutoAction:
                 rospy.loginfo("========扫描中，准备抓取=====")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
-                    if item_type == 1:
-                        continue
-                    if item_type:
-                        break
-                    else:
+                    if item_type == 1 or item_type == 0:
                         rospy.loginfo("========没扫描到，向前进一点=====")
-                        self.robot.step_go_pro(0.15)
+                        self.robot.step_go_pro(0.15 - float(item_type) * 0.5)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
+                    else:
+                        break
                 if item_type == 0:
                     if self.arm.complete[46] and self.arm.complete[88] and self.arm.complete[85]:
                         self.stop_flag = True
