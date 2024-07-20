@@ -300,12 +300,14 @@ class ArmAction:
 
     def drop(self, item):
         self.complete[item] = False
+        if self.time[item] == 3:
+            if self.drop_step_three(item):
+                return
+        if self.time[item] == 2:
+            if self.drop_step_two(item):
+                return
         if self.time[item] == 1:
             self.drop_step_one(item)
-        elif self.time[item] == 2:
-            self.drop_step_two(item)
-        elif self.time[item] == 3:
-            self.drop_step_three(item)
 
     def drop_step_one(self, _):
         '''
@@ -332,11 +334,9 @@ class ArmAction:
         # 向上移动一点
         z = z + 25
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.3)
-        # 移动到其他地方
-        x, y = 50, 150
-        self.interface.set_pose(x, y, z)
-        rospy.sleep(0.2)
+        rospy.sleep(0.5)
+        self.interface.set_pose(200, 110, 175, 250)
+        rospy.sleep(0.75)
         self.arm_default_pose()
         self.grasp_status_pub.publish(String("0"))
         return True
@@ -361,10 +361,12 @@ class ArmAction:
                     continue
                 cube_list.append(pice)
 
-            if len(cube_list) == 0 and count > 10:
-                self.time[item] = 1
-                self.drop_step_one(item)
-                return False
+            if len(cube_list) == 0:
+                if count > 10:
+                    self.time[item] = 1
+                    return False
+                else:
+                    continue
 
             closest_x = cube_list[0][1][0]
             closest_y = cube_list[0][1][1]
@@ -378,13 +380,13 @@ class ArmAction:
                     closest_y = yp
                     id = pice[0]
             
-            if 100 < closest_x:
+            if closest_x < 100:
                 count += 1
                 self.fix_rotate.step_rotate_pro(-0.8)
                 cube_list_tmp.clear()
                 cube_list.clear()
                 rospy.sleep(0.75)
-            elif closest_x < 540:
+            elif closest_x > 540:
                 count += 1
                 self.fix_rotate.step_rotate_pro(0.8)
                 cube_list_tmp.clear()
@@ -413,17 +415,14 @@ class ArmAction:
             # 向上移动一点
             z = z + 25
             self.interface.set_pose(x, y, z)
-            rospy.sleep(0.3)
-            # 移动到其他地方
-            x, y = 50, 150
-            self.interface.set_pose(x, y, z)
-            rospy.sleep(0.2)
+            rospy.sleep(0.5)
+            self.interface.set_pose(200, 110, 175, 250)
+            rospy.sleep(0.75)
             self.arm_default_pose()
             self.grasp_status_pub.publish(String("0"))
             return True
         else:
             self.time[item] = 1
-            self.drop_step_one(item)
             return False
         
 
@@ -456,10 +455,12 @@ class ArmAction:
                         continue
                     cube_list.append(pice)
 
-                if len(cube_list) == 0 and count > 10:
-                    self.time[item] = 2
-                    self.drop_step_two(item)
-                    return False
+                if len(cube_list) == 0:
+                    if count > 10:
+                        self.time[item] = 2
+                        return False
+                    else:
+                        continue
                 closest_x = cube_list[0][1][0]
                 closest_y = cube_list[0][1][1]
                 id = cube_list[0][0]
@@ -472,13 +473,13 @@ class ArmAction:
                         closest_y = yp
                         id = pice[0]
 
-                if 100 < closest_x:
+                if closest_x < 100:
                     count += 1
                     self.fix_rotate.step_rotate_pro(-0.8)
                     cube_list_tmp.clear()
                     cube_list.clear()
                     rospy.sleep(0.75)
-                elif closest_x < 540:
+                elif closest_x > 540:
                     count += 1
                     self.fix_rotate.step_rotate_pro(0.8)
                     cube_list_tmp.clear()
@@ -504,21 +505,19 @@ class ArmAction:
                 # 向上移动一点
                 z = z + 25
                 self.interface.set_pose(x, y, z)
-                rospy.sleep(0.3)
-                # 移动到其他地方
-                x, y = 50, 150
-                self.interface.set_pose(x, y, z)
-                rospy.sleep(0.2)
+                rospy.sleep(0.5)
+                self.interface.set_pose(200, 110, 175, 250)
+                rospy.sleep(0.75)
                 self.arm_default_pose()
                 self.grasp_status_pub.publish(String("0"))
                 self.complete[item] = True
                 return True
             else:
-                self.drop_step_two(item)
+                self.time[item] = 2
                 return False
         else:
             self.time[item] = 2
-            self.drop_step_two(item)
+            return False
         
     def check_scan_stat(self, data):
         tested = False
