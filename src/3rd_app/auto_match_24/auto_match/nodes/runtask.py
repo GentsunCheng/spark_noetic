@@ -344,7 +344,7 @@ class ArmAction:
     def drop_step_two(self, item):
         found = False
         count = 0
-        while not found:
+        while not found and count < 10:
             cube_list_tmp = self.cam.detector()
             time = 0
             while len(cube_list_tmp) == 0 and time < 10:
@@ -438,7 +438,7 @@ class ArmAction:
         if self.is_in:
             found = False
             count = 0
-            while not found:
+            while not found and count < 10:
                 cube_list_tmp = self.cam.detector()
                 time = 0
                 while len(cube_list_tmp) == 0 and time < 10:
@@ -822,7 +822,7 @@ class AutoAction:
 
             rospy.sleep(0.5)
             if self.stop_flag: return
-            if item_type == 0:
+            if item_type == 0 or item_type == 1:
                 continue
 
             # ====放置物品====
