@@ -345,19 +345,23 @@ class ArmAction:
         found = False
         count = 0
         while not found and count < 10:
+            count += 1
+            cube_list_tmp = []
+            cube_list = []
+            cube_list_tmp.clear()
+            cube_list.clear()
             cube_list_tmp = self.cam.detector()
             time = 0
             while len(cube_list_tmp) == 0 and time < 10:
                 time += 1
-                rospy.logwarn("list is empty")
+                rospy.logwarn(f"list is empty, check time: {time}")
                 rospy.sleep(0.5)
                 cube_list_tmp = self.cam.detector()
 
-            cube_list = []
             for pice in cube_list_tmp:
                 xp = pice[1][0]
                 yp = pice[1][1]
-                if xp < 75 and 430 < yp < 460:
+                if xp < 75 and 430 < yp:
                     continue
                 cube_list.append(pice)
 
@@ -381,16 +385,10 @@ class ArmAction:
                     id = pice[0]
             
             if closest_x < 100:
-                count += 1
                 self.fix_rotate.step_rotate_pro(-0.8)
-                cube_list_tmp.clear()
-                cube_list.clear()
                 rospy.sleep(0.75)
             elif closest_x > 540:
-                count += 1
                 self.fix_rotate.step_rotate_pro(0.8)
-                cube_list_tmp.clear()
-                cube_list.clear()
                 rospy.sleep(0.75)
             else:
                 found = True
@@ -439,19 +437,23 @@ class ArmAction:
             found = False
             count = 0
             while not found and count < 10:
+                count += 1
+                cube_list_tmp = []
+                cube_list = []
+                cube_list_tmp.clear()
+                cube_list.clear()
                 cube_list_tmp = self.cam.detector()
                 time = 0
                 while len(cube_list_tmp) == 0 and time < 10:
                     time += 1
-                    rospy.logwarn("list is empty")
+                    rospy.logwarn(f"list is empty, check time: {time}")
                     rospy.sleep(0.5)
                     cube_list_tmp = self.cam.detector()
 
-                cube_list = []
                 for pice in cube_list_tmp:
                     xp = pice[1][0]
                     yp = pice[1][1]
-                    if xp < 75 and 430 < yp < 460:
+                    if xp < 75 and 430 < yp:
                         continue
                     cube_list.append(pice)
 
@@ -474,16 +476,10 @@ class ArmAction:
                         id = pice[0]
 
                 if closest_x < 40:
-                    count += 1
                     self.fix_rotate.step_rotate_pro(-0.35)
-                    cube_list_tmp.clear()
-                    cube_list.clear()
                     rospy.sleep(0.75)
                 elif closest_x > 600:
-                    count += 1
                     self.fix_rotate.step_rotate_pro(0.35)
-                    cube_list_tmp.clear()
-                    cube_list.clear()
                     rospy.sleep(0.75)
                 else:
                     found = True
@@ -552,7 +548,7 @@ class ArmAction:
         '''
         移动机械臂到摄像头看不到的地方，以方便识别与抓取
         '''
-        self.interface.set_pose(10, 150, 160, 100)
+        self.interface.set_pose(10, 170, 160, 100)
         rospy.sleep(1.0)
 
 
