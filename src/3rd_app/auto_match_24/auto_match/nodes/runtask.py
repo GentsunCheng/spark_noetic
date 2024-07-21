@@ -346,31 +346,27 @@ class ArmAction:
         count = 0
         while not found and count < 10:
             count += 1
+            time = 10
             cube_list_tmp = []
             cube_list = []
-            cube_list_tmp.clear()
-            cube_list.clear()
             cube_list_tmp = self.cam.detector()
-            time = 0
-            while len(cube_list_tmp) == 0 and time < 10:
-                time += 1
-                rospy.logwarn(f"list is empty, check time: {time}")
+            for i in range(time):
+                rospy.logwarn(f"list is empty, check time: {i}")
                 rospy.sleep(0.5)
-                cube_list_tmp = self.cam.detector()
-
-            for pice in cube_list_tmp:
-                xp = pice[1][0]
-                yp = pice[1][1]
-                if xp < 75 and 430 < yp:
-                    continue
-                cube_list.append(pice)
+                for pice in cube_list_tmp:
+                    xp = pice[1][0]
+                    yp = pice[1][1]
+                    if xp < 75 and 430 < yp:
+                        continue
+                    cube_list.append(pice)
+                if len(cube_list):
+                    break
+                else:
+                    cube_list_tmp = self.cam.detector()
 
             if len(cube_list) == 0:
-                if count > 10:
-                    self.time[item] = 1
-                    return False
-                else:
-                    continue
+                self.time[item] = 1
+                return False
 
             closest_x = cube_list[0][1][0]
             closest_y = cube_list[0][1][1]
@@ -438,31 +434,28 @@ class ArmAction:
             count = 0
             while not found and count < 10:
                 count += 1
+                time = 10
                 cube_list_tmp = []
                 cube_list = []
-                cube_list_tmp.clear()
-                cube_list.clear()
                 cube_list_tmp = self.cam.detector()
-                time = 0
-                while len(cube_list_tmp) == 0 and time < 10:
-                    time += 1
-                    rospy.logwarn(f"list is empty, check time: {time}")
+                for i in range(time):
+                    rospy.logwarn(f"list is empty, check time: {i}")
                     rospy.sleep(0.5)
-                    cube_list_tmp = self.cam.detector()
-
-                for pice in cube_list_tmp:
-                    xp = pice[1][0]
-                    yp = pice[1][1]
-                    if xp < 75 and 430 < yp:
-                        continue
-                    cube_list.append(pice)
+                    for pice in cube_list_tmp:
+                        xp = pice[1][0]
+                        yp = pice[1][1]
+                        if xp < 75 and 430 < yp:
+                            continue
+                        cube_list.append(pice)
+                    if len(cube_list):
+                        break
+                    else:
+                        cube_list_tmp = self.cam.detector()
 
                 if len(cube_list) == 0:
-                    if count > 10:
-                        self.time[item] = 2
-                        return False
-                    else:
-                        continue
+                    self.time[item] = 2
+                    return False
+                
                 closest_x = cube_list[0][1][0]
                 closest_y = cube_list[0][1][1]
                 id = cube_list[0][0]
