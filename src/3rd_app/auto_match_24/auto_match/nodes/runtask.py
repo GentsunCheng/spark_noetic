@@ -229,9 +229,10 @@ class ArmAction:
         self.reset_pub = rospy.Publisher("armreset_pro", position, queue_size=1)
         self.lidar_sub = rospy.Subscriber(
             "/scan", LaserScan, self.check_scan_stat, queue_size=1, buff_size=2**24)
-        # self.exclude = np.array(cv2.imread(os.path.join(
-        #     rospkg.RosPack().get_path('auto_match'),'config', 'tamp.png'), 0))
-        self.exclude = np.array(cv2.imread(os.environ['HOME'] + "/spark_noetic/tmp.png", 0))
+        self.exclude = np.array(cv2.imread(os.path.join(
+            rospkg.RosPack().get_path('auto_match'),'config', 'tmp.png'), 0))
+        self.disallowed = np.array(cv2.imread(os.path.join(
+            rospkg.RosPack().get_path('auto_match'),'config', 'disallowed_area.png'), 0))
  
     
     def grasp(self):
@@ -356,9 +357,8 @@ class ArmAction:
                 for pice in cube_list_tmp:
                     xp = pice[1][0]
                     yp = pice[1][1]
-                    if xp < 75 and 430 < yp:
-                        continue
-                    cube_list.append(pice)
+                    if self.disallowed[int(yp), int(xp)] > 128:
+                        cube_list.append(pice)
                 if len(cube_list):
                     break
                 else:
@@ -444,9 +444,8 @@ class ArmAction:
                     for pice in cube_list_tmp:
                         xp = pice[1][0]
                         yp = pice[1][1]
-                        if xp < 75 and 430 < yp:
-                            continue
-                        cube_list.append(pice)
+                        if self.disallowed[int(yp), int(xp)] > 128:
+                            cube_list.append(pice)
                     if len(cube_list):
                         break
                     else:
@@ -776,7 +775,7 @@ class AutoAction:
             # =====识别并抓取物体====
             item_type = 0
 
-            self.arm.reset_pub.publish(position(10, 150, 160, 0))
+            self.arm.reset_pub.publish(position(10, 170, 160, 0))
             if ret: # 判断是否成功到达目标点
                 rospy.loginfo("========往前走看清一点=====")
                 self.robot.step_go_pro(0.02)  # 前进
@@ -785,7 +784,7 @@ class AutoAction:
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
                     if item_type == 1:
-                        self.arm.reset_pub.publish(position(10, 150, 160, 0))
+                        self.arm.reset_pub.publish(position(10, 170, 160, 0))
                         self.robot.step_go_pro(0.15)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
