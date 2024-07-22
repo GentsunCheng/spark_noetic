@@ -709,6 +709,7 @@ class AutoAction:
         self.task_cmd_sub = rospy.Subscriber("/task_start_flag", String, self.task_cmd_cb) # 订阅任务开始与否信号
         self.task_run_th = threading.Thread(target=lambda: "pass") # 创建线程对象
         self.stop_flag = False  # 任务的启停标志
+        self.can_task_once = True
 
         # 订阅机械臂手动控制的话题
         self.grasp_sub = rospy.Subscriber("grasp", String, self.grasp_cb)
@@ -803,14 +804,18 @@ class AutoAction:
                         self.stop_flag = True
                         return
                     else:
-                        if sorting_name == "Sorting_DA":
-                            sorting_name = "Sorting_AB"
-                        elif sorting_name == "Sorting_AB":
-                            sorting_name = "Sorting_BC"
-                        elif sorting_name == "Sorting_BC":
-                            sorting_name = "Sorting_CD"
-                        elif sorting_name == "Sorting_CD":
-                            sorting_name = "Sorting_DA"
+                        if self.can_task_once:
+                            self.can_task_once = False
+                            sorting_name == "Sorting_DA"
+                        else:
+                            if sorting_name == "Sorting_DA":
+                                sorting_name = "Sorting_AB"
+                            elif sorting_name == "Sorting_AB":
+                                sorting_name = "Sorting_BC"
+                            elif sorting_name == "Sorting_BC":
+                                sorting_name = "Sorting_CD"
+                            elif sorting_name == "Sorting_CD":
+                                sorting_name = "Sorting_DA"
                 rospy.loginfo("========向后退一点=====")
                 for _ in range(i + 3):
                     self.robot.step_go_pro(-0.15)  # 后退
