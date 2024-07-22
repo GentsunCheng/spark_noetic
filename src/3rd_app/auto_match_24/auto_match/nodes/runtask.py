@@ -803,7 +803,14 @@ class AutoAction:
                         self.stop_flag = True
                         return
                     else:
-                        sorting_name = "Sorting_DA"
+                        if sorting_name == "Sorting_DA":
+                            sorting_name = "Sorting_AB"
+                        elif sorting_name == "Sorting_AB":
+                            sorting_name = "Sorting_BC"
+                        elif sorting_name == "Sorting_BC":
+                            sorting_name = "Sorting_CD"
+                        elif sorting_name == "Sorting_CD":
+                            sorting_name = "Sorting_DA"
                 rospy.loginfo("========向后退一点=====")
                 for _ in range(i + 3):
                     self.robot.step_go_pro(-0.15)  # 后退
