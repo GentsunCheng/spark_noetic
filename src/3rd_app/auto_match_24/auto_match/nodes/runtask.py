@@ -381,10 +381,10 @@ class ArmAction:
                     id = pice[0]
             
             if closest_x < 100:
-                self.fix_rotate.step_rotate_pro(-0.8)
+                self.fix_rotate.step_rotate_pro(0.75)
                 rospy.sleep(0.75)
             elif closest_x > 540:
-                self.fix_rotate.step_rotate_pro(0.8)
+                self.fix_rotate.step_rotate_pro(-0.75)
                 rospy.sleep(0.75)
             else:
                 found = True
@@ -468,10 +468,10 @@ class ArmAction:
                         id = pice[0]
 
                 if closest_x < 40:
-                    self.fix_rotate.step_rotate_pro(-0.35)
+                    self.fix_rotate.step_rotate_pro(0.3)
                     rospy.sleep(0.75)
                 elif closest_x > 600:
-                    self.fix_rotate.step_rotate_pro(0.35)
+                    self.fix_rotate.step_rotate_pro(-0.3)
                     rospy.sleep(0.75)
                 else:
                     found = True
