@@ -203,13 +203,6 @@ class GraspObject():
             self.default_arm()
             self.forth_pose()
 
-        # 机械臂重置
-        elif msg.data == 'reset':
-            self.pump_up_down_mod = False
-            self.angle = 90.0
-            self.reset_pub.publish(1)
-            self.forth_pose()
-
         else:
             try:
                 oprate = json.loads(msg.data)
