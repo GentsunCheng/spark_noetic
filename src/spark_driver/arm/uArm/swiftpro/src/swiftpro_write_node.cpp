@@ -250,7 +250,7 @@ int main(int argc, char** argv)
 		serial::Timeout to = serial::Timeout::simpleTimeout(1000);
 		_serial.setTimeout(to);
 		_serial.open();
-		Gcode = (std::string)"M2234 V0\n\r\n";
+		Gcode = (std::string)"M2234 V0\r\n";
 		_serial.write(Gcode.c_str());
 		ROS_INFO_STREAM("Port has been open successfully");
 	}
