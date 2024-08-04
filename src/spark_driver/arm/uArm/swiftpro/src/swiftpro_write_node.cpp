@@ -26,8 +26,7 @@ swiftpro::SwiftproState pos;
  * Inputs: 		msg(float)			3 cartesian coordinates: x, y, z(mm)
  * Outputs:		Gcode				send gcode to control swift pro
  */
-void position_write_callback(const swiftpro::position& msg)
-{
+void position_write_callback(const swiftpro::position& msg) {
     std::string Gcode;
     std_msgs::String result;
     std::string x = std::to_string(msg.x);
@@ -53,8 +52,7 @@ void position_write_callback(const swiftpro::position& msg)
  * Inputs: 		msg(float)			angle of 1st motor(degree)
  * Outputs:		Gcode				send gcode to control swift pro
  */
-void angle1st_callback(const swiftpro::angle1st& msg)
-{
+void angle1st_callback(const swiftpro::angle1st& msg) {
 	std::string Gcode = "";
 	std_msgs::String result;
 	std::string m1 = std::to_string(msg.angle1st);
@@ -71,8 +69,7 @@ void angle1st_callback(const swiftpro::angle1st& msg)
  * Inputs: 		msg(float)			angle of 2nd motor(degree)
  * Outputs:		Gcode				send gcode to control swift pro
  */
-void angle2nd_callback(const swiftpro::angle2nd& msg)
-{
+void angle2nd_callback(const swiftpro::angle2nd& msg) {
 	std::string Gcode = "";
 	std_msgs::String result;
 	std::string m2 = std::to_string(msg.angle2nd);
@@ -89,8 +86,7 @@ void angle2nd_callback(const swiftpro::angle2nd& msg)
  * Inputs: 		msg(float)			angle of 3rd motor(degree)
  * Outputs:		Gcode				send gcode to control swift pro
  */
-void angle3rd_callback(const swiftpro::angle3rd& msg)
-{
+void angle3rd_callback(const swiftpro::angle3rd& msg) {
 	std::string Gcode = "";
 	std_msgs::String result;
 	std::string m3 = std::to_string(msg.angle3rd);
@@ -107,8 +103,7 @@ void angle3rd_callback(const swiftpro::angle3rd& msg)
  * Inputs: 		msg(float)			angle of 4th motor(degree)
  * Outputs:		Gcode				send gcode to control swift pro
  */
-void angle4th_callback(const swiftpro::angle4th& msg)
-{
+void angle4th_callback(const swiftpro::angle4th& msg) {
 	std::string Gcode = "";
 	std_msgs::String result;
 	std::string m4 = std::to_string(msg.angle4th);
@@ -125,8 +120,7 @@ void angle4th_callback(const swiftpro::angle4th& msg)
  * Inputs: 		msg(uint8)			status of gripper: attach if 1; detach if 0
  * Outputs:		Gcode				send gcode to control swift pro
  */
-void swiftpro_status_callback(const swiftpro::status& msg)
-{
+void swiftpro_status_callback(const swiftpro::status& msg) {
 	std::string Gcode = "";
 	std_msgs::String result;
 
@@ -134,8 +128,7 @@ void swiftpro_status_callback(const swiftpro::status& msg)
 		Gcode = (std::string)"M17\r\n";   // attach
 	else if (msg.status == 0)
 		Gcode = (std::string)"M2019\r\n";
-	else
-	{
+	else {
 		ROS_INFO("Error:Wrong swiftpro status input");
 		return;
 	}
@@ -151,8 +144,7 @@ void swiftpro_status_callback(const swiftpro::status& msg)
  * Inputs: 		msg(uint8)			status of gripper: work if 1; otherwise 0
  * Outputs:		Gcode				send gcode to control swift pro
  */
-void gripper_callback(const swiftpro::status& msg)
-{
+void gripper_callback(const swiftpro::status& msg) {
 	std::string Gcode = "";
 	std_msgs::String result;
 
@@ -160,8 +152,7 @@ void gripper_callback(const swiftpro::status& msg)
 		Gcode = (std::string)"M2232 V1" + "\r\n";
 	else if (msg.status == 0)
 		Gcode = (std::string)"M2232 V0" + "\r\n";
-	else
-	{
+	else {
 		ROS_INFO("Error:Wrong gripper status input");
 		return;
 	}
@@ -177,8 +168,7 @@ void gripper_callback(const swiftpro::status& msg)
  * Inputs: 		msg(uint8)			status of pump: work if 1; otherwise 0
  * Outputs:		Gcode				send gcode to control swift pro
  */
-void pump_callback(const swiftpro::status& msg)
-{
+void pump_callback(const swiftpro::status& msg) {
 	std::string Gcode = "";
 	std_msgs::String result;
 	std::string status = std::to_string(msg.status);
@@ -195,8 +185,7 @@ void pump_callback(const swiftpro::status& msg)
  * Inputs: 		msg(buzzer)			buzzer time and frequency
  * Outputs:		Gcode				send gcode to control swift pro
 */
-void buzzer_callback(const swiftpro::buzzer& buzzer)
-{
+void buzzer_callback(const swiftpro::buzzer& buzzer) {
 	std::string Gcode = "";
 	std_msgs::String result;
 	std::string time = std::to_string((int(buzzer.time)) * 1000);
@@ -224,8 +213,7 @@ void buzzer_callback(const swiftpro::buzzer& buzzer)
  *	 gripper_topic
  *	 pump_topic
  */
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 	ros::init(argc, argv, "swiftpro_write_node");
 	ros::NodeHandle nh;
 	swiftpro::SwiftproState swiftpro_state;
@@ -243,35 +231,31 @@ int main(int argc, char** argv)
 	ros::Publisher 	 pub = nh.advertise<swiftpro::SwiftproState>("SwiftproState_topic", 10);
 	ros::Rate loop_rate(200);
 
-	try
-	{
+	try {
 		_serial.setPort("/dev/ttyACM0");
 		_serial.setBaudrate(115200);
 		serial::Timeout to = serial::Timeout::simpleTimeout(1000);
 		_serial.setTimeout(to);
 		_serial.open();
-		Gcode = (std::string)"M2234 V0\r\n";
-		_serial.write(Gcode.c_str());
 		ROS_INFO_STREAM("Port has been open successfully");
 	}
-	catch (serial::IOException& e)
-	{
+	catch (serial::IOException& e) {
 		ROS_ERROR_STREAM("Unable to open port");
 		return -1;
 	}
 
-	if (_serial.isOpen())
-	{
+	if (_serial.isOpen()) {
 		ros::Duration(3.5).sleep();				// wait 3.5s
 		_serial.write("M2120 V0\r\n");			// stop report position
-		ros::Duration(0.1).sleep();				// wait 0.1s
+		ros::Duration(0.2).sleep();				// wait 0.2s
 		_serial.write("M17\r\n");				// attach
+		ros::Duration(0.3).sleep();				// wait 0.3s
+		_serial.write("M2234 V0\r\n");			// stop bluetooth
 		ros::Duration(0.1).sleep();				// wait 0.1s
 		ROS_INFO_STREAM("Attach and wait for commands");
 	}
 
-	while (ros::ok())
-	{
+	while (ros::ok()) {
 		pub.publish(pos);
 		ros::spinOnce();
 		loop_rate.sleep();
