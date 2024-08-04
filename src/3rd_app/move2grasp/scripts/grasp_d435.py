@@ -121,6 +121,7 @@ class GraspObject():
         self.detector = spark_detect(os.environ['HOME'] + "/vegetable.pt")
         self.xc_prev = 0
         self.yc_prev = 0
+        self.pump_status = 0
         self.is_have_object = False
         self.is_found_object = False
         self.object_union = []
@@ -143,10 +144,10 @@ class GraspObject():
         self.sub = rospy.Subscriber(
             '/grasp', String, self.grasp_cp, queue_size=10)
         # 发布机械臂位姿
-        self.pub1 = rospy.Publisher(
+        self.pose_pub = rospy.Publisher(
             'position_write_topic', position, queue_size=1)
         # 发布机械臂吸盘
-        self.pub2 = rospy.Publisher(
+        self.pump_pub = rospy.Publisher(
             'pump_topic', status, queue_size=1)
         # 发布第四关节状态
         self.angle4th_pub = rospy.Publisher(
@@ -154,12 +155,15 @@ class GraspObject():
         # 发布机械臂状态
         self.grasp_status_pub = rospy.Publisher(
             'grasp_status', String, queue_size=1)
+        # 发布机械臂复位
+        self.reset_pub = rospy.Publisher(
+            'armreset_pro', position, queue_size=1)
         # 发布TWist消息控制机器人底盘
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        pos = position()
-        pos.x, pos.y, pos.z = 110.0, 0.0, 35.0
-        self.arr_pos_z = pos.z
-        self.pub1.publish(pos)
+        self.pos = position()
+        self.pos.x, self.pos.y, self.pos.z = 110.0, 0.0, 35.0
+        self.arr_pos_z = self.pos.z
+        self.pose_pub.publish(self.pos)
 
     def grasp_cp(self, msg):
         # 释放物体
@@ -173,7 +177,8 @@ class GraspObject():
         elif msg.data == 'close_pump':
             # 放下物体
             self.is_found_object = False
-            self.pub2.publish(0)
+            self.pump_status = 0
+            self.pump_pub.publish(self.pump_status)
             self.pump_up_down_mod = False
             rospy.sleep(0.3)
             self.arm_pose()
@@ -202,6 +207,12 @@ class GraspObject():
             self.angle = 90.0
             self.default_arm()
             self.forth_pose()
+        
+        # 机械臂复位
+        elif msg.data == 'reset':
+            self.reset_pub.publish(self.pos)
+            self.pump_pub.publish(self.pump_status)
+
 
         else:
             try:
@@ -242,30 +253,30 @@ class GraspObject():
         rospy.loginfo("start to grasp")
         # stop function
         r2 = rospy.Rate(10)
-        pos = position()
         # 物体所在坐标+标定误差
-        pos.x = self.x_kb[0] * self.yc_prev + self.x_kb[1]
-        pos.y = self.y_kb[0] * self.xc_prev + self.y_kb[1]
-        pos.z = -25.0
+        self.pos.x = self.x_kb[0] * self.yc_prev + self.x_kb[1]
+        self.pos.y = self.y_kb[0] * self.xc_prev + self.y_kb[1]
+        self.pos.z = -25.0
         rospy.loginfo("z = -25")
-        self.pub1.publish(pos)
+        self.pose_pub.publish(self.pos)
         r2.sleep()
 
-        pos.z = -50.0
-        self.pub1.publish(pos)
+        self.pos.z = -50.0
+        self.pose_pub.publish(self.pos)
         rospy.loginfo("z = -50")
 
         # 开始吸取物体
-        self.pub2.publish(1)
+        self.pump_status = 1
+        self.pump_pub.publish(self.pump_status)
         r2.sleep()
 
         # 提起物体
-        pos.y = 0.0
+        self.pos.y = 0.0
         if self.auto_mod == 1:
-            pos.x, pos.z = 140.0, 150.0
+            self.pos.x, self.pos.z = 140.0, 150.0
         else:
-            pos.x, pos.z = 250.0, 75.0
-        self.pub1.publish(pos)
+            self.pos.x, self.pos.z = 250.0, 75.0
+        self.pose_pub.publish(self.pos)
         self.step = 2
         self.auto_mod = 0
         self.xc_prev, self.yc_prev = 0, 0
@@ -453,27 +464,26 @@ class GraspObject():
      # 释放物体
     def release_object(self):
         rotate = angle4th()
-        pos = position()
         rotate.angle4th = 90
-        pos.x, pos.y = 250.0, 0.0
+        self.pos.x, self.pos.y = 250.0, 0.0
         self.arr_pos_z = -125 + self.step * self.block_height
-        pos.z = self.arr_pos_z if self.pump_up_down_mod else self.arr_pos_z - 25.0
-        self.pub1.publish(pos)
-        rospy.loginfo(f"释放坐标: x:{pos.x}, y:{pos.y}, z:{pos.z}")
+        self.pos.z = self.arr_pos_z if self.pump_up_down_mod else self.arr_pos_z - 25.0
+        self.pose_pub.publish(self.pos)
+        rospy.loginfo(f"释放坐标: x:{self.pos.x}, y:{self.pos.y}, z:{self.pos.z}")
         rospy.sleep(0.5)
-        self.pub2.publish(0)
-        pos.z, self.pump_up_down_mod = (self.arr_pos_z + 25.0, 0) if self.pump_up_down_mod else (self.arr_pos_z, self.pump_up_down_mod)
+        self.pump_status = 0
+        self.pump_pub.publish(self.pump_status)
+        self.pos.z, self.pump_up_down_mod = (self.arr_pos_z + 25.0, 0) if self.pump_up_down_mod else (self.arr_pos_z, self.pump_up_down_mod)
         rospy.sleep(0.5)
-        self.pub1.publish(pos)
+        self.pose_pub.publish(self.pos)
         self.angle4th_pub.publish(rotate)
 
     # 机械臂位姿调整
     def arm_pose(self):
-        pos = position()
         # go forward
-        pos.x, pos.y = 250.0, 0.0
-        self.arr_pos_z = pos.z = (-150.0 + self.step * self.block_height) if self.pump_up_down_mod else (-125.0 + self.step * self.block_height)
-        self.pub1.publish(pos)
+        self.pos.x, self.pos.y = 250.0, 0.0
+        self.arr_pos_z = self.pos.z = (-150.0 + self.step * self.block_height) if self.pump_up_down_mod else (-125.0 + self.step * self.block_height)
+        self.pose_pub.publish(self.pos)
         rospy.sleep(0.5)
 
     # 第四关节调整
@@ -484,47 +494,45 @@ class GraspObject():
 
     # 备选方案
     def spare_plan(self):
-        pos = position()
         # go forward
-        pos.x, pos.y = 250.0, 0.0
-        pos.z = self.arr_pos_z if self.pump_up_down_mod else self.arr_pos_z - 25.0
-        self.pub1.publish(pos)
+        self.pos.x, self.pos.y = 250.0, 0.0
+        self.pos.z = self.arr_pos_z if self.pump_up_down_mod else self.arr_pos_z - 25.0
+        self.pose_pub.publish(self.pos)
         rospy.sleep(0.3)
-        self.pub2.publish(1)
+        self.pump_status = 1
+        self.pump_pub.publish(self.pump_status)
         rospy.sleep(0.5)
         # 提起物体
-        pos.x, pos.y, pos.z = 250.0, 0.0, self.arr_pos_z
-        self.pub1.publish(pos)
+        self.pos.x, self.pos.y, self.pos.z = 250.0, 0.0, self.arr_pos_z
+        self.pose_pub.publish(self.pos)
 
     # 扫方块左
     def sweep_square_left(self):
-        pos = position()
-        pos.speed = 200
-        pos.x, pos.y, pos.z = 250.0, 0.0, 120.0
-        self.pub1.publish(pos)
-        pos.x, pos.y, pos.z = 90.0, 220.0, -25.0
+        self.pos.speed = 200
+        self.pos.x, self.pos.y, self.pos.z = 250.0, 0.0, 120.0
+        self.pose_pub.publish(self.pos)
+        self.pos.x, self.pos.y, self.pos.z = 90.0, 220.0, -25.0
         rospy.sleep(0.5)
-        self.pub1.publish(pos)
+        self.pose_pub.publish(self.pos)
 
     # 扫方块右
     def sweep_square_right(self):
-        pos = position()
-        pos.speed = 200
-        pos.x, pos.y, pos.z = 250.0, 0.0, 120.0
-        self.pub1.publish(pos)
-        pos.x, pos.y, pos.z = 90.0, -220.0, -25.0
+        self.pos.speed = 200
+        self.pos.x, self.pos.y, self.pos.z = 250.0, 0.0, 120.0
+        self.pose_pub.publish(self.pos)
+        self.pos.x, self.pos.y, self.pos.z = 90.0, -220.0, -25.0
         rospy.sleep(0.5)
-        self.pub1.publish(pos)
+        self.pose_pub.publish(self.pos)
 
     # 机械臂恢复默认位姿
     def default_arm(self):
-        pos = position()
         r2 = rospy.Rate(1)
         rotate = angle4th()
-        pos.x, pos.y, pos.z = 110.0, 0.0, 35.0
+        self.pos.x, self.pos.y, self.pos.z = 110.0, 0.0, 35.0
         rotate.angle4th = 90
-        self.pub1.publish(pos)
-        self.pub2.publish(0)
+        self.pose_pub.publish(self.pos)
+        self.pump_status = 0
+        self.pump_pub.publish(self.pump_status)
         self.angle4th_pub.publish(rotate)
         r2.sleep()
         return 'return completed'

@@ -226,7 +226,7 @@ class ArmAction:
         self.complete = {46: False, 88: False, 85: False}
         self.fix_rotate = FixRotate()
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
-        self.reset_pub = rospy.Publisher("armreset_pro", position, queue_size=1)
+        self.reset_pub = rospy.Publisher("armreset_auto", position, queue_size=1)
         self.lidar_sub = rospy.Subscriber(
             "/scan", LaserScan, self.check_scan_stat, queue_size=1, buff_size=2**24)
         self.exclude = np.array(cv2.imread(os.path.join(
