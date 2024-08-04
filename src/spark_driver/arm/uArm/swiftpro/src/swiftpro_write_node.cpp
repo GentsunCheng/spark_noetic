@@ -229,6 +229,7 @@ int main(int argc, char** argv)
 	ros::init(argc, argv, "swiftpro_write_node");
 	ros::NodeHandle nh;
 	swiftpro::SwiftproState swiftpro_state;
+	std::string Gcode = "";
 
 	ros::Subscriber sub_position = nh.subscribe("position_write_topic", 10, position_write_callback);
 	ros::Subscriber sub_status = nh.subscribe("swiftpro_status_topic", 10, swiftpro_status_callback);
@@ -249,6 +250,8 @@ int main(int argc, char** argv)
 		serial::Timeout to = serial::Timeout::simpleTimeout(1000);
 		_serial.setTimeout(to);
 		_serial.open();
+		Gcode = (std::string)"M2234 V0\n\r\n";
+		_serial.write(Gcode.c_str());
 		ROS_INFO_STREAM("Port has been open successfully");
 	}
 	catch (serial::IOException& e)
