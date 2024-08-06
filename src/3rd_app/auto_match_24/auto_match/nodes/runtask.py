@@ -212,6 +212,8 @@ class ArmAction:
         arr.clear()
         del arr
 
+        self.arm_default_pose_child_thread_start_flag = False
+
         # 创建机械臂控制接口的对象
         self.interface = SwiftProInterface()
 
@@ -333,8 +335,7 @@ class ArmAction:
         # 向上移动一点
         z = z + 25
         self.interface.set_pose(x, y, z)
-        rospy.sleep(0.5)
-        self.arm_default_pose()
+        rospy.sleep(0.2)
         self.grasp_status_pub.publish(String("0"))
         return True
     
@@ -403,8 +404,7 @@ class ArmAction:
             # 向上移动一点
             z = z + 25
             self.interface.set_pose(x, y, z)
-            rospy.sleep(0.5)
-            self.arm_default_pose()
+            rospy.sleep(0.2)
             self.grasp_status_pub.publish(String("0"))
             return True
         else:
@@ -483,8 +483,7 @@ class ArmAction:
                 # 向上移动一点
                 z = z + 25
                 self.interface.set_pose(x, y, z)
-                rospy.sleep(0.5)
-                self.arm_default_pose()
+                rospy.sleep(0.2)
                 self.grasp_status_pub.publish(String("0"))
                 self.complete[item] = True
                 return True
@@ -530,6 +529,17 @@ class ArmAction:
         '''
         self.interface.set_pose(20, 170, 174, 100)
         rospy.sleep(1.0)
+
+    def arm_default_pose_child_thread_function(self):
+        '''
+        移动机械臂到摄像头看不到的地方，以方便识别与抓取
+        '''
+        while True:
+            if self.arm_default_pose_child_thread_start_flag:
+                self.interface.set_pose(20, 170, 174, 100)
+                rospy.sleep(0.5)
+                self.arm_default_pose_child_thread_start_flag = False
+            rospy.sleep(0.5)
 
 
 class FixRotate:
@@ -699,6 +709,9 @@ class AutoAction:
         self.stop_flag = False  # 任务的启停标志
         self.can_task_once = True
 
+        self.arm_default_pose_child_thread = threading.Thread(target=self.arm.arm_default_pose_child_thread_function)
+        self.arm_default_pose_child_thread.start()
+
         # 订阅机械臂手动控制的话题
         self.grasp_sub = rospy.Subscriber("grasp", String, self.grasp_cb)
 
@@ -720,7 +733,7 @@ class AutoAction:
         if self.stop_flag: return
 
         # ==== 移动机械臂 =====
-        self.arm.arm_default_pose()  # 移动机械臂到其他地方
+        self.arm.arm_default_pose_child_thread_start_flag = True  # 移动机械臂到其他地方
 
         
 
@@ -775,7 +788,7 @@ class AutoAction:
                     if item_type == 1:
                         self.arm.reset_pub.publish(position(20, 170, 174, 0))
                         self.robot.step_go_pro(0.15)
-                        ### rospy.sleep(1.5)
+                        rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
                     if item_type:
@@ -784,7 +797,7 @@ class AutoAction:
                         rospy.loginfo("========没扫描到，向前进一点=====")
                         rospy.sleep(0.5)
                         self.robot.step_go_pro(0.15)
-                        ### rospy.sleep(1.5)
+                        rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
                 if item_type == 0 or item_type == 1:
@@ -823,7 +836,8 @@ class AutoAction:
                 rospy.logwarn("task error: navigation to the drop_place fails!!!")
                 rospy.loginfo("continue to next task")
             self.arm.drop(item_type)
-            self.robot.step_back(distance=0.4)
+            self.arm.arm_default_pose_child_thread_start_flag = True
+            self.robot.step_go_pro(-0.35)
             if self.stop_flag:
                 self.stop_flag = False
 
