@@ -6,7 +6,9 @@ import threading
 import cv2
 import rospy
 import rospkg
+import pyfiglet
 import actionlib
+import message_filters
 import numpy as np
 from std_msgs.msg import *
 from actionlib_msgs.msg import *
@@ -16,6 +18,7 @@ import common.msg
 import common.srv
 from common.msg import MoveStraightDistanceAction, TurnBodyDegreeAction
 import swiftpro.msg
+from cv_bridge import CvBridge
 from swiftpro.msg import position
 from vision_msgs.msg import Detection2DArray
 from geometry_msgs.msg import Twist
@@ -68,7 +71,12 @@ class SwiftProInterface:
 
 class CamAction:
     def __init__(self):
-        pass
+        self.bridge = CvBridge()
+        self.depth_x = 320
+        self.depth_y = 240
+        self.depth_checking = False
+        self.depth_sub = message_filters.Subscriber("/camera/depth/image_rect_raw", Image)
+        self.depth_sub = rospy.Subscriber("/camera/depth/image_rect_raw", Image, self.depth_callback)
 
     def detector(self):
         '''
@@ -178,6 +186,20 @@ class CamAction:
                 print(items_place_dict)
             
         return items_place_dict
+    
+    def get_depth(self, x, y):
+        self.depth_checking = True
+        self.depth_x = x
+        self.depth_y = y
+        while self.depth_checking:
+            rospy.sleep(0.1)
+        return self.distance
+    
+    def depth_callback(self, depth_msg):
+        depth_image = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding="passthrough")
+        self.distance = depth_image[self.depth_y, self.depth_x]
+        self.depth_checking = False
+
 
 
 
@@ -417,11 +439,12 @@ class ArmAction:
             rospy.logwarn("fantastic mode start!!!")
             rospy.sleep(3)
         self.testing = True
+        rospy.loginfo("check is in")
         while self.testing:
-            rospy.logwarn("check is in")
             rospy.sleep(0.3)
 
         if self.is_in:
+            rospy.loginfo("step two in")
             found = False
             count = 0
             while not found and count < 10:
@@ -491,6 +514,7 @@ class ArmAction:
                 self.time[item] = 2
                 return False
         else:
+            rospy.loginfo(pyfiglet.figlet_format("step two out"))
             self.time[item] = 2
             return False
         
@@ -688,7 +712,7 @@ class AutoAction:
         # if init_node:
         rospy.init_node('spark_auto_match_node', anonymous=True)
 
-        rospy.loginfo("========ready to task=====")
+        rospy.loginfo("start auto task")
 
         # 实例化Cam
         try: self.cam = CamAction()
@@ -715,7 +739,7 @@ class AutoAction:
         # 订阅机械臂手动控制的话题
         self.grasp_sub = rospy.Subscriber("grasp", String, self.grasp_cb)
 
-        rospy.loginfo("spark_auto_match_node is ready")
+        rospy.loginfo(pyfiglet.figlet_format(text="ready", font="slant"))
 
     # 接收到启动自动赛信号，开始执行任务
     def run_task(self):
