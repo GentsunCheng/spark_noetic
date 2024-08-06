@@ -291,7 +291,7 @@ class ArmAction:
         self.arm_default_pose()
         rospy.sleep(0.75)
         if not self.cam.check_if_grasp(closest_x, closest_y, timeout=1.5, confidence=0.3):
-            self.reset_pub.publish(position(10, 150, 160, 0))
+            self.reset_pub.publish(position(20, 170, 174, 0))
             return 1
         self.grasp_status_pub.publish(String("0"))
         if self.time[id] < 3:
@@ -319,9 +319,7 @@ class ArmAction:
         x = 230
         y = 0
         z = 175
-        self.interface.set_pose(200, 110, 175)
-        rospy.sleep(0.75)
-        self.interface.set_pose(x, y, z)
+        self.interface.set_pose(x, y, z, 150)
         rospy.sleep(1.25)
         z = -125 + self.block_height
         self.interface.set_pose(x, y, z)
@@ -336,8 +334,6 @@ class ArmAction:
         z = z + 25
         self.interface.set_pose(x, y, z)
         rospy.sleep(0.5)
-        self.interface.set_pose(200, 110, 175, 250)
-        rospy.sleep(0.75)
         self.arm_default_pose()
         self.grasp_status_pub.publish(String("0"))
         return True
@@ -393,9 +389,7 @@ class ArmAction:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
-            self.interface.set_pose(200, 110, 175)
-            rospy.sleep(0.75)
-            self.interface.set_pose(x, y, z)
+            self.interface.set_pose(x, y, z, 150)
             rospy.sleep(1.25)
             z = -125 + self.block_height * 2
             self.interface.set_pose(x, y, z)
@@ -410,8 +404,6 @@ class ArmAction:
             z = z + 25
             self.interface.set_pose(x, y, z)
             rospy.sleep(0.5)
-            self.interface.set_pose(200, 110, 175, 250)
-            rospy.sleep(0.75)
             self.arm_default_pose()
             self.grasp_status_pub.publish(String("0"))
             return True
@@ -480,9 +472,7 @@ class ArmAction:
                 x = self.x2_kb[0] * closest_y + self.x2_kb[1]
                 y = self.y2_kb[0] * closest_x + self.y2_kb[1]
                 z = -125 + self.block_height * 3
-                self.interface.set_pose(200, 110, 175)
-                rospy.sleep(0.75)
-                self.interface.set_pose(x, y, z)
+                self.interface.set_pose(x, y, z, 150)
                 rospy.sleep(1.25)
                 z = z - 25
                 self.interface.set_pose(x, y, z)
@@ -494,8 +484,6 @@ class ArmAction:
                 z = z + 25
                 self.interface.set_pose(x, y, z)
                 rospy.sleep(0.5)
-                self.interface.set_pose(200, 110, 175, 250)
-                rospy.sleep(0.75)
                 self.arm_default_pose()
                 self.grasp_status_pub.publish(String("0"))
                 self.complete[item] = True
@@ -540,7 +528,7 @@ class ArmAction:
         '''
         移动机械臂到摄像头看不到的地方，以方便识别与抓取
         '''
-        self.interface.set_pose(10, 170, 160, 100)
+        self.interface.set_pose(20, 170, 174, 100)
         rospy.sleep(1.0)
 
 
@@ -738,7 +726,7 @@ class AutoAction:
 
         # ===== 导航到分类区 =====
         if self.robot.goto_local("Classification_area"):
-            rospy.sleep(2)
+            ### rospy.sleep(2)
             items_place_dict = self.cam.get_recriving_area_location()
         else :
             rospy.logerr("Navigation to Classification_area failed,please run task again ")
@@ -776,7 +764,7 @@ class AutoAction:
             # =====识别并抓取物体====
             item_type = 0
 
-            self.arm.reset_pub.publish(position(10, 170, 160, 0))
+            self.arm.reset_pub.publish(position(20, 170, 174, 0))
             if ret: # 判断是否成功到达目标点
                 rospy.loginfo("========往前走看清一点=====")
                 self.robot.step_go_pro(0.02)  # 前进
@@ -785,9 +773,9 @@ class AutoAction:
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
                     if item_type == 1:
-                        self.arm.reset_pub.publish(position(10, 170, 160, 0))
+                        self.arm.reset_pub.publish(position(20, 170, 174, 0))
                         self.robot.step_go_pro(0.15)
-                        rospy.sleep(1.5)
+                        ### rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
                     if item_type:
@@ -796,7 +784,7 @@ class AutoAction:
                         rospy.loginfo("========没扫描到，向前进一点=====")
                         rospy.sleep(0.5)
                         self.robot.step_go_pro(0.15)
-                        rospy.sleep(1.5)
+                        ### rospy.sleep(1.5)
                         item_type = self.arm.grasp()
                         rospy.sleep(0.5)
                 if item_type == 0 or item_type == 1:
@@ -831,9 +819,7 @@ class AutoAction:
             ret = self.robot.goto_local(items_place_dict[item_type]) # 根据抓到的物品类型，导航到对应的放置区
             rospy.sleep(2.0) # 停稳
 
-            if ret:
-                pass
-            else:
+            if not ret:
                 rospy.logwarn("task error: navigation to the drop_place fails!!!")
                 rospy.loginfo("continue to next task")
             self.arm.drop(item_type)

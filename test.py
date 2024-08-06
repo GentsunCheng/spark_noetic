@@ -1,20 +1,10 @@
-import rospy
-from sensor_msgs.msg import *
+import time
+from uarm import SwiftAPI
 
+swift = SwiftAPI("/dev/ttyACM0")
 
-def check_grasp_state(data):
-    i = 0
-    for distance in data.ranges:
-        if distance == 0:
-            continue
-        if distance <= 0.3:
-            i += 1
-        print("times", i)
-        
+swift.waiting_ready()
 
-
-rospy.init_node("check_grasp_state")
-lidar_sub = rospy.Subscriber(
-    "/scan", LaserScan, check_grasp_state, queue_size=1, buff_size=2**24
-)
-rospy.spin()
+swift.set_position(20, 170, 174)
+time.sleep(1)
+print(swift.get_position())
