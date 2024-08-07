@@ -148,7 +148,7 @@ class CamAction:
             if len(cube_list) < 3:
                 if len(cube_list) == 0:
                     rospy.logwarn("objects not found...")
-                    self.robot.step_go(0.03)
+                    self.robot.step_go_pro(0.3, wait=False)
                     rospy.sleep(2)
                     continue
                 rospy.logwarn("finding object...")
@@ -653,36 +653,6 @@ class RobotMoveAction:
             rospy.Duration.from_sec(5)  # 超过5s为超时
         )
         return True
-    
-    def step_back(self, distance=0.2):
-        '''
-        后退, 用于抓取或放置后使用
-        @return: True 为调整成功, False 为调整失败
-        '''
-        self.move_action_cli.send_goal_and_wait(
-            common.msg.MoveStraightDistanceGoal(
-                type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
-                const_rot_vel=-0.1,
-                move_distance=distance,
-            ),
-            rospy.Duration.from_sec(5)  # 超过5s为超时
-        )
-        return True
-    
-    def step_go(self, dis):
-        '''
-        前进, 用于抓取或放置前使用
-        @return: True 为调整成功, False 为调整失败
-        '''
-        self.move_action_cli.send_goal_and_wait(
-            common.msg.MoveStraightDistanceGoal(
-                type=common.msg.MoveStraightDistanceGoal.TYPE_ODOM,
-                const_rot_vel=0.1,
-                move_distance=dis,
-            ),
-            rospy.Duration.from_sec(5)  # 超过5s为超时
-        )
-        return True
 
     def step_rotate(self, rad):
         twist = Twist()
@@ -697,13 +667,14 @@ class RobotMoveAction:
         twist.angular.z = 0
         self.cmd_pub.publish(twist)
 
-    def step_go_pro(self, linear, time=0.3):
+    def step_go_pro(self, linear, time=0.3, wait=True):
         twist_go = Twist()
         twist_go.linear.x = linear
         self.cmd_pub.publish(twist_go)
-        rospy.sleep(time)
-        twist_go.linear.x = 0
-        self.cmd_pub.publish(twist_go)
+        if wait:
+            rospy.sleep(time)
+            twist_go.linear.x = 0
+            self.cmd_pub.publish(twist_go)
 
 
 class AutoAction:
@@ -751,7 +722,7 @@ class AutoAction:
         rospy.loginfo("start task now.")
 
         # ==== 离开起始区,避免在膨胀区域中，导致导航失败 =====
-        self.robot.step_go(0.3)
+        self.robot.step_go_pro(0.3, wait=False)
         # self.robot.step_rotate(-0.5)
 
         if self.stop_flag: return
