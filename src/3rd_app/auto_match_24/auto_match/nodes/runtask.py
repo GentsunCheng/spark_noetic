@@ -320,7 +320,7 @@ class ArmAction:
         rospy.loginfo(f"摆到旁边")
         self.arm_default_pose()
         rospy.sleep(0.75)
-        if not self.cam.check_if_grasp(closest_x, closest_y, type="depth",old_dis=distance):
+        if not self.cam.check_if_grasp(closest_x, closest_y, type="depth", old_dis=distance):
             self.reset_pub.publish(position(20, 170, 174, 0))
             return 1
         self.grasp_status_pub.publish(String("0"))
