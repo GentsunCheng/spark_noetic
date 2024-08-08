@@ -202,7 +202,7 @@ class CamAction:
     
     def depth_callback(self, depth_msg):
         depth_image = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding="passthrough")
-        self.distance = depth_image[self.depth_y, self.depth_x]
+        self.distance = depth_image[int(self.depth_y), int(self.depth_x)]
         self.depth_checking = False
 
 
@@ -316,13 +316,14 @@ class ArmAction:
         # 抬起目标方块
         rospy.loginfo(f"把物品抬起来")
         self.interface.set_pose(x, y, z + 120)
-        rospy.sleep(1.0)
-        rospy.loginfo(f"摆到旁边")
-        self.arm_default_pose()
         rospy.sleep(0.75)
-        if not self.cam.check_if_grasp(closest_x, closest_y, type="depth", old_dis=distance):
-            self.reset_pub.publish(position(20, 170, 174, 0))
-            return 1
+        rospy.loginfo(f"摆到旁边")
+        self.arm_default_pose_child_thread_start_flag = True
+        ### 检测是否抓到
+        # rospy.sleep(0.75)
+        # if not self.cam.check_if_grasp(closest_x, closest_y, type="depth", old_dis=distance):
+        #     self.reset_pub.publish(position(20, 170, 174, 0))
+        #     return 1
         self.grasp_status_pub.publish(String("0"))
         if self.time[id] < 3:
             self.time[id] += 1
