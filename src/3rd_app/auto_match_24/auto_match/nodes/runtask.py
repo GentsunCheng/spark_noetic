@@ -681,7 +681,8 @@ class RobotMoveAction:
         if wait:
             rospy.sleep(time)
             twist_go.linear.x = 0
-            self.cmd_pub.publish(twist_go)
+            for _ in range(10):
+                self.cmd_pub.publish(twist_go)
 
 
 class AutoAction:
@@ -797,7 +798,7 @@ class AutoAction:
                         break
                     else:
                         rospy.loginfo("========没扫描到，向前进一点=====")
-                        rospy.sleep(0.5)
+                        # rospy.sleep(0.5)
                         self.robot.step_go_pro(0.15)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
