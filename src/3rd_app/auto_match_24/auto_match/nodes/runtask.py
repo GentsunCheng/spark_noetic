@@ -787,12 +787,12 @@ class AutoAction:
                 rospy.loginfo("========扫描中，准备抓取=====")
                 item_type = self.arm.grasp()  # 抓取物品并返回抓取物品的类型
                 for i in range(3):
-                    if item_type == 1:
-                        self.arm.reset_pub.publish(position(20, 170, 174, 0))
-                        self.robot.step_go_pro(0.15)
-                        rospy.sleep(1.5)
-                        item_type = self.arm.grasp()
-                        rospy.sleep(0.5)
+                    # if item_type == 1:
+                    #     self.arm.reset_pub.publish(position(20, 170, 174, 0))
+                    #     self.robot.step_go_pro(0.15)
+                    #     rospy.sleep(1.5)
+                    #     item_type = self.arm.grasp()
+                    #     rospy.sleep(0.5)
                     if item_type:
                         break
                     else:
@@ -801,8 +801,9 @@ class AutoAction:
                         self.robot.step_go_pro(0.15)
                         rospy.sleep(1.5)
                         item_type = self.arm.grasp()
-                        rospy.sleep(0.5)
-                if item_type == 0 or item_type == 1:
+                        # rospy.sleep(0.5)
+                # if item_type == 0 or item_type == 1:
+                if item_type == 0:
                     if self.arm.complete[46] and self.arm.complete[88] and self.arm.complete[85]:
                         self.stop_flag = True
                         return
@@ -821,7 +822,7 @@ class AutoAction:
                                 sorting_name = "Sorting_DA"
                 rospy.loginfo("========向后退一点=====")
                 for _ in range(i + 3):
-                    self.robot.step_go_pro(-0.15)  # 后退
+                    self.robot.step_go_pro(-0.15, wait=False)  # 后退
 
             rospy.sleep(0.5)
             if self.stop_flag: return
@@ -839,7 +840,7 @@ class AutoAction:
                 rospy.loginfo("continue to next task")
             self.arm.drop(item_type)
             self.arm.arm_default_pose_child_thread_start_flag = True
-            self.robot.step_go_pro(-0.35)
+            self.robot.step_go_pro(-0.35, wait=False)
             if self.stop_flag:
                 self.stop_flag = False
 
