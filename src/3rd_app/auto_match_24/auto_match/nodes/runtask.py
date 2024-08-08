@@ -112,23 +112,28 @@ class CamAction:
         return cube_list
     
     
-    def check_if_grasp(self, x, y, timeout=3, confidence=0.5, scope=30):
+    def check_if_grasp(self, x, y, timeout=3, confidence=0.5, scope=30, type="yolo", old_dis=None):
         stat = False
-        total = int(timeout * 4)
-        count = 0
-        for _ in range(total):
-            cube_list = self.detector()
-            for pice in cube_list:
-                if x - scope < pice[1][0] < x + scope and y - scope < pice[1][1] < y + scope:
-                    count += 1
-                    break
-            rospy.sleep(0.25)
-        if count / total > confidence:
-            stat = False
-            rospy.loginfo("grasp failed")
-        else:
-            stat = True
-            rospy.loginfo("grasp success")
+        if type=="yolo":
+            total = int(timeout * 4)
+            count = 0
+            for _ in range(total):
+                cube_list = self.detector()
+                for pice in cube_list:
+                    if x - scope < pice[1][0] < x + scope and y - scope < pice[1][1] < y + scope:
+                        count += 1
+                        break
+                rospy.sleep(0.25)
+            if count / total > confidence:
+                stat = False
+                rospy.loginfo("grasp failed")
+            else:
+                stat = True
+                rospy.loginfo("grasp success")
+        if type=="depth" and old_dis:
+            distance = self.get_depth(x, y)
+            if abs(distance - old_dis) > 30:
+                stat = True
         return stat
 
 
@@ -295,6 +300,7 @@ class ArmAction:
                 id = pice[0]
                 
         rospy.loginfo(f"物品位置在: {closest_x}, {closest_y}")
+        distance = self.cam.get_depth(closest_x, closest_y)
         # 获取机械臂目标位置
         x = self.x_kb[0] * closest_y + self.x_kb[1]
         y = self.y_kb[0] * closest_x + self.y_kb[1]
@@ -314,7 +320,7 @@ class ArmAction:
         rospy.loginfo(f"摆到旁边")
         self.arm_default_pose()
         rospy.sleep(0.75)
-        if not self.cam.check_if_grasp(closest_x, closest_y, timeout=1.5, confidence=0.3):
+        if not self.cam.check_if_grasp(closest_x, closest_y, type="depth",old_dis=distance):
             self.reset_pub.publish(position(20, 170, 174, 0))
             return 1
         self.grasp_status_pub.publish(String("0"))
