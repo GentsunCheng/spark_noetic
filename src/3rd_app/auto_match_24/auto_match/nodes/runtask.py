@@ -794,8 +794,9 @@ class AutoAction:
                         rospy.loginfo("========没扫描到，向前进一点=====")
                         # rospy.sleep(0.5)
                         self.robot.step_go_pro(0.15)
+                        rospy.sleep(1.0)
                         item_type = self.arm.grasp()
-                        rospy.sleep(1.5)
+                        rospy.sleep(0.5)
                         # rospy.sleep(0.5)
                 # if item_type == 0 or item_type == 1:
                 if item_type == 0:
