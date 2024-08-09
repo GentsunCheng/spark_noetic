@@ -415,7 +415,7 @@ class ArmAction:
             else:
                 found = True
 
-        if id == item and 40 <= closest_y:
+        if id == item:
             x = self.x_kb[0] * closest_y + self.x_kb[1]
             y = self.y_kb[0] * closest_x + self.y_kb[1]
             z = 175
@@ -522,7 +522,7 @@ class ArmAction:
             self.time[item] = 2
             return False
         
-    def check_scan_stat(self, data):
+    def check_scan_stat(self, data, dis=0.3):
         tested = False
         rospy.sleep(3.0)
         for _ in range(10):
@@ -530,7 +530,7 @@ class ArmAction:
                 tested_once = False
                 if distance == 0.0:
                     continue
-                if distance < 0.3:
+                if distance < dis:
                     tested_once = True
                     break
             if tested_once:
