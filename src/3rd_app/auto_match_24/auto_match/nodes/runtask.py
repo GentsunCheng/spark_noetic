@@ -252,7 +252,6 @@ class ArmAction:
         self.block_height = 100
         self.is_in = False
         self.testing = False
-        self.complete = {46: False, 88: False, 85: False}
         self.fix_rotate = FixRotate()
         self.grasp_status_pub = rospy.Publisher("/grasp_status", String, queue_size=1)
         self.reset_pub = rospy.Publisher("armreset_auto", position, queue_size=1)
@@ -308,15 +307,15 @@ class ArmAction:
         rospy.loginfo(f"arm: {x}, {y}, {z}")
         # 机械臂移动到目标位置上方
         self.interface.set_pose(x, y, z + 20)
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
         self.interface.set_pose(x, y, z)
         # 打开气泵，进行吸取
         self.interface.set_pump(True)
-        rospy.sleep(1.0)
+        rospy.sleep(0.5)
         # 抬起目标方块
         rospy.loginfo(f"把物品抬起来")
         self.interface.set_pose(x, y, z + 120)
-        rospy.sleep(0.75)
+        rospy.sleep(0.5)
         rospy.loginfo(f"摆到旁边")
         self.arm_default_pose_child_thread_start_flag = True
         ### 检测是否抓到
@@ -331,7 +330,6 @@ class ArmAction:
 
 
     def drop(self, item):
-        self.complete[item] = False
         if self.time[item] == 3:
             if self.drop_step_three(item):
                 return
@@ -512,7 +510,6 @@ class ArmAction:
                 self.interface.set_pose(x, y, z)
                 rospy.sleep(0.2)
                 self.grasp_status_pub.publish(String("0"))
-                self.complete[item] = True
                 return True
             else:
                 self.time[item] = 2
@@ -797,27 +794,23 @@ class AutoAction:
                         rospy.loginfo("========没扫描到，向前进一点=====")
                         # rospy.sleep(0.5)
                         self.robot.step_go_pro(0.15)
-                        rospy.sleep(1.5)
                         item_type = self.arm.grasp()
+                        rospy.sleep(1.5)
                         # rospy.sleep(0.5)
                 # if item_type == 0 or item_type == 1:
                 if item_type == 0:
-                    if self.arm.complete[46] and self.arm.complete[88] and self.arm.complete[85]:
-                        self.stop_flag = True
-                        return
+                    if self.can_task_once:
+                        self.can_task_once = False
+                        sorting_name == "Sorting_DA"
                     else:
-                        if self.can_task_once:
-                            self.can_task_once = False
-                            sorting_name == "Sorting_DA"
-                        else:
-                            if sorting_name == "Sorting_DA":
-                                sorting_name = "Sorting_AB"
-                            elif sorting_name == "Sorting_AB":
-                                sorting_name = "Sorting_BC"
-                            elif sorting_name == "Sorting_BC":
-                                sorting_name = "Sorting_CD"
-                            elif sorting_name == "Sorting_CD":
-                                sorting_name = "Sorting_DA"
+                        if sorting_name == "Sorting_DA":
+                            sorting_name = "Sorting_AB"
+                        elif sorting_name == "Sorting_AB":
+                            sorting_name = "Sorting_BC"
+                        elif sorting_name == "Sorting_BC":
+                            sorting_name = "Sorting_CD"
+                        elif sorting_name == "Sorting_CD":
+                            sorting_name = "Sorting_DA"
                 rospy.loginfo("========向后退一点=====")
                 for _ in range(i + 3):
                     self.robot.step_go_pro(-0.15, wait=False)  # 后退

@@ -103,7 +103,7 @@ class spark_detect:
 
         return result
 
-class GraspObject():
+class MainProcess():
     '''
     监听主控，用于物品抓取功能
     '''
@@ -542,7 +542,7 @@ if __name__ == '__main__':
     try:
         rospy.init_node('GraspObject', anonymous=False)
         rospy.loginfo("Init GraspObject main")
-        GraspObject()
+        MainProcess()
         rospy.spin()
     except rospy.ROSInterruptException:
         rospy.loginfo("End spark GraspObject main")
