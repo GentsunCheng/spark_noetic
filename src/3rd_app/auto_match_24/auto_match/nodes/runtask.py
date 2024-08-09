@@ -4,6 +4,7 @@ import os
 import threading
 
 import cv2
+import yaml
 import rospy
 import rospkg
 import pyfiglet
@@ -239,8 +240,6 @@ class ArmAction:
         arr.clear()
         del arr
 
-        self.arm_default_pose_child_thread_start_flag = False
-
         # 创建机械臂控制接口的对象
         self.interface = SwiftProInterface()
 
@@ -248,7 +247,11 @@ class ArmAction:
         self.center_x = self.width // 2  # 图像底边中心的x坐标
         self.bottom_y = self.height  # 图像底边的y坐标
 
-        self.time = {46: 0, 88: 0, 85: 0}
+        item_file = os.path.join(rospkg.RosPack().get_path('auto_match'),'config', 'items_config.yaml')
+        with open(item_file, 'r') as file:
+            items = yaml.safe_load(file)
+        self.time = {value: 0 for value in items.values()}
+        
         self.block_height = 100
         self.is_in = False
         self.testing = False
@@ -261,6 +264,10 @@ class ArmAction:
             rospkg.RosPack().get_path('auto_match'),'config', 'tmp.png'), 0))
         self.disallowed = np.array(cv2.imread(os.path.join(
             rospkg.RosPack().get_path('auto_match'),'config', 'disallowed_area.png'), 0))
+        
+        self.arm_default_pose_child_thread_start_flag = False
+        self.arm_default_pose_child_thread = threading.Thread(target=self.arm_default_pose_child_thread_function)
+        self.arm_default_pose_child_thread.start()
  
     
     def grasp(self):
@@ -322,7 +329,7 @@ class ArmAction:
         # rospy.sleep(0.75)
         # if not self.cam.check_if_grasp(closest_x, closest_y, type="depth", old_dis=distance):
         #     self.reset_pub.publish(position(20, 170, 174, 0))
-        #     return 1
+        #     return 404
         self.grasp_status_pub.publish(String("0"))
         if self.time[id] < 3:
             self.time[id] += 1
@@ -706,9 +713,6 @@ class AutoAction:
         self.stop_flag = False  # 任务的启停标志
         self.can_task_once = True
 
-        self.arm_default_pose_child_thread = threading.Thread(target=self.arm.arm_default_pose_child_thread_function)
-        self.arm_default_pose_child_thread.start()
-
         # 订阅机械臂手动控制的话题
         self.grasp_sub = rospy.Subscriber("grasp", String, self.grasp_cb)
 
@@ -818,7 +822,7 @@ class AutoAction:
 
             rospy.sleep(0.5)
             if self.stop_flag: return
-            if item_type == 0 or item_type == 1:
+            if item_type == 0 or item_type == 404:
                 continue
 
             # ====放置物品====

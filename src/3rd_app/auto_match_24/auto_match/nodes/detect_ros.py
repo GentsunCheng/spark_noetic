@@ -8,6 +8,8 @@ import os
 import cv2
 import yolov5
 import rospy
+import rospkg
+import yaml
 from std_msgs.msg import *
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
@@ -102,8 +104,10 @@ class Detector:
         self.image_sub = rospy.Subscriber(
             "/camera/color/image_raw", Image, self.image_cb, queue_size=1, buff_size=2**24
             )
-        self.obj_id = {'wine': 46, 'bear': 88, 'clock': 85}
-        self.items = ['wine', 'bear', 'clock']
+        item_file = os.path.join(rospkg.RosPack().get_path('auto_match'),'config', 'items_config.yaml')
+        with open(item_file, 'r') as file:
+            self.obj_id = yaml.safe_load(file)
+            print(self.obj_id)
         self.detector = SparkDetect(os.environ['HOME'] + "/auto.pt")
 
     def image_cb(self, data):
@@ -119,7 +123,7 @@ class Detector:
             results = self.detector.detect(image)
             img_bgr = results.image
             for i in range(len(results.name)):
-                if (results.name[i] not in self.items) or results.confidence[i] < 0.5:
+                if (results.name[i] not in self.obj_id) or results.confidence[i] < 0.5:
                     continue
                 obj = Detection2D()
                 obj.header = data.header
@@ -139,7 +143,7 @@ class Detector:
         try:
             image_out = self.bridge.cv2_to_imgmsg(img, "bgr8")
         except CvBridgeError as e:
-            print(e)
+            rospy.logerr(e)
         image_out.header = data.header
         self.image_pub.publish(image_out)
         
